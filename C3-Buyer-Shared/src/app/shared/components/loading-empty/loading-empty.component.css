@@ -1,0 +1,3 @@
+.sc-loading p,
+.sc-empty-state p { margin: 0; font-size: var(--sc-text-sm); }
+.sc-empty-state__icon { color: var(--sc-rose); font-size: 2rem; }

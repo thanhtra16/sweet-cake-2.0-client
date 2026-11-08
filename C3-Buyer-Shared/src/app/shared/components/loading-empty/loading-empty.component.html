@@ -1,0 +1,10 @@
+<section *ngIf="loading" class="sc-loading" role="status" aria-live="polite">
+  <span class="sc-spinner" aria-hidden="true"></span>
+  <p>{{ loadingText }}</p>
+</section>
+
+<section *ngIf="!loading && isEmpty" class="sc-empty-state">
+  <span class="sc-empty-state__icon" aria-hidden="true">♡</span>
+  <h3 class="sc-empty-state__title">{{ emptyTitle }}</h3>
+  <p>{{ emptyMessage }}</p>
+</section>
