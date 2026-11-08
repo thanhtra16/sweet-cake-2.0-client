@@ -1,0 +1,10 @@
+.buyer-layout {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.buyer-layout__main {
+  width: 100%;
+  flex: 1;
+}

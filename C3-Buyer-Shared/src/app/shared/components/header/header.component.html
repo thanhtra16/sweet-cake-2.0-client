@@ -1,0 +1,26 @@
+<header class="sc-header">
+  <div class="sc-header__inner">
+    <a class="sc-header__brand" routerLink="/" aria-label="Sweet Cake - Trang chủ">
+      <span class="sc-header__brand-mark" aria-hidden="true">S</span>
+      <span class="sc-header__brand-text">
+        <strong>Sweet Cake</strong>
+        <small>Freshly baked with love</small>
+      </span>
+    </a>
+
+    <nav class="sc-header__nav" aria-label="Điều hướng chính">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
+      <a routerLink="/products" routerLinkActive="is-active">Sản phẩm</a>
+      <a routerLink="/about" routerLinkActive="is-active">Giới thiệu</a>
+      <a routerLink="/contact" routerLinkActive="is-active">Liên hệ</a>
+    </nav>
+
+    <div class="sc-header__actions">
+      <a class="sc-header__cart" routerLink="/cart" aria-label="Giỏ hàng">
+        <span aria-hidden="true">♡</span>
+        <span>Giỏ hàng</span>
+      </a>
+      <a class="sc-btn sc-btn--primary sc-header__login" routerLink="/login">Đăng nhập</a>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,11 @@
+<nav *ngIf="totalPages > 1" class="sc-pagination" aria-label="Phân trang">
+  <button type="button" class="sc-pagination__item" [disabled]="currentPage <= 1"
+    (click)="goTo(currentPage - 1)" aria-label="Trang trước">‹</button>
+
+  <button *ngFor="let page of pages" type="button" class="sc-pagination__item"
+    [class.is-active]="page === currentPage" [attr.aria-current]="page === currentPage ? 'page' : null"
+    (click)="goTo(page)">{{ page }}</button>
+
+  <button type="button" class="sc-pagination__item" [disabled]="currentPage >= totalPages"
+    (click)="goTo(currentPage + 1)" aria-label="Trang tiếp theo">›</button>
+</nav>

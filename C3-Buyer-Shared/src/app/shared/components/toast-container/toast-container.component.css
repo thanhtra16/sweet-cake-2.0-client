@@ -1,0 +1,7 @@
+.sc-toast__body { min-width: 0; flex: 1; }
+.sc-toast__message { margin: 0; overflow-wrap: anywhere; }
+.sc-toast__close {
+  flex: 0 0 auto; padding: 0 0.2rem; border: 0; background: transparent;
+  color: var(--sc-muted); font-size: 1.25rem; line-height: 1;
+}
+.sc-toast__close:hover { color: var(--sc-deep); }
