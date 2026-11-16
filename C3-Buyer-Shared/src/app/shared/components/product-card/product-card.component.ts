@@ -5,6 +5,7 @@ import { VndPipe } from '../../pipes/vnd.pipe';
 export interface BuyerProduct {
   _id?: string;
   name: string;
+  kind: 'cake' | 'accessory';
   price: number;
   image?: string;
   description?: string;
