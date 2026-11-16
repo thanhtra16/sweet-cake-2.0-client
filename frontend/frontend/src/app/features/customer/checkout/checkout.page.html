@@ -1,0 +1,28 @@
+<section class="checkout sc-container">
+  <h1>Thanh toán</h1>
+  <p class="checkout__notice" *ngIf="error" role="alert">{{ error }}</p>
+  <div class="checkout__grid">
+    <form class="sc-card checkout__form" (ngSubmit)="onSubmit()">
+      <h2>Thông tin người nhận</h2>
+      <label>Họ và tên<input class="sc-input" name="fullName" [(ngModel)]="receiver.fullName" required /></label>
+      <label>Số điện thoại<input class="sc-input" name="phone" [(ngModel)]="receiver.phone" required /></label>
+      <h2>Hình thức nhận bánh</h2>
+      <label><input type="radio" name="receiveMethod" value="pickup" [(ngModel)]="receiveMethod" (change)="onReceiveMethodChange()" /> Nhận tại cửa hàng</label>
+      <label><input type="radio" name="receiveMethod" value="delivery" [(ngModel)]="receiveMethod" (change)="onReceiveMethodChange()" /> Giao tận nơi</label>
+      <label *ngIf="receiveMethod === 'pickup'">Chi nhánh
+        <select class="sc-input" name="branch" [(ngModel)]="selectedBranch"><option *ngFor="let branch of settings?.branches" [value]="branch._id || branch.name">{{ branch.name }} – {{ branch.address }}</option></select>
+      </label>
+      <label>Ngày nhận bánh<input class="sc-input" type="date" name="date" [(ngModel)]="selectedDate" (change)="loadSlots()" /></label>
+      <div class="checkout__slots"><button type="button" class="sc-btn sc-btn--secondary" *ngFor="let slot of slots" [disabled]="slot.status !== 'open'" [class.is-selected]="selectedSlotId === slot.id" (click)="selectedSlotId = slot.id">{{ slot.label }} <small>{{ slot.status === 'open' ? 'Còn chỗ' : slot.status === 'full' ? 'Đầy ca' : 'Đã đóng' }}</small></button></div>
+      <label>Mã voucher<div class="checkout__voucher"><input class="sc-input" name="voucher" [(ngModel)]="voucherCode" placeholder="Nhập mã giảm giá" /><button type="button" class="sc-btn" (click)="applyVoucher()">Áp dụng</button></div></label>
+      <p class="checkout__error" *ngIf="voucherError">{{ voucherError }}</p>
+      <label>Ghi chú<textarea class="sc-textarea" name="note" [(ngModel)]="note" maxlength="200"></textarea><small>{{ note.length }}/200</small></label>
+      <button class="sc-btn sc-btn--primary" type="submit" [disabled]="loading || !quote">{{ loading ? 'Đang tạo đơn...' : 'Đặt hàng và thanh toán' }}</button>
+    </form>
+    <aside class="sc-card checkout__summary" *ngIf="quote">
+      <h2>Tóm tắt đơn hàng</h2>
+      <p>Tạm tính <strong>{{ formatVnd(quote.subtotal) }}</strong></p><p>Giảm giá <strong>-{{ formatVnd(quote.discount) }}</strong></p><p>Phí giao hàng <strong>{{ formatVnd(quote.deliveryFee) }}</strong></p>
+      <hr /><p class="checkout__total">Tổng thanh toán <strong>{{ formatVnd(quote.total) }}</strong></p>
+    </aside>
+  </div>
+</section>
