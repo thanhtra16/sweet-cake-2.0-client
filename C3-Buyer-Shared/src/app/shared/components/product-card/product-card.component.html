@@ -15,10 +15,14 @@
     <div class="sc-product-card__bottom">
       <strong class="sc-product-card__price">{{ product.price | vnd }}</strong>
       <div class="sc-product-card__actions">
-        <button type="button" class="sc-btn sc-btn--outline sc-btn--sm" (click)="onViewDetail()">Chi tiết</button>
-        <button *ngIf="showAddToCart" type="button" class="sc-btn sc-btn--primary sc-btn--sm"
-          (click)="onAddToCart()">Thêm</button>
-      </div>
+  <button
+    *ngIf="showAddToCart"
+    type="button"
+    class="sc-btn sc-btn--primary sc-btn--sm"
+    (click)="onAddToCart()">
+    Thêm giỏ hàng
+  </button>
+</div>
     </div>
   </div>
 </article>
