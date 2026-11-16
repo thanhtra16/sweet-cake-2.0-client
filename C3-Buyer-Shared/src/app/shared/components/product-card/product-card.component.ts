@@ -4,7 +4,6 @@ import { VndPipe } from '../../pipes/vnd.pipe';
 
 export interface BuyerProduct {
   _id?: string;
-  id?: string;
   name: string;
   price: number;
   image?: string;
