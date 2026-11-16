@@ -5,7 +5,7 @@
 }
 .sc-product-card__image { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform 250ms ease; }
 .sc-product-card:hover .sc-product-card__image { transform: scale(1.035); }
-.sc-product-card__body { display: flex; height: calc(100% - auto); flex-direction: column; gap: 0.65rem; }
+.sc-product-card__body { display: flex; flex:1; flex-direction: column; gap: 0.65rem; }
 .sc-product-card__name { margin: 0; font-family: var(--sc-font-heading); font-size: 1.15rem; }
 .sc-product-card__description {
   display: -webkit-box; overflow: hidden; margin: 0; color: var(--sc-muted);
