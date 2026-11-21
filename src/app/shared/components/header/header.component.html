@@ -1,191 +1,6 @@
-
-<header class="site-header">
-
-  <!-- LOGO -->
-  <div class="header-logo">
-    <a routerLink="/gioi-thieu" class="tieu-de-lon">
-      SweetCake
-    </a>
-  </div>
-
-  <!-- NAVIGATION -->
-  <div class="header-navigation">
-    <nav class="chu-thuong">
-
-      <a
-        href="#"
-        id="nut-kich-hoat-menu"
-        (click)="toggleMenu($event)"
-        [attr.aria-expanded]="isMenuOpen"
-      >
-        Menu
-        <i
-          class="bi bi-chevron-down"
-          style="font-size: 10px; margin-left: 2px;"
-        ></i>
-      </a>
-
-      <a routerLink="/lich-su-mua-hang">Đơn hàng</a>
-      <a routerLink="/gioi-thieu">Giới thiệu</a>
-      <a routerLink="/blog">Blog</a>
-      <a routerLink="/lien-he">Cửa hàng</a>
-
-    </nav>
-  </div>
-
-  <!-- HEADER ICONS -->
-  <div class="header-icons">
-
-    <a
-      routerLink="/thong-bao"
-      class="bi bi-bell"
-      aria-label="Thông báo"
-    ></a>
-
-    <a
-      routerLink="/lich-su-mua-hang"
-      class="bi bi-cart"
-      aria-label="Giỏ hàng"
-    ></a>
-
-    <a
-      routerLink="/quan-ly-tai-khoan"
-      class="bi bi-person-circle"
-      aria-label="Tài khoản"
-    ></a>
-
-  </div>
-
-  <!-- MEGA MENU -->
-  <div
-    class="khung-menu-tha-lon"
-    id="o-chua-mega-menu"
-    [class.dang-kich-hoat]="isMenuOpen"
-    (click)="$event.stopPropagation()"
-  >
-
-    <div class="hop-chia-hai-vung-menu">
-
-      <!-- DANH MỤC BÊN TRÁI -->
-      <div class="vung-danh-muc-trai tieu-de-nho">
-
-        <a routerLink="/gioi-thieu" (click)="closeMenu()">
-          GIỚI THIỆU
-        </a>
-
-        <a routerLink="/chinh-sach" (click)="closeMenu()">
-          CHÍNH SÁCH
-        </a>
-
-        <a routerLink="/faq" (click)="closeMenu()">
-          CÂU HỎI THƯỜNG GẶP
-        </a>
-
-        <a routerLink="/blog" (click)="closeMenu()">
-          BLOG
-        </a>
-
-        <a routerLink="/lien-he" (click)="closeMenu()">
-          CỬA HÀNG
-        </a>
-
-      </div>
-
-      <!-- SẢN PHẨM BÊN PHẢI -->
-      <div class="vung-hien-thi-phai">
-
-        <div class="chu-de-muc-menu-phai">
-          SẢN PHẨM NỔI BẬT
-        </div>
-
-        <div class="luoi-hai-cot-menu">
-
-          @for (product of products; track product.id) {
-            <a
-              class="dong-chi-tiet-mon-an"
-              [routerLink]="['/chi-tiet', product.id]"
-              (click)="closeMenu()"
-            >
-
-              <img
-                [src]="product.thumbnail"
-                [alt]="product.name"
-              >
-
-              <div class="chu-khoi-mon-an">
-
-                <h4>{{ product.name }}</h4>
-
-                <p>
-                  {{ getShortDescription(product.description) }}
-                </p>
-
-              </div>
-
-            </a>
-          }
-
-          @if (products.length === 0) {
-            <p class="chu-thuong">
-              Chưa có sản phẩm nổi bật.
-            </p>
-          }
-
-        </div>
-
-        <!-- BANNER ƯU ĐÃI -->
-        <div class="hop-banner-nho-uu-dai">
-
-          <div>
-            <p class="tieu-de-nho">
-              Ưu đãi thành viên
-            </p>
-
-            <p class="chu-thuong">
-              Giảm ngay 10% cho đơn hàng đầu tiên
-              của bạn khi đăng ký tài khoản SweetCake.
-            </p>
-          </div>
-
-          <button
-            class="nut-bam"
-            id="nut-dang-ky-ngay"
-            type="button"
-            routerLink="/dang-ky"
-            (click)="closeMenu()"
-          >
-            ĐĂNG KÝ NGAY
-          </button>
-
-        </div>
-
-      </div>
-    </div>
-
-    <!-- THANH DƯỚI MEGA MENU -->
-    <div class="thanh-day-menu-duoi">
-
-      <div>
-        <i
-          class="bi bi-telephone-fill"
-          style="margin-right: 6px;"
-        ></i>
-
-        LIÊN HỆ VỚI CHÚNG TÔI
-      </div>
-
-      <div class="nhom-icon-m-duoi">
-        <i class="bi bi-telephone"></i>
-        <i class="bi bi-facebook"></i>
-        <i class="bi bi-instagram"></i>
-      </div>
-
-    </div>
-
-  </div>
-
 <header class="sc-header">
   <div class="sc-header__inner">
+    <!-- LOGO -->
     <a class="sc-header__brand" routerLink="/" aria-label="Sweet Cake - Trang chủ">
       <span class="sc-header__brand-mark" aria-hidden="true">S</span>
       <span class="sc-header__brand-text">
@@ -194,27 +9,37 @@
       </span>
     </a>
 
+    <!-- NAVIGATION -->
     <nav class="sc-header__nav" aria-label="Điều hướng chính">
       <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
       <a routerLink="/products" routerLinkActive="is-active">Sản phẩm</a>
       <a routerLink="/accessories" routerLinkActive="is-active">Phụ kiện</a>
       <a routerLink="/orders" routerLinkActive="is-active">Đơn hàng</a>
-      <a routerLink="/about" routerLinkActive="is-active">Giới thiệu</a>
-      <a routerLink="/contact" routerLinkActive="is-active">Liên hệ</a>
+      <a routerLink="/gioi-thieu" routerLinkActive="is-active">Giới thiệu</a>
+      <a routerLink="/lien-he" routerLinkActive="is-active">Liên hệ</a>
     </nav>
 
+    <!-- ACTIONS: THÔNG BÁO, GIỎ HÀNG, TÀI KHOẢN -->
     <div class="sc-header__actions">
-      <a class="sc-header__cart" routerLink="/cart" aria-label="Giỏ hàng">
-        <span class="sc-header__cart-icon" aria-hidden="true">♡</span>
-        <span>Giỏ hàng</span>
+      <!-- Thông báo -->
+      <a class="sc-header__icon-btn" routerLink="/thong-bao" aria-label="Thông báo" title="Thông báo">
+        <i class="bi bi-bell"></i>
+      </a>
 
+      <!-- Giỏ hàng kèm số lượng -->
+      <a class="sc-header__icon-btn sc-header__cart" routerLink="/cart" aria-label="Giỏ hàng" title="Giỏ hàng">
+        <i class="bi bi-cart"></i>
         @if ((cartCount$ | async); as count) {
           @if (count > 0) {
-            <span class="sc-header__cart-count">{{ count }}</span>
+            <span class="sc-header__cart-badge">{{ count }}</span>
           }
         }
       </a>
-      <a class="sc-btn sc-btn--primary sc-header__login" routerLink="/login">Đăng nhập</a>
+
+      <!-- Tài khoản / Đăng nhập -->
+      <a class="sc-header__icon-btn" routerLink="/quan-ly-tai-khoan" aria-label="Tài khoản" title="Tài khoản">
+        <i class="bi bi-person-circle"></i>
+      </a>
     </div>
   </div>
 </header>
