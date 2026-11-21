@@ -1,0 +1,249 @@
+
+:host {
+  display: block;
+}
+
+.customizer {
+  padding: 28px;
+  background: var(--sc-cream);
+  border: 1px solid var(--sc-line);
+  border-radius: 20px;
+}
+
+.customizer__heading {
+  margin-bottom: 30px;
+
+  h2 {
+    margin: 8px 0;
+  }
+}
+
+.customizer__section {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--sc-line);
+
+  &:last-of-type {
+    border-bottom: 0;
+  }
+}
+
+.customizer__section-title {
+  margin: 0 0 18px;
+  color: var(--sc-ink);
+  font-family: 'Playfair Display', serif;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.customizer__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.customizer__options--sizes {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.customizer__option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 58px;
+  padding: 12px;
+  border: 1px solid var(--sc-line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--sc-ink);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  &:hover {
+    border-color: var(--sc-rose);
+  }
+
+  &:focus-within {
+    outline: 2px solid var(--sc-rose);
+    outline-offset: 2px;
+  }
+}
+
+.customizer__option--active {
+  border-color: var(--sc-rose);
+  background: var(--sc-pink);
+  color: var(--sc-deep);
+  font-weight: 600;
+}
+
+.customizer__option-name {
+  font-weight: 600;
+}
+
+.customizer__option-price {
+  color: var(--sc-muted);
+  font-size: 12px;
+}
+
+.customizer__colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.customizer__color {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  color: var(--sc-muted);
+  font-size: 13px;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:focus-within .customizer__color-swatch {
+    outline: 2px solid var(--sc-rose);
+    outline-offset: 3px;
+  }
+}
+
+.customizer__color-swatch {
+  width: 38px;
+  height: 38px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--sc-line);
+}
+
+.customizer__color--active .customizer__color-swatch {
+  box-shadow: 0 0 0 2px var(--sc-rose);
+}
+
+.customizer__message {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+}
+
+.customizer__message-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.customizer__counter {
+  color: var(--sc-green);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.customizer__counter--warning {
+  color: var(--sc-deep);
+}
+
+.customizer__accessories {
+  display: grid;
+  gap: 12px;
+}
+
+.customizer__accessory {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--sc-ink);
+  cursor: pointer;
+
+  input {
+    accent-color: var(--sc-rose);
+    width: 17px;
+    height: 17px;
+  }
+}
+
+.customizer__accessory-price {
+  margin-left: auto;
+  color: var(--sc-muted);
+  font-size: 13px;
+}
+
+.customizer__summary {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.customizer__summary-row,
+.customizer__summary-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  color: var(--sc-muted);
+}
+
+.customizer__summary-row strong {
+  color: var(--sc-ink);
+}
+
+.customizer__summary-total {
+  margin-top: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--sc-line);
+  color: var(--sc-ink);
+  font-weight: 600;
+
+  strong {
+    color: var(--sc-deep);
+    font-size: 22px;
+  }
+}
+
+.customizer__note {
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+
+.customizer__price-values {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  del {
+    color: var(--sc-muted);
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  strong {
+    color: var(--sc-deep);
+  }
+}
+
+@media (max-width: 600px) {
+  .customizer {
+    padding: 18px;
+  }
+
+  .customizer__options--sizes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
