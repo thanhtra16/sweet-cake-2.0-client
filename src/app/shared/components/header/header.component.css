@@ -1,0 +1,329 @@
+
+:host {
+  display: block;
+}
+
+.site-header {
+  position: relative;
+  z-index: 1000;
+  display: flex;
+  background-color: #f9f6f2;
+  padding: 0;
+  margin: 0 20px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.site-header .header-logo .tieu-de-lon {
+  margin: 0;
+  padding: 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 64px;
+  color: #2D1B10;
+  font-weight: 700;
+  line-height: 72px;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.site-header .chu-thuong {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #4B454A;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+}
+
+.site-header .chu-thuong a {
+  text-decoration: none;
+  margin-right: 20px;
+  color: #2D1B10;
+  font-weight: 600;
+  transition: .3s;
+}
+
+.site-header .chu-thuong a:hover {
+  color: #7D562D;
+}
+
+.site-header .header-icons {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.site-header .header-icons a {
+  color: #2D1B10;
+  font-size: 24px;
+  transition: .3s;
+  text-decoration: none;
+}
+
+.site-header .header-icons a:hover {
+  color: #7D562D;
+  transform: scale(1.15);
+}
+
+/* MEGA MENU */
+
+.site-header .khung-menu-tha-lon {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  z-index: 999;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+  border-top: 1px solid #f2e7df;
+  display: none;
+  border-radius: 12px;
+}
+
+.site-header .khung-menu-tha-lon.dang-kich-hoat {
+  display: block;
+}
+
+.site-header .hop-chia-hai-vung-menu {
+  display: flex;
+  width: 100%;
+}
+
+/* DANH MỤC BÊN TRÁI */
+
+.site-header .vung-danh-muc-trai {
+  width: 24%;
+  background-color: #F6F3EF;
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.site-header .vung-danh-muc-trai a {
+  display: block;
+  padding: 10px 20px 10px 35px;
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: #2D1B10;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  font-weight: 100;
+}
+
+.site-header .vung-danh-muc-trai a:hover {
+  background-color: #FFFFFF;
+}
+
+.site-header .vung-danh-muc-trai a.dang-chon {
+  color: #2D1B10;
+  font-weight: 700;
+  border-right: 3px solid #7a5232;
+}
+
+/* KHU VỰC SẢN PHẨM */
+
+.site-header .vung-hien-thi-phai {
+  width: 76%;
+  padding: 40px 50px;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-header .chu-de-muc-menu-phai {
+  margin-bottom: 25px;
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  color: #2D1B10;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  border-bottom: 1px solid #f2e7df;
+  padding-bottom: 10px;
+}
+
+.site-header .luoi-hai-cot-menu {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  row-gap: 25px;
+  column-gap: 40px;
+  margin-bottom: 35px;
+}
+
+.site-header .dong-chi-tiet-mon-an {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  text-decoration: none;
+}
+
+.site-header .dong-chi-tiet-mon-an img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.site-header .chu-khoi-mon-an h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  color: #2D1B10;
+  margin-bottom: 3px;
+  font-weight: bold;
+}
+
+.site-header .chu-khoi-mon-an p {
+  font-size: 12px;
+  color: #777;
+  line-height: 1.4;
+  margin-bottom: 0;
+}
+
+/* BANNER ƯU ĐÃI */
+
+.site-header .hop-banner-nho-uu-dai {
+  background-color: #fdf5f7;
+  border-radius: 8px;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.site-header .hop-banner-nho-uu-dai .tieu-de-nho {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  color: #2D1B10;
+  margin-bottom: 5px;
+}
+
+.site-header .hop-banner-nho-uu-dai .chu-thuong {
+  font-size: 14px;
+  line-height: 24px;
+  color: #4B454A;
+  margin-bottom: 0;
+}
+
+.site-header .nut-bam {
+  background-color: #7D562D;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  height: 60px;
+  padding: 0 20px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+
+.site-header .nut-bam:hover {
+  background-color: #623F18;
+}
+
+/* THANH DƯỚI MEGA MENU */
+
+.site-header .thanh-day-menu-duoi {
+  background-color: #2D1B10;
+  color: #fff;
+  padding: 12px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  border-radius: 0 0 12px 12px;
+}
+
+.site-header .thanh-day-menu-duoi .nhom-icon-m-duoi {
+  display: flex;
+  gap: 15px;
+  font-size: 15px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .site-header .header-navigation {
+    display: none;
+  }
+
+  .site-header .khung-menu-tha-lon {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .site-header .vung-danh-muc-trai {
+    width: 30%;
+  }
+
+  .site-header .vung-hien-thi-phai {
+    width: 70%;
+    padding: 25px;
+  }
+
+  .site-header .vung-danh-muc-trai a {
+    font-size: 15px;
+    padding: 10px;
+  }
+
+  .site-header .luoi-hai-cot-menu {
+    column-gap: 15px;
+  }
+}
+
+@media (max-width: 520px) {
+  .site-header {
+    margin: 0 10px;
+  }
+
+  .site-header .header-logo .tieu-de-lon {
+    font-size: 35px;
+    line-height: 45px;
+  }
+
+  .site-header .header-icons {
+    gap: 12px;
+  }
+
+  .site-header .header-icons a {
+    font-size: 19px;
+  }
+
+  .site-header .khung-menu-tha-lon {
+    left: -10px;
+    width: calc(100% + 20px);
+  }
+
+  .site-header .hop-chia-hai-vung-menu {
+    flex-direction: column;
+  }
+
+  .site-header .vung-danh-muc-trai,
+  .site-header .vung-hien-thi-phai {
+    width: 100%;
+  }
+
+  .site-header .vung-danh-muc-trai {
+    padding: 10px 0;
+  }
+
+  .site-header .vung-hien-thi-phai {
+    padding: 20px;
+  }
+
+  .site-header .luoi-hai-cot-menu {
+    grid-template-columns: 1fr;
+  }
+
+  .site-header .hop-banner-nho-uu-dai {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .site-header .thanh-day-menu-duoi {
+    padding: 12px 15px;
+  }
+}
