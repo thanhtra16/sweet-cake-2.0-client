@@ -11,6 +11,14 @@ export const BUYER_ROUTES: Routes = [
     },
 
     {
+        path: 'faq',
+
+        loadComponent: () =>
+            import('./pages/faq/faq.component')
+                .then(m => m.FaqComponent)
+    },
+
+    {
         path: '',
         redirectTo: 'gioi-thieu',
         pathMatch: 'full'
