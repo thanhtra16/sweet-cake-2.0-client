@@ -1,0 +1,270 @@
+<section class="customizer">
+  <div class="customizer__heading">
+    <span class="sc-eyebrow">MAKE IT YOURS</span>
+    <h2 class="sc-section-title">Tùy chỉnh chiếc bánh</h2>
+    <p class="sc-muted">
+      Lựa chọn hương vị và phong cách bánh theo sở thích của bạn.
+    </p>
+  </div>
+
+  <form [formGroup]="form" class="customizer__form">
+
+    <!-- Kích thước -->
+    <section class="customizer__section">
+      <h3 class="customizer__section-title">Kích thước bánh</h3>
+
+      <div class="customizer__options customizer__options--sizes">
+        @for (size of sizeOptions; track size.name) {
+          <label
+            class="customizer__option"
+            [class.customizer__option--active]="form.controls.size.value === size.name"
+          >
+            <input
+              type="radio"
+              formControlName="size"
+              [value]="size.name"
+            />
+
+            <span class="customizer__option-name">
+              {{ size.name }}
+            </span>
+
+            <span class="customizer__option-price">
+              @if (size.surcharge === 0) {
+                Miễn phí
+              } @else {
+                +{{ size.surcharge | number }}đ
+              }
+            </span>
+          </label>
+        }
+      </div>
+    </section>
+
+    <!-- Cốt bánh -->
+    <section class="customizer__section">
+      <h3 class="customizer__section-title">Cốt bánh</h3>
+
+      <div class="customizer__options">
+        @for (base of baseOptions; track base) {
+          <label
+            class="customizer__option"
+            [class.customizer__option--active]="form.controls.base.value === base"
+          >
+            <input
+              type="radio"
+              formControlName="base"
+              [value]="base"
+            />
+            {{ base }}
+          </label>
+        }
+      </div>
+    </section>
+
+    <!-- Nhân bánh -->
+    <section class="customizer__section">
+      <h3 class="customizer__section-title">Nhân bánh</h3>
+
+      <div class="customizer__options">
+        @for (filling of fillingOptions; track filling) {
+          <label
+            class="customizer__option"
+            [class.customizer__option--active]="form.controls.filling.value === filling"
+          >
+            <input
+              type="radio"
+              formControlName="filling"
+              [value]="filling"
+            />
+            {{ filling }}
+          </label>
+        }
+      </div>
+    </section>
+
+    <!-- Màu kem -->
+    <section class="customizer__section">
+      <h3 class="customizer__section-title">Màu kem</h3>
+
+      <div class="customizer__colors">
+        @for (color of frostingOptions; track color.name) {
+          <label
+            class="customizer__color"
+            [class.customizer__color--active]="form.controls.frostingColor.value === color.name"
+            [title]="color.name"
+          >
+            <input
+              type="radio"
+              formControlName="frostingColor"
+              [value]="color.name"
+            />
+
+            <span
+              class="customizer__color-swatch"
+              [style.backgroundColor]="color.value"
+            ></span>
+
+            <span>{{ color.name }}</span>
+          </label>
+        }
+      </div>
+    </section>
+
+    <!-- Độ ngọt -->
+    <section class="customizer__section">
+      <h3 class="customizer__section-title">Độ ngọt</h3>
+
+      <div class="customizer__options">
+        @for (sweetness of sweetnessOptions; track sweetness.value) {
+          <label
+            class="customizer__option"
+            [class.customizer__option--active]="form.controls.sweetness.value === sweetness.value"
+          >
+            <input
+              type="radio"
+              formControlName="sweetness"
+              [value]="sweetness.value"
+            />
+            {{ sweetness.label }}
+          </label>
+        }
+      </div>
+    </section>
+
+    <!-- Lời nhắn -->
+    <section class="customizer__section">
+      <h3 class="customizer__section-title">Lời nhắn trên bánh</h3>
+
+      <textarea
+        class="sc-textarea customizer__message"
+        formControlName="message"
+        placeholder="Nhập lời nhắn bạn muốn ghi trên bánh..."
+        [attr.maxlength]="maxMessageLength"
+      ></textarea>
+
+      <div class="customizer__message-footer">
+        <span class="sc-muted">
+          Tối đa {{ maxMessageLength }} ký tự.
+        </span>
+
+        <span
+          class="customizer__counter"
+          [class.customizer__counter--warning]="remainingCharacters <= 5"
+        >
+          {{ messageLength }}/{{ maxMessageLength }}
+        </span>
+      </div>
+
+      @if (form.controls.message.hasError('maxlength')) {
+        <p class="sc-error-text">
+          Lời nhắn đã vượt quá giới hạn ký tự.
+        </p>
+      }
+    </section>
+
+    <!-- Phụ kiện -->
+    <section class="customizer__section">
+      <h3 class="customizer__section-title">Phụ kiện trang trí</h3>
+
+      @if (accessoryOptions.length > 0) {
+        <div class="customizer__accessories">
+          @for (accessory of accessoryOptions; track accessory.id) {
+            <div class="customizer__accessory-item">
+
+              <label class="customizer__accessory">
+                <input
+                  type="checkbox"
+                  [checked]="isAccessorySelected(accessory.id)"
+                  (change)="toggleAccessory(
+                    accessory.id,
+                    $any($event.target).checked
+                  )"
+                />
+
+                <span>{{ accessory.name }}</span>
+
+                <span class="customizer__accessory-price">
+                  +{{ accessory.price | number }}đ
+                </span>
+              </label>
+
+              <!-- Chọn biến thể nếu phụ kiện có biến thể -->
+              @if (
+                isAccessorySelected(accessory.id) &&
+                accessory.variants.length > 0
+              ) {
+                <div class="customizer__accessory-variant">
+                  <label [for]="'accessory-variant-' + accessory.id">
+                    Chọn {{ accessory.name.toLowerCase() }}
+                  </label>
+
+                  <select
+                    class="customizer__variant-select"
+                    [id]="'accessory-variant-' + accessory.id"
+                    [value]="getSelectedVariantId(accessory.id)"
+                    (change)="onAccessoryVariantChange(
+                      accessory.id,
+                      $any($event.target).value
+                    )"
+                  >
+                    <option value="" disabled>
+                      -- Chọn biến thể --
+                    </option>
+
+                    @for (variant of accessory.variants; track variant.id) {
+                      <option [value]="variant.id">
+                        {{ variant.label }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              }
+
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="sc-muted">
+          Danh sách phụ kiện sẽ được cập nhật khi có dữ liệu cấu hình.
+        </p>
+      }
+    </section>
+
+    <!-- Tổng giá -->
+    <section class="customizer__summary">
+      <div class="customizer__summary-row">
+        <span>Giá cơ bản</span>
+
+        <div class="customizer__price-values">
+          @if (appliedBasePrice < basePrice) {
+            <del>{{ basePrice | number }}đ</del>
+          }
+
+          <strong>{{ appliedBasePrice | number }}đ</strong>
+        </div>
+      </div>
+
+      <div class="customizer__summary-row">
+        <span>Phụ phí kích thước</span>
+        <strong>{{ sizeSurcharge | number }}đ</strong>
+      </div>
+
+      <div class="customizer__summary-row">
+        <span>Phụ phí tùy chọn</span>
+        <strong>{{ accessoryTotal | number }}đ</strong>
+      </div>
+
+      <div class="customizer__summary-total">
+        <span>Đơn giá dòng</span>
+        <strong>{{ estimatedPrice | number }}đ</strong>
+      </div>
+
+      <p class="sc-muted customizer__note">
+        Giá khuyến mãi chỉ áp dụng cho giá cơ bản.
+        Các khoản phụ phí được tính riêng.
+      </p>
+    </section>
+
+  </form>
+</section>
