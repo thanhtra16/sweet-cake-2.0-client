@@ -12,7 +12,7 @@ interface SearchResult {
 @Component({
   selector: 'app-faq',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './faq.component.html',
   styleUrl: './faq.component.css'
 })

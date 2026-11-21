@@ -69,7 +69,7 @@ export class HeaderComponent implements OnInit {
   // Lấy danh sách sản phẩm nổi bật
   loadProducts(): void {
     this.http
-      .get<Product[]>(`${this.apiUrl}/data/products`)
+      .get<Product[]>(`${this.apiUrl}/products`)
       .subscribe({
         next: (data) => {
           this.products = Array.isArray(data)

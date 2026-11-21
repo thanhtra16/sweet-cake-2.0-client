@@ -15,6 +15,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'blog/:id',
     renderMode: RenderMode.Client
   },
+    {
+    // Các trang auth dùng sessionStorage/localStorage nên render ở trình duyệt
+    path: 'auth/**',
+    renderMode: RenderMode.Client
+  },
   {
     path: '**',
     renderMode: RenderMode.Prerender
