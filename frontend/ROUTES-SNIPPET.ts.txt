@@ -1,0 +1,3 @@
+// Thêm vào children của BuyerLayout hiện tại, không thay routes toàn app:
+{ path: 'checkout', loadComponent: () => import('./features/customer/checkout/checkout.page').then(m => m.CheckoutPage) },
+{ path: 'payment/:orderId', loadComponent: () => import('./features/customer/payment/payment.page').then(m => m.PaymentPage) },
