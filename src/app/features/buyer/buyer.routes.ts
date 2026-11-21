@@ -38,6 +38,13 @@ export const BUYER_ROUTES: Routes = [
     },
 
     {
+        path: 'policies',
+        loadComponent: () =>
+          import('./pages/policies/policies.component')
+                .then(m => m.PoliciesComponent)
+    },
+
+    {
         path: '',
         redirectTo: 'gioi-thieu',
         pathMatch: 'full'
