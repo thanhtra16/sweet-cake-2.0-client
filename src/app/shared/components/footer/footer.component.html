@@ -1,3 +1,82 @@
+<footer class="site-footer">
+  <div class="footer-chinh">
+    <!-- CỘT THƯƠNG HIỆU -->
+    <div class="footer-tung-cot khung-thuong-hieu">
+      <div class="footer-logo">SweetCake</div>
+
+      <p class="footer-mo-ta">
+        Tiệm bánh thủ công với tâm huyết mang lại những trải nghiệm ngọt ngào và
+        tinh tế nhất cho khách hàng.
+      </p>
+
+      <div class="social-icons">
+        <a href="#" aria-label="Facebook">
+          <i class="bi bi-facebook"></i>
+        </a>
+
+        <a href="#" aria-label="Instagram">
+          <i class="bi bi-instagram"></i>
+        </a>
+
+        <a href="#" aria-label="Điện thoại">
+          <i class="bi bi-telephone-fill"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- CỘT SẢN PHẨM -->
+    <div class="footer-tung-cot chu-thuong">
+      <p>SẢN PHẨM</p>
+
+      <a routerLink="/san-pham">Menu</a>
+      <a routerLink="/san-pham">Best Seller</a>
+      <a routerLink="/phu-kien">Phụ kiện</a>
+    </div>
+
+    <!-- CỘT HỖ TRỢ -->
+    <div class="footer-tung-cot chu-thuong">
+      <p>HỖ TRỢ</p>
+
+      <a routerLink="/faq">Câu hỏi thường gặp (FAQ)</a>
+      <a routerLink="/chinh-sach">Chính sách</a>
+      <a routerLink="/gioi-thieu">Giới thiệu</a>
+    </div>
+
+    <!-- CỘT ĐỊA CHỈ -->
+    <div class="footer-tung-cot chu-thuong">
+      <p>ĐỊA CHỈ</p>
+
+      <a>Nhóm 1, Đại học Kinh tế Luật</a>
+      <a>Giờ mở cửa: 8:00 - 22:00</a>
+    </div>
+  </div>
+
+  <!-- FOOTER BOTTOM -->
+  <div class="footer-bottom">
+    <form class="newsletter-box" (ngSubmit)="submitEmail()">
+      <label class="newsletter-title" for="newsletter-email">
+        NHẬN TIN TỪ CHÚNG TÔI
+      </label>
+
+      <div class="newsletter-email-group">
+        <input
+          id="newsletter-email"
+          class="newsletter-nhap-email"
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          placeholder="Email của bạn"
+        />
+
+        <button class="newsletter-gui-email" type="submit">Gửi</button>
+      </div>
+    </form>
+
+    <div class="ban-quyen">
+      © 2026 SweetCake. Tất cả quyền được bảo lưu.
+    </div>
+  </div>
+</footer>
 <footer class="sc-footer">
   <div class="sc-footer__inner">
     <section class="sc-footer__brand">
