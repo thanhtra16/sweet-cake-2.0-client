@@ -6,8 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class OrderService {
-  private apiUrl = 'http://localhost:5000/api/orders';
-  private adminApiUrl = 'http://localhost:5000/api/admin/orders';
+  private apiUrl = 'http://localhost:3000/api/orders';
+  private adminApiUrl = 'http://localhost:3000/api/admin/orders';
 
   constructor(private http: HttpClient) {}
 
@@ -19,7 +19,7 @@ export class OrderService {
   }
 
   // Lấy danh sách đơn hàng (Buyer)
-  getOrders(filterParams?: { group?: string; status?: string; page?: number; limit?: number }): Observable<any> {
+  getOrders(filterParams?: { group?: string; status?: string; phone?: string; page?: number; limit?: number }): Observable<any> {
     let params = new HttpParams();
     if (filterParams) {
       Object.keys(filterParams).forEach(key => {

@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../../../core/services/order.service';
 
@@ -8,312 +8,813 @@ import { OrderService } from '../../../../core/services/order.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="admin-wrapper">
-      <div class="admin-header">
-        <div>
-          <h1>Quản lý Đơn hàng & Hoàn tiền</h1>
-          <p>Xử lý đơn đặt bánh, duyệt yêu cầu hủy và đối soát hoàn tiền khách hàng.</p>
-        </div>
-        <button class="btn-refresh" (click)="loadOrders()">🔄 Làm mới</button>
-      </div>
+    <div class="admin-page">
+      <div class="admin-wrapper">
 
-      <!-- BỘ LỌC NHANH -->
-      <div class="filter-bar">
-        <button class="filter-chip" [class.active]="filterMode === 'all'" (click)="setFilter('all')">
-          Tất cả đơn
-        </button>
-        <button class="filter-chip warn" [class.active]="filterMode === 'cancel_req'" (click)="setFilter('cancel_req')">
-          🔔 Có yêu cầu hủy chờ duyệt
-        </button>
-        <button class="filter-chip danger" [class.active]="filterMode === 'cancelled'" (click)="setFilter('cancelled')">
-          💸 Đơn đã hủy / Chờ hoàn tiền
-        </button>
-      </div>
-
-      <div *ngIf="toastMsg" class="toast-box">{{ toastMsg }}</div>
-
-      <!-- BẢNG ĐƠN HÀNG -->
-      <div class="table-card">
-        <table class="admin-table" *ngIf="!loading && orders.length > 0">
-          <thead>
-            <tr>
-              <th>Mã đơn</th>
-              <th>Khách hàng</th>
-              <th>Tổng tiền</th>
-              <th>Trạng thái</th>
-              <th>Yêu cầu hủy / Hoàn tiền</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let o of orders">
-              <td>
-                <strong>#{{ o.code }}</strong>
-                <div class="sub">{{ o.receiveDate | date:'dd/MM' }} ({{ o.slotLabel }})</div>
-              </td>
-              <td>
-                <div>{{ o.receiver?.name }}</div>
-                <div class="sub">{{ o.receiver?.phone }}</div>
-              </td>
-              <td>
-                <strong>{{ o.total | number }} đ</strong>
-                <div class="sub">{{ o.paymentStatus === 'paid' ? 'Đã TT' : 'Chưa TT' }}</div>
-              </td>
-              <td>
-                <span class="status-tag" [ngClass]="'st-' + o.status">{{ o.status }}</span>
-              </td>
-              <td>
-                <!-- Yêu cầu hủy pending -->
-                <div *ngIf="o.cancelRequest?.status === 'pending'" class="tag-alert">
-                  ⚠️ Khách xin hủy: "{{ o.cancelRequest.reason || o.cancelRequest.reasonCode }}"
-                </div>
-                <!-- Hoàn tiền pending -->
-                <div *ngIf="o.refund?.status === 'pending'" class="tag-refund">
-                  ⏳ Chờ hoàn: <strong>{{ o.refund.amount | number }} đ</strong>
-                </div>
-                <div *ngIf="o.refund?.status === 'completed'" class="tag-done">
-                  ✅ Đã hoàn: {{ o.refund.amount | number }} đ
-                </div>
-              </td>
-              <td class="actions-cell">
-                <!-- Duyệt / Từ chối yêu cầu hủy -->
-                <ng-container *ngIf="o.cancelRequest?.status === 'pending'">
-                  <button class="btn-sm btn-approve" (click)="openDecisionModal(o, 'accepted')">Duyệt hủy</button>
-                  <button class="btn-sm btn-reject" (click)="openDecisionModal(o, 'rejected')">Từ chối</button>
-                </ng-container>
-
-                <!-- Hủy đặc biệt (Lỗi cửa hàng - hoàn 100%) -->
-                <button
-                  *ngIf="o.status !== 'cancelled' && o.status !== 'done'"
-                  class="btn-sm btn-special"
-                  (click)="openSpecialCancelModal(o)"
-                >
-                  Hủy đặc biệt (100%)
-                </button>
-
-                <!-- Xác nhận hoàn tiền -->
-                <button
-                  *ngIf="o.refund?.status === 'pending'"
-                  class="btn-sm btn-refund"
-                  (click)="openRefundModal(o)"
-                >
-                  Xác nhận hoàn tiền
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div *ngIf="loading" class="empty-state">Đang tải dữ liệu...</div>
-        <div *ngIf="!loading && orders.length === 0" class="empty-state">Không có đơn hàng phù hợp bộ lọc.</div>
-      </div>
-
-      <!-- MODAL 1: DUYỆT / TỪ CHỐI YÊU CẦU HỦY -->
-      <div class="modal-backdrop" *ngIf="decisionOrder" (click)="decisionOrder = null">
-        <div class="modal-card" (click)="$event.stopPropagation()">
-          <h3>{{ decisionType === 'accepted' ? 'Chấp thuận hủy đơn #' + decisionOrder.code : 'Từ chối yêu cầu hủy #' + decisionOrder.code }}</h3>
-          <div class="form-group">
-            <label>Ghi chú phản hồi cho khách hàng *</label>
-            <textarea rows="3" [(ngModel)]="decisionReason" class="form-control" placeholder="Nhập lý do duyệt hoặc từ chối..."></textarea>
+        <!-- 1. HEADER -->
+        <header class="admin-header">
+          <div>
+            <h1>Quản lý Đơn hàng & Hoàn tiền</h1>
+            <p>Xử lý đơn đặt bánh, duyệt yêu cầu hủy và đối soát hoàn tiền khách hàng.</p>
           </div>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="decisionOrder = null">Đóng</button>
-            <button class="btn-confirm" (click)="submitDecision()">Xác nhận</button>
+          <button class="btn-refresh" (click)="loadAdminOrders()" [disabled]="loading">
+            <i class="bi bi-arrow-clockwise"></i> Làm mới
+          </button>
+        </header>
+
+        <!-- 2. TABS & BỘ LỌC -->
+        <div class="toolbar-row">
+          <div class="filter-tabs">
+            <button
+              class="tab-pill"
+              [class.active]="activeFilter === 'all'"
+              (click)="setFilter('all')"
+            >
+              Tất cả đơn
+            </button>
+            <button
+              class="tab-pill"
+              [class.active]="activeFilter === 'cancel_request'"
+              (click)="setFilter('cancel_request')"
+            >
+              🔔 Có yêu cầu hủy chờ duyệt
+            </button>
+            <button
+              class="tab-pill"
+              [class.active]="activeFilter === 'refund'"
+              (click)="setFilter('refund')"
+            >
+              💸 Đơn đã hủy / Chờ hoàn tiền
+            </button>
+          </div>
+
+          <div class="search-controls">
+            <input
+              type="text"
+              [(ngModel)]="searchText"
+              (keyup.enter)="loadAdminOrders()"
+              placeholder="Tìm mã đơn, tên hoặc SĐT..."
+              class="search-input"
+            />
+            <select [(ngModel)]="statusFilter" (change)="loadAdminOrders()" class="status-select">
+              <option value="">Tất cả trạng thái</option>
+              <option value="pending_payment">Chờ thanh toán</option>
+              <option value="pending_approval">Chờ duyệt</option>
+              <option value="accepted">Đã tiếp nhận</option>
+              <option value="baking">Đang làm bánh</option>
+              <option value="delivering">Đang giao</option>
+              <option value="done">Hoàn thành</option>
+              <option value="cancelled">Đã hủy</option>
+            </select>
           </div>
         </div>
-      </div>
 
-      <!-- MODAL 2: HỦY ĐẶC BIỆT (LỖI TIỆM HOÀN 100%) -->
-      <div class="modal-backdrop" *ngIf="specialCancelOrderObj" (click)="specialCancelOrderObj = null">
-        <div class="modal-card" (click)="$event.stopPropagation()">
-          <h3>Hủy đặc biệt đơn #{{ specialCancelOrderObj.code }}</h3>
-          <p class="desc">Áp dụng khi sự cố phát sinh từ cửa hàng (hết nguyên liệu, sự cố giao nhận...). Hệ thống sẽ tự động tạo phiếu hoàn tiền <strong>100%</strong> nếu khách đã thanh toán.</p>
-          <div class="form-group">
-            <label>Lý do hủy đặc biệt *</label>
-            <textarea rows="3" [(ngModel)]="specialCancelReason" class="form-control" placeholder="Ví dụ: Tiệm gặp sự cố lò nướng không kịp giao đúng giờ..."></textarea>
-          </div>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="specialCancelOrderObj = null">Đóng</button>
-            <button class="btn-danger" (click)="submitSpecialCancel()">Xác nhận hủy 100%</button>
+        <!-- THÔNG BÁO THAO TÁC -->
+        <div *ngIf="toastMsg" class="toast-ok">
+          <i class="bi bi-check-circle-fill"></i> {{ toastMsg }}
+        </div>
+
+        <!-- 3. TRẠNG THÁI LOADING / ERROR / EMPTY -->
+        <div *ngIf="loading" class="state-card">
+          Đang tải dữ liệu...
+        </div>
+
+        <div *ngIf="!loading && errorMsg" class="state-card error">
+          <p>{{ errorMsg }}</p>
+          <button class="btn-dark" (click)="loadAdminOrders()">Thử kết nối lại</button>
+        </div>
+
+        <div *ngIf="!loading && !errorMsg && orders.length === 0" class="state-card">
+          Không có đơn hàng nào phù hợp với bộ lọc hiện tại.
+        </div>
+
+        <!-- 4. DANH SÁCH ĐƠN HÀNG ADMIN -->
+        <div class="orders-table-card" *ngIf="!loading && !errorMsg && orders.length > 0">
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã đơn & Ngày đặt</th>
+                  <th>Khách hàng</th>
+                  <th>Sản phẩm đặt</th>
+                  <th>Tổng tiền & Thanh toán</th>
+                  <th>Trạng thái & Yêu cầu</th>
+                  <th class="text-right">Thao tác xử lý</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let o of orders">
+                  <!-- Cột 1: Mã đơn -->
+                  <td>
+                    <strong class="code-txt">#{{ o.code }}</strong>
+                    <div class="sub-txt">{{ o.createdAt | date:'HH:mm - dd/MM/yyyy' }}</div>
+                    <span class="method-tag">
+                      {{ o.receiveMethod === 'delivery' ? 'Giao tận nơi' : 'Lấy tại tiệm' }}
+                    </span>
+                  </td>
+
+                  <!-- Cột 2: Khách hàng -->
+                  <td>
+                    <strong>{{ o.receiver?.fullName }}</strong>
+                    <div class="sub-txt">{{ o.receiver?.phone }}</div>
+                    <div class="sub-txt">Nhận: {{ o.receiveDate | date:'dd/MM' }} ({{ o.slotLabel }})</div>
+                  </td>
+
+                  <!-- Cột 3: Sản phẩm -->
+                  <td>
+                    <div *ngFor="let item of o.items" class="item-line">
+                      <strong>{{ item.name }}</strong> × {{ item.qty }}
+                      <div class="sub-txt" *ngIf="item.config?.size">Size {{ item.config.size }}</div>
+                    </div>
+                  </td>
+
+                  <!-- Cột 4: Tiền & Hoàn tiền -->
+                  <td>
+                    <strong class="price-txt">{{ o.total | number }} đ</strong>
+                    <div>
+                      <span class="pay-tag" [class.paid]="o.payment?.status === 'paid'">
+                        {{ o.payment?.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán' }}
+                      </span>
+                    </div>
+                    <div *ngIf="o.refund?.status" class="refund-tag" [ngClass]="'rf-' + o.refund.status">
+                      Hoàn tiền: {{ o.refund.amount | number }}đ
+                      ({{ o.refund.status === 'completed' ? 'Đã hoàn' : 'Chờ hoàn' }})
+                    </div>
+                  </td>
+
+                  <!-- Cột 5: Trạng thái & Yêu cầu hủy -->
+                  <td>
+                    <span class="status-badge" [ngClass]="'st-' + o.status">
+                      ● {{ getStatusLabel(o.status) }}
+                    </span>
+
+                    <div *ngIf="o.cancelRequest?.status === 'pending'" class="cancel-req-alert">
+                      <strong>🔔 Khách yêu cầu hủy:</strong>
+                      <p>"{{ o.cancelRequest.reason }}"</p>
+                    </div>
+
+                    <div *ngIf="o.status === 'cancelled'" class="sub-txt mt-1">
+                      Lý do: {{ o.cancellation?.reason || o.cancel?.reason || 'Đã hủy' }}
+                    </div>
+                  </td>
+
+                  <!-- Cột 6: Hành động -->
+                  <td class="actions-cell">
+                    <!-- 1. Xác nhận thanh toán -->
+                    <button
+                      *ngIf="o.status === 'pending_payment' || o.payment?.status !== 'paid'"
+                      class="btn-act blue"
+                      (click)="onConfirmPayment(o)"
+                    >
+                      Xác nhận TT
+                    </button>
+
+                    <!-- 2. Tiếp nhận đơn -->
+                    <button
+                      *ngIf="o.status === 'pending_approval'"
+                      class="btn-act green"
+                      (click)="onAcceptOrder(o)"
+                    >
+                      Tiếp nhận đơn
+                    </button>
+
+                    <!-- 3. Duyệt yêu cầu hủy của khách -->
+                    <ng-container *ngIf="o.cancelRequest?.status === 'pending'">
+                      <button class="btn-act warn" (click)="openActionModal('decide_cancel', o)">
+                        Xử lý yêu cầu hủy
+                      </button>
+                    </ng-container>
+
+                    <!-- 4. Từ chối / Hủy đơn thông thường -->
+                    <button
+                      *ngIf="['pending_payment', 'pending_approval', 'accepted', 'baking'].includes(o.status)"
+                      class="btn-act danger"
+                      (click)="openActionModal('reject', o)"
+                    >
+                      Từ chối / Hủy
+                    </button>
+
+                    <!-- 5. Hủy đặc biệt từ cửa hàng (Hoàn 100%) -->
+                    <button
+                      *ngIf="!['done', 'cancelled'].includes(o.status)"
+                      class="btn-act outline"
+                      (click)="openActionModal('special_cancel', o)"
+                    >
+                      Hủy lỗi tiệm (100%)
+                    </button>
+
+                    <!-- 6. Xác nhận hoàn tiền thủ công -->
+                    <button
+                      *ngIf="o.status === 'cancelled' && o.payment?.status === 'paid' && o.refund?.status !== 'completed'"
+                      class="btn-act brown"
+                      (click)="openActionModal('confirm_refund', o)"
+                    >
+                      💸 Xác nhận hoàn tiền
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <!-- MODAL 3: XÁC NHẬN HOÀN TIỀN THỦ CÔNG -->
-      <div class="modal-backdrop" *ngIf="refundOrderObj" (click)="refundOrderObj = null">
-        <div class="modal-card" (click)="$event.stopPropagation()">
-          <h3>Xác nhận đã chuyển khoản hoàn tiền</h3>
-          <p class="desc">Đơn hàng <strong>#{{ refundOrderObj.code }}</strong> — Số tiền hoàn mặc định: <strong>{{ refundOrderObj.refund?.amount | number }} đ</strong></p>
-          <div class="form-group">
-            <label>Số tiền thực hoàn (VNĐ)</label>
-            <input type="number" [(ngModel)]="refundAmount" class="form-control" />
-          </div>
-          <div class="form-group" *ngIf="refundAmount !== refundOrderObj.refund?.amount">
-            <label>Lý do điều chỉnh số tiền hoàn *</label>
-            <input type="text" [(ngModel)]="refundAdjustReason" class="form-control" placeholder="Nhập lý do chênh lệch..." />
-          </div>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="refundOrderObj = null">Đóng</button>
-            <button class="btn-confirm" (click)="submitConfirmRefund()">Hoàn tất hoàn tiền</button>
-          </div>
+      <!-- MODAL XỬ LÝ NGHIỆP VỤ ADMIN -->
+      <div class="modal-backdrop" *ngIf="modalType !== 'none' && selectedOrder" (click)="closeModal()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+          <button class="close-btn" (click)="closeModal()">✕</button>
+
+          <!-- A. Duyệt hoặc từ chối yêu cầu hủy của khách -->
+          <ng-container *ngIf="modalType === 'decide_cancel'">
+            <h3>Xử lý yêu cầu hủy đơn #{{ selectedOrder.code }}</h3>
+            <p class="m-sub">Lý do khách gửi: <strong>"{{ selectedOrder.cancelRequest?.reason }}"</strong></p>
+
+            <div class="m-field">
+              <label>Quyết định của cửa hàng:</label>
+              <select [(ngModel)]="decisionChoice" class="m-control">
+                <option value="accepted">Chấp nhận hủy đơn (Tính hoàn tiền theo quy định)</option>
+                <option value="rejected">Từ chối yêu cầu hủy (Tiếp tục thực hiện đơn)</option>
+              </select>
+            </div>
+
+            <div class="m-field">
+              <label>Ghi chú phản hồi cho khách hàng:</label>
+              <textarea rows="3" [(ngModel)]="actionNote" class="m-control" placeholder="Nhập lý do duyệt hoặc từ chối..."></textarea>
+            </div>
+
+            <div class="m-footer">
+              <button class="btn-outline" (click)="closeModal()">Đóng</button>
+              <button class="btn-dark" (click)="submitDecideCancel()" [disabled]="submitting">
+                {{ submitting ? 'Đang lưu...' : 'Xác nhận quyết định' }}
+              </button>
+            </div>
+          </ng-container>
+
+          <!-- B. Từ chối / Hủy đơn thông thường -->
+          <ng-container *ngIf="modalType === 'reject'">
+            <h3>Từ chối / Hủy đơn hàng #{{ selectedOrder.code }}</h3>
+            <div class="m-field">
+              <label>Lý do hủy đơn <span class="req">*</span></label>
+              <textarea rows="3" [(ngModel)]="actionNote" class="m-control" placeholder="Ví dụ: Quá tải khung giờ giao bánh hoặc khách báo hủy qua hotline..."></textarea>
+            </div>
+            <div class="m-footer">
+              <button class="btn-outline" (click)="closeModal()">Đóng</button>
+              <button class="btn-danger" (click)="submitRejectOrder()" [disabled]="submitting">
+                {{ submitting ? 'Đang hủy...' : 'Xác nhận hủy đơn' }}
+              </button>
+            </div>
+          </ng-container>
+
+          <!-- C. Hủy đặc biệt từ cửa hàng (Hoàn 100%) -->
+          <ng-container *ngIf="modalType === 'special_cancel'">
+            <h3>Hủy đặc biệt từ phía cửa hàng (Hoàn 100%)</h3>
+            <p class="m-sub">Áp dụng khi phát sinh sự cố từ xưởng bánh hoặc vận chuyển. Khách sẽ được hoàn 100% số tiền đã thanh toán.</p>
+            <div class="m-field">
+              <label>Lý do sự cố <span class="req">*</span></label>
+              <textarea rows="3" [(ngModel)]="actionNote" class="m-control" placeholder="Nhập chi tiết lý do hủy đặc biệt..."></textarea>
+            </div>
+            <div class="m-footer">
+              <button class="btn-outline" (click)="closeModal()">Đóng</button>
+              <button class="btn-dark" (click)="submitSpecialCancel()" [disabled]="submitting">
+                {{ submitting ? 'Đang xử lý...' : 'Xác nhận hủy & hoàn 100%' }}
+              </button>
+            </div>
+          </ng-container>
+
+          <!-- D. Xác nhận hoàn tiền thủ công -->
+          <ng-container *ngIf="modalType === 'confirm_refund'">
+            <h3>Xác nhận đã hoàn tiền cho đơn #{{ selectedOrder.code }}</h3>
+            <p class="m-sub">Khách hàng: <strong>{{ selectedOrder.receiver?.fullName }}</strong> ({{ selectedOrder.receiver?.phone }})</p>
+            <div class="m-field">
+              <label>Số tiền hoàn thực tế (VNĐ):</label>
+              <input type="number" [(ngModel)]="refundAmount" class="m-control" />
+            </div>
+            <div class="m-field">
+              <label>Ghi chú đối soát (nếu có điều chỉnh số tiền):</label>
+              <input type="text" [(ngModel)]="actionNote" class="m-control" placeholder="Ví dụ: Đã chuyển khoản hoàn qua VietQR..." />
+            </div>
+            <div class="m-footer">
+              <button class="btn-outline" (click)="closeModal()">Đóng</button>
+              <button class="btn-brown" (click)="submitConfirmRefund()" [disabled]="submitting">
+                {{ submitting ? 'Đang xác nhận...' : 'Hoàn tất đối soát hoàn tiền' }}
+              </button>
+            </div>
+          </ng-container>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .admin-wrapper { padding: 30px 40px; font-family: 'Segoe UI', sans-serif; background: #f8f6f4; min-height: 100vh; color: #2c221e; }
-    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { font-family: serif; margin: 0 0 4px 0; font-size: 28px; }
-    .admin-header p { margin: 0; color: #665c54; font-size: 14px; }
-    .btn-refresh { background: #fff; border: 1px solid #dcd3cb; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .admin-page {
+      background: #F9F6F2;
+      min-height: 100vh;
+      padding: 28px 24px 60px;
+      font-family: 'Inter', sans-serif;
+      color: #2D1B10;
+    }
 
-    .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-    .filter-chip { background: #fff; border: 1px solid #e6e1db; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 13px; }
-    .filter-chip.active { background: #2c221e; color: #fff; border-color: #2c221e; }
+    .admin-wrapper {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
 
-    .toast-box { background: #def7ec; color: #03543f; padding: 12px 18px; border-radius: 8px; margin-bottom: 16px; font-weight: 600; }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
 
-    .table-card { background: #fff; border-radius: 14px; border: 1px solid #ebe5df; overflow: hidden; }
-    .admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .admin-table th { background: #faf8f6; text-align: left; padding: 14px 16px; border-bottom: 1px solid #ebe5df; color: #665c54; font-size: 12px; text-transform: uppercase; }
-    .admin-table td { padding: 14px 16px; border-bottom: 1px solid #f4f0ec; vertical-align: top; }
-    .sub { font-size: 12px; color: #8c7b72; margin-top: 2px; }
+    .admin-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      margin: 0 0 6px 0;
+      color: #2D1B10;
+    }
 
-    .status-tag { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #f3efe9; }
-    .st-cancelled { background: #fde8e8; color: #c81e1e; }
+    .admin-header p {
+      font-size: 13.5px;
+      color: #7D6B5D;
+      margin: 0;
+    }
 
-    .tag-alert { background: #fef3c7; color: #92400e; padding: 6px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 4px; }
-    .tag-refund { background: #e0f2fe; color: #075985; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
-    .tag-done { background: #def7ec; color: #03543f; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+    .btn-refresh {
+      background: #FFFFFF;
+      border: 1px solid #DCD2C8;
+      border-radius: 10px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2D1B10;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
-    .actions-cell { display: flex; flex-direction: column; gap: 6px; }
-    .btn-sm { padding: 6px 10px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; }
-    .btn-approve { background: #def7ec; color: #03543f; }
-    .btn-reject { background: #fde8e8; color: #c81e1e; }
-    .btn-special { background: #fef3c7; color: #92400e; }
-    .btn-refund { background: #593e32; color: #fff; }
+    .toolbar-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
 
-    .empty-state { padding: 40px; text-align: center; color: #888; }
+    .filter-tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-card { background: #fff; border-radius: 14px; padding: 26px; width: 100%; max-width: 450px; }
-    .modal-card h3 { margin: 0 0 10px 0; font-family: serif; }
-    .desc { font-size: 13px; color: #665c54; margin-bottom: 14px; }
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-    .form-control { width: 100%; padding: 10px; border: 1px solid #dcd3cb; border-radius: 8px; box-sizing: border-box; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
-    .btn-cancel { background: #f3efe9; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
-    .btn-confirm { background: #593e32; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-    .btn-danger { background: #c81e1e; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .tab-pill {
+      background: #FFFFFF;
+      border: 1px solid #E2D9CF;
+      color: #2D1B10;
+      padding: 9px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab-pill.active {
+      background: #241309;
+      border-color: #241309;
+      color: #FFFFFF;
+    }
+
+    .search-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-input, .status-select {
+      background: #FFFFFF;
+      border: 1px solid #DCD2C8;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #2D1B10;
+      outline: none;
+    }
+
+    .toast-ok {
+      background: #E6F6EC;
+      border: 1px solid #B7EB8F;
+      color: #15803D;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .state-card {
+      background: #FFFFFF;
+      border: 1px solid #EAE2D9;
+      border-radius: 14px;
+      padding: 54px 20px;
+      text-align: center;
+      color: #7D6B5D;
+      font-size: 14px;
+    }
+
+    .state-card.error {
+      background: #FFF2F0;
+      border-color: #FFCCC7;
+      color: #CF1322;
+    }
+
+    .orders-table-card {
+      background: #FFFFFF;
+      border: 1px solid #EAE2D9;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(45, 27, 16, 0.03);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .admin-table th {
+      background: #FAF7F4;
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6B584C;
+      border-bottom: 1px solid #EAE2D9;
+    }
+
+    .admin-table td {
+      padding: 16px;
+      border-bottom: 1px solid #F2ECE4;
+      vertical-align: top;
+    }
+
+    .text-right { text-align: right !important; }
+    .code-txt { font-size: 14px; color: #2D1B10; }
+    .sub-txt { font-size: 11.5px; color: #7D6B5D; margin-top: 2px; }
+    .mt-1 { margin-top: 6px; }
+
+    .method-tag {
+      display: inline-block;
+      margin-top: 5px;
+      background: #F4ECE3;
+      color: #7D562D;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .item-line { margin-bottom: 6px; }
+    .price-txt { font-size: 14.5px; color: #2D1B10; }
+
+    .pay-tag {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #FDF3E7;
+      color: #B45309;
+      font-weight: 600;
+    }
+
+    .pay-tag.paid {
+      background: #E6F6EC;
+      color: #15803D;
+    }
+
+    .refund-tag {
+      margin-top: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #FFFBE6;
+      color: #D46B08;
+    }
+
+    .rf-completed {
+      background: #E6F6EC;
+      color: #15803D;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      background: #FDF3E7;
+      color: #B45309;
+    }
+
+    .st-done { background: #E6F6EC; color: #15803D; }
+    .st-cancelled { background: #FEE2E2; color: #B91C1C; }
+
+    .cancel-req-alert {
+      margin-top: 8px;
+      background: #FFFBE6;
+      border: 1px solid #FFE58F;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      color: #874D00;
+    }
+
+    .cancel-req-alert p {
+      margin: 3px 0 0 0;
+      font-style: italic;
+    }
+
+    .actions-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .btn-act {
+      border: none;
+      border-radius: 7px;
+      padding: 6px 11px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-act.blue { background: #E6F4FF; color: #0958D9; }
+    .btn-act.green { background: #E6F6EC; color: #15803D; }
+    .btn-act.warn { background: #FFFBE6; color: #D46B08; border: 1px solid #FFE58F; }
+    .btn-act.danger { background: #FFF1F0; color: #CF1322; }
+    .btn-act.outline { background: #FFFFFF; border: 1px solid #DCD2C8; color: #5E4B3E; }
+    .btn-act.brown { background: #7D562D; color: #FFFFFF; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(24, 14, 8, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2500;
+      padding: 16px;
+    }
+
+    .modal-box {
+      position: relative;
+      background: #FFFFFF;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 26px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .modal-box h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      margin: 0 0 8px 0;
+    }
+
+    .m-sub { font-size: 12.5px; color: #6B584C; margin: 0 0 14px 0; }
+    .m-field { margin-bottom: 14px; }
+    .m-field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+    .req { color: #CF1322; }
+    .m-control { width: 100%; border: 1px solid #DCD2C8; border-radius: 8px; padding: 9px 12px; font-size: 13px; box-sizing: border-box; }
+
+    .m-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    .btn-outline { background: #fff; border: 1px solid #DCD2C8; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-dark { background: #2D1B10; color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-danger { background: #CF1322; color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-brown { background: #7D562D; color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
   `]
 })
 export class AdminOrdersComponent implements OnInit {
+  activeFilter: 'all' | 'cancel_request' | 'refund' = 'all';
+  searchText = '';
+  statusFilter = '';
+
   orders: any[] = [];
   loading = false;
-  filterMode: 'all' | 'cancel_req' | 'cancelled' = 'all';
+  errorMsg = '';
   toastMsg = '';
 
-  // Modals state
-  decisionOrder: any = null;
-  decisionType: 'accepted' | 'rejected' = 'accepted';
-  decisionReason = '';
-
-  specialCancelOrderObj: any = null;
-  specialCancelReason = '';
-
-  refundOrderObj: any = null;
+  // Modal state
+  modalType: 'none' | 'decide_cancel' | 'reject' | 'special_cancel' | 'confirm_refund' = 'none';
+  selectedOrder: any = null;
+  decisionChoice: 'accepted' | 'rejected' = 'accepted';
+  actionNote = '';
   refundAmount = 0;
-  refundAdjustReason = '';
+  submitting = false;
 
-  constructor(private orderService: OrderService) {}
+  constructor(
+    private orderService: OrderService,
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
   ngOnInit(): void {
-    this.loadOrders();
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadAdminOrders();
+    }
   }
 
-  setFilter(mode: 'all' | 'cancel_req' | 'cancelled') {
-    this.filterMode = mode;
-    this.loadOrders();
+  setFilter(tab: 'all' | 'cancel_request' | 'refund') {
+    this.activeFilter = tab;
+    this.statusFilter = '';
+    this.loadAdminOrders();
   }
 
-  loadOrders() {
+  loadAdminOrders() {
     this.loading = true;
-    const params: any = {};
-    if (this.filterMode === 'cancel_req') params.hasCancelRequest = true;
-    if (this.filterMode === 'cancelled') params.status = 'cancelled';
+    this.errorMsg = '';
+
+    const params: any = { limit: 50 };
+    if (this.searchText.trim()) params.search = this.searchText.trim();
+    if (this.statusFilter) params.status = this.statusFilter;
+
+    if (this.activeFilter === 'cancel_request') {
+      params.hasCancelRequest = true;
+    } else if (this.activeFilter === 'refund') {
+      params.status = 'cancelled';
+    }
 
     this.orderService.getAdminOrders(params).subscribe({
-      next: (res) => {
-        this.orders = res.items || res || [];
+      next: (res: any) => {
+        this.orders = res.items || res.orders || (Array.isArray(res) ? res : []);
         this.loading = false;
+        this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err: any) => {
         this.orders = [];
         this.loading = false;
+        this.errorMsg = err.error?.message || 'Không thể tải dữ liệu từ máy chủ Admin (kiểm tra Backend cổng 3000 hoặc quyền Admin).';
+        this.cdr.detectChanges();
       }
     });
   }
 
-  openDecisionModal(order: any, type: 'accepted' | 'rejected') {
-    this.decisionOrder = order;
-    this.decisionType = type;
-    this.decisionReason = '';
+  onConfirmPayment(order: any) {
+    this.orderService.confirmPaymentManual(order._id).subscribe({
+      next: () => {
+        this.showToast(`Đã xác nhận thanh toán cho đơn #${order.code}`);
+        this.loadAdminOrders();
+      },
+      error: (err: any) => alert(err.error?.message || 'Lỗi xác nhận thanh toán')
+    });
   }
 
-  submitDecision() {
-    this.orderService
-      .decideCancelRequest(this.decisionOrder._id, {
-        decision: this.decisionType,
-        decisionReason: this.decisionReason
-      })
-      .subscribe(() => {
-        this.decisionOrder = null;
-        this.notify('Đã cập nhật quyết định yêu cầu hủy!');
-        this.loadOrders();
-      });
+  onAcceptOrder(order: any) {
+    this.orderService.acceptOrder(order._id).subscribe({
+      next: () => {
+        this.showToast(`Đã tiếp nhận đơn #${order.code} chuyển xuống bếp.`);
+        this.loadAdminOrders();
+      },
+      error: (err: any) => alert(err.error?.message || 'Lỗi tiếp nhận đơn')
+    });
   }
 
-  openSpecialCancelModal(order: any) {
-    this.specialCancelOrderObj = order;
-    this.specialCancelReason = '';
+  openActionModal(type: 'decide_cancel' | 'reject' | 'special_cancel' | 'confirm_refund', order: any) {
+    this.modalType = type;
+    this.selectedOrder = order;
+    this.decisionChoice = 'accepted';
+    this.actionNote = '';
+    this.refundAmount = order.refund?.amount ?? order.total ?? 0;
+  }
+
+  closeModal() {
+    if (this.submitting) return;
+    this.modalType = 'none';
+    this.selectedOrder = null;
+  }
+
+  submitDecideCancel() {
+    this.submitting = true;
+    this.orderService.decideCancelRequest(this.selectedOrder._id, {
+      decision: this.decisionChoice,
+      decisionReason: this.actionNote.trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.closeModal();
+        this.showToast(`Đã xử lý yêu cầu hủy cho đơn #${this.selectedOrder?.code}`);
+        this.loadAdminOrders();
+      },
+      error: (err: any) => {
+        this.submitting = false;
+        alert(err.error?.message || 'Không thể xử lý yêu cầu hủy');
+      }
+    });
+  }
+
+  submitRejectOrder() {
+    if (!this.actionNote.trim()) {
+      alert('Vui lòng nhập lý do hủy đơn.');
+      return;
+    }
+    this.submitting = true;
+    this.orderService.rejectOrCancelOrder(this.selectedOrder._id, {
+      reason: this.actionNote.trim()
+    }).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.closeModal();
+        this.showToast(`Đã hủy đơn hàng #${this.selectedOrder?.code}`);
+        this.loadAdminOrders();
+      },
+      error: (err: any) => {
+        this.submitting = false;
+        alert(err.error?.message || 'Không thể hủy đơn');
+      }
+    });
   }
 
   submitSpecialCancel() {
-    if (!this.specialCancelReason.trim()) return;
-    this.orderService
-      .specialCancelOrder(this.specialCancelOrderObj._id, {
-        reason: this.specialCancelReason,
-        cause: 'shop_fault'
-      })
-      .subscribe(() => {
-        this.specialCancelOrderObj = null;
-        this.notify('Đã thực hiện hủy đặc biệt & tạo phiếu hoàn tiền 100%!');
-        this.loadOrders();
-      });
-  }
-
-  openRefundModal(order: any) {
-    this.refundOrderObj = order;
-    this.refundAmount = order.refund?.amount || 0;
-    this.refundAdjustReason = '';
+    if (!this.actionNote.trim()) {
+      alert('Vui lòng nhập lý do hủy đặc biệt.');
+      return;
+    }
+    this.submitting = true;
+    this.orderService.specialCancelOrder(this.selectedOrder._id, {
+      reason: this.actionNote.trim()
+    }).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.closeModal();
+        this.showToast(`Đã hủy đặc biệt (hoàn 100%) đơn #${this.selectedOrder?.code}`);
+        this.loadAdminOrders();
+      },
+      error: (err: any) => {
+        this.submitting = false;
+        alert(err.error?.message || 'Không thể thực hiện hủy đặc biệt');
+      }
+    });
   }
 
   submitConfirmRefund() {
-    this.orderService
-      .confirmRefund(this.refundOrderObj._id, {
-        amount: this.refundAmount,
-        adjustReason: this.refundAdjustReason
-      })
-      .subscribe(() => {
-        this.refundOrderObj = null;
-        this.notify('Đã xác nhận hoàn tiền thành công!');
-        this.loadOrders();
-      });
+    this.submitting = true;
+    this.orderService.confirmRefund(this.selectedOrder._id, {
+      amount: Number(this.refundAmount),
+      adjustReason: this.actionNote.trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.closeModal();
+        this.showToast(`Đã xác nhận hoàn tiền cho đơn #${this.selectedOrder?.code}`);
+        this.loadAdminOrders();
+      },
+      error: (err: any) => {
+        this.submitting = false;
+        alert(err.error?.message || 'Không thể xác nhận hoàn tiền');
+      }
+    });
   }
 
-  notify(msg: string) {
+  showToast(msg: string) {
     this.toastMsg = msg;
-    setTimeout(() => (this.toastMsg = ''), 4000);
+    setTimeout(() => {
+      this.toastMsg = '';
+      this.cdr.detectChanges();
+    }, 4000);
+  }
+
+  getStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      pending_payment: 'Chờ thanh toán',
+      pending_approval: 'Chờ duyệt',
+      accepted: 'Đã tiếp nhận',
+      baking: 'Đang làm bánh',
+      delivering: 'Đang giao',
+      delivered: 'Đã xong',
+      done: 'Hoàn thành',
+      cancelled: 'Đã hủy'
+    };
+    return map[status] || status;
   }
 }

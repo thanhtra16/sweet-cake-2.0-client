@@ -1,654 +1,1007 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Component, OnInit, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { OrderService } from '../../../../core/services/order.service';
 
 @Component({
   selector: 'app-order-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, RouterLink],
   template: `
-    <div class="page-wrapper">
-      <!-- HEADER CHUẨN SWEETCAKE -->
-      <header class="site-header">
-        <div class="logo-area">
-          <a routerLink="/" class="logo-text">SweetCake</a>
-        </div>
-        <nav class="nav-links">
-          <a routerLink="/menu" class="nav-item">Menu</a>
-          <a routerLink="/orders" class="nav-item active">Đơn hàng</a>
-          <a routerLink="/about" class="nav-item">Giới thiệu</a>
-          <a routerLink="/blog" class="nav-item">Blog</a>
-          <a routerLink="/contact" class="nav-item">Cửa hàng</a>
+    <div class="detail-page">
+      <div class="page-wrapper" *ngIf="order; else stateTpl">
+
+        <!-- 1. BREADCRUMB -->
+        <nav class="breadcrumb">
+          <a routerLink="/danh-sach-san-pham">Trang chủ</a>
+          <span>/</span>
+          <a routerLink="/orders">Tra cứu & Lịch sử</a>
+          <span>/</span>
+          <strong>Đơn hàng #{{ order.code }}</strong>
         </nav>
-        <div class="header-actions">
-          <a routerLink="/cart" class="icon-btn">🛒</a>
-          <a routerLink="/profile" class="icon-btn">👤</a>
-        </div>
-      </header>
 
-      <main class="main-container" *ngIf="order; else loadingTpl">
-        <div class="top-bar">
-          <button class="btn-back" (click)="goBack()">← Quay lại</button>
-          <span class="status-pill" [ngClass]="'status-' + order.status">
-            {{ getStatusLabel(order.status) }}
-          </span>
-        </div>
-
-        <!-- THÔNG BÁO THÀNH CÔNG / LỖI -->
-        <div *ngIf="toastMessage" class="alert-banner" [class.error]="toastType === 'error'">
-          {{ toastMessage }}
-        </div>
-
-        <!-- THÔNG TIN CHÍNH -->
-        <div class="detail-card">
-          <div class="order-head">
-            <div>
-              <span class="mini-label">MÃ ĐƠN HÀNG</span>
-              <h1>#{{ order.code }}</h1>
-              <p class="sub-date">Đặt lúc {{ order.createdAt | date:'HH:mm - dd/MM/yyyy' }}</p>
+        <!-- 2. HEADER ĐƠN HÀNG -->
+        <section class="order-top-header">
+          <div>
+            <div class="meta-pills">
+              <span class="pill-tracking">MÃ THEO DÕI TRỰC TUYẾN</span>
+              <span class="pill-date">
+                <i class="bi bi-calendar3"></i> Ngày đặt: {{ order.createdAt | date:'dd/MM/yyyy — HH:mm' }}
+              </span>
             </div>
-
-            <!-- CÁC NÚT HÀNH ĐỘNG CHÍNH -->
-            <div class="action-buttons">
-              <button
-                *ngIf="canDirectCancel()"
-                class="btn-danger-outline"
-                (click)="openCancelModal('direct')"
-              >
-                Hủy đơn hàng
-              </button>
-
-              <button
-                *ngIf="canRequestCancel()"
-                class="btn-warning-outline"
-                (click)="openCancelModal('request')"
-              >
-                Yêu cầu hủy đơn
-              </button>
-
-              <button
-                *ngIf="canReorder()"
-                class="btn-primary"
-                (click)="openReorderModal()"
-              >
-                🔄 Mua lại đơn này
-              </button>
-            </div>
+            <h1>Đơn hàng #{{ order.code }}</h1>
+            <p class="workshop-sub">Được chế tác thủ công bởi Xưởng bánh nghệ thuật SweetCake Quận 3</p>
           </div>
 
-          <!-- TRẠNG THÁI YÊU CẦU HỦY (NẾU CÓ) -->
-          <div *ngIf="order.cancelRequest?.status" class="info-box warning-box">
-            <strong>📌 Trạng thái yêu cầu hủy:</strong>
-            <span *ngIf="order.cancelRequest.status === 'pending'">
-              Đang chờ cửa hàng xem xét (Gửi lúc {{ order.cancelRequest.requestedAt | date:'HH:mm dd/MM' }})
+          <div class="top-actions">
+            <span class="status-pill-main" [ngClass]="'st-' + order.status">
+              ● {{ getStatusLabel(order.status) }}
             </span>
-            <span *ngIf="order.cancelRequest.status === 'accepted'">
-              Đã được chấp thuận hủy.
-            </span>
-            <span *ngIf="order.cancelRequest.status === 'rejected'">
-              Bị từ chối — Lý do: "{{ order.cancelRequest.decisionReason || 'Bánh đã vào công đoạn hoàn thiện' }}"
-            </span>
-          </div>
-
-          <!-- THÔNG TIN HỦY & HOÀN TIỀN (NẾU ĐÃ HỦY) -->
-          <div *ngIf="order.status === 'cancelled'" class="info-box cancel-box">
-            <h4>❌ Đơn hàng đã bị hủy</h4>
-            <p><strong>Lý do:</strong> {{ order.cancel?.reason || order.cancel?.reasonCode || 'Không có ghi chú' }}</p>
-            <p *ngIf="order.cancel?.cancelledAt"><strong>Thời gian hủy:</strong> {{ order.cancel.cancelledAt | date:'HH:mm dd/MM/yyyy' }}</p>
-
-            <div *ngIf="order.refund && order.refund.status !== 'none'" class="refund-subbox">
-              <h5>💰 Thông tin hoàn tiền</h5>
-              <p><strong>Số tiền hoàn:</strong> <span class="price-highlight">{{ order.refund.amount | number }} đ</span></p>
-              <p>
-                <strong>Trạng thái hoàn:</strong>
-                <span class="refund-badge" [ngClass]="'ref-' + order.refund.status">
-                  {{ order.refund.status === 'completed' ? 'Đã hoàn tiền thành công' : 'Đang chờ xử lý hoàn tiền' }}
-                </span>
-              </p>
-              <p *ngIf="order.refund.dueAt && order.refund.status === 'pending'">
-                <strong>Hạn hoàn dự kiến:</strong> {{ order.refund.dueAt | date:'dd/MM/yyyy HH:mm' }}
-              </p>
-              <p *ngIf="order.refund.completedAt">
-                <strong>Đã hoàn lúc:</strong> {{ order.refund.completedAt | date:'dd/MM/yyyy HH:mm' }}
-              </p>
-            </div>
-          </div>
-
-          <!-- THÔNG TIN NGƯỜI NHẬN -->
-          <div class="info-grid">
-            <div class="info-col">
-              <h4>Người nhận bánh</h4>
-              <p><strong>{{ order.receiver?.name }}</strong></p>
-              <p>SĐT: {{ order.receiver?.phone }}</p>
-              <p *ngIf="order.receiveMethod === 'delivery'">
-                Giao tận nơi: {{ order.shippingAddress?.street }}, {{ order.shippingAddress?.ward }}, {{ order.shippingAddress?.district }}
-              </p>
-              <p *ngIf="order.receiveMethod === 'pickup'">
-                Nhận tại tiệm: {{ order.pickupBranch || 'Chi nhánh chính SweetCake' }}
-              </p>
-            </div>
-            <div class="info-col">
-              <h4>Thời gian nhận & Thanh toán</h4>
-              <p>Ngày nhận: <strong>{{ order.receiveDate | date:'dd/MM/yyyy' }}</strong></p>
-              <p>Khung giờ: <strong>{{ order.slotLabel }}</strong></p>
-              <p>Thanh toán: {{ order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán' }}</p>
-            </div>
-          </div>
-
-          <!-- DANH SÁCH SẢN PHẨM -->
-          <div class="items-section">
-            <h4>Chi tiết sản phẩm</h4>
-            <div class="item-row" *ngFor="let item of order.items">
-              <div class="item-left">
-                <div class="item-title">{{ item.name }} <span class="qty">x{{ item.qty }}</span></div>
-                <div class="item-meta" *ngIf="item.variant">Phân loại: {{ item.variant }}</div>
-              </div>
-              <div class="item-price">{{ item.lineTotal | number }} đ</div>
-            </div>
-          </div>
-
-          <!-- TỔNG TIỀN -->
-          <div class="summary-section">
-            <div class="sum-row"><span>Tạm tính</span><span>{{ order.subtotal | number }} đ</span></div>
-            <div class="sum-row" *ngIf="order.discount"><span>Giảm giá</span><span>-{{ order.discount | number }} đ</span></div>
-            <div class="sum-row"><span>Phí giao hàng</span><span>{{ order.deliveryFee | number }} đ</span></div>
-            <div class="sum-row total"><span>Tổng cộng</span><span>{{ order.total | number }} đ</span></div>
-          </div>
-        </div>
-      </main>
-
-      <ng-template #loadingTpl>
-        <div class="main-container loading-state">
-          <p *ngIf="!loadError">Đang tải thông tin đơn hàng...</p>
-          <p *ngIf="loadError" class="error-text">{{ loadError }}</p>
-        </div>
-      </ng-template>
-
-      <!-- FOOTER CHUẨN SWEETCAKE -->
-      <footer class="site-footer">
-        <div class="footer-content">
-          <div class="footer-col brand-col">
-            <h3 class="footer-logo">SweetCake</h3>
-            <p class="footer-desc">Tiệm bánh thủ công với tâm huyết mang lại những trải nghiệm ngọt ngào và tinh tế nhất cho khách hàng.</p>
-            <div class="social-icons">
-              <a href="#" class="soc-icon">f</a>
-              <a href="#" class="soc-icon">📷</a>
-              <a href="#" class="soc-icon">💬</a>
-              <a href="#" class="soc-icon">📞</a>
-            </div>
-          </div>
-          <div class="footer-col">
-            <h5>SẢN PHẨM</h5>
-            <a routerLink="/menu">Menu</a>
-            <a routerLink="/menu">Best Seller</a>
-            <a routerLink="/menu">Phụ kiện</a>
-          </div>
-          <div class="footer-col">
-            <h5>HỖ TRỢ</h5>
-            <a routerLink="/contact">Câu hỏi thường gặp (FAQ)</a>
-            <a routerLink="/contact">Chính sách</a>
-            <a routerLink="/about">Giới thiệu</a>
-          </div>
-          <div class="footer-col">
-            <h5>ĐỊA CHỈ</h5>
-            <p>Nhóm 1, Đại học Kinh tế Luật</p>
-            <p>Giờ mở cửa: 8:00 - 22:00</p>
-          </div>
-        </div>
-
-        <div class="footer-newsletter-row">
-          <div class="newsletter-inner">
-            <span class="newsletter-label">NHẮN TIN TỪ CHÚNG TÔI</span>
-            <div class="newsletter-input-group">
-              <input type="email" placeholder="Email của bạn" />
-              <button>Gửi</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="footer-bottom">
-          <p>&copy; 2026 SweetCake. Tất cả quyền được bảo lưu.</p>
-        </div>
-      </footer>
-
-      <!-- ==================== MODAL 1: HỦY / YÊU CẦU HỦY ĐƠN ==================== -->
-      <div class="modal-backdrop" *ngIf="showCancelModal" (click)="closeCancelModal()">
-        <div class="modal-card" (click)="$event.stopPropagation()">
-          <h3>{{ cancelMode === 'direct' ? 'Xác nhận hủy đơn hàng' : 'Gửi yêu cầu hủy đơn hàng' }}</h3>
-          <p class="modal-desc">
-            {{ cancelMode === 'direct'
-              ? 'Đơn hàng chưa tiến hành làm bánh nên sẽ được hủy ngay lập tức.'
-              : 'Đơn hàng đã được tiếp nhận/chế biến. Yêu cầu của bạn sẽ được gửi tới quản lý tiệm để xem xét.' }}
-          </p>
-
-          <div class="policy-preview" *ngIf="order?.paymentStatus === 'paid'">
-            <strong>Chính sách hoàn tiền ước tính:</strong>
-            <span *ngIf="order.status === 'pending_approval'">Hoàn 100% ({{ order.total | number }} đ) do tiệm chưa duyệt đơn.</span>
-            <span *ngIf="order.status === 'accepted'">Dự kiến hoàn 100% nếu tiệm chấp thuận trước khi vào bếp.</span>
-            <span *ngIf="order.status === 'baking'">Bánh đang làm, mức hoàn tiền phụ thuộc vào tiến độ nguyên liệu thực tế.</span>
-            <span *ngIf="order.status === 'delivering'">Đơn đang giao, có thể không được hoàn tiền nếu hủy ngang.</span>
-          </div>
-
-          <div class="form-group">
-            <label>Chọn lý do hủy *</label>
-            <select [(ngModel)]="cancelReasonCode" class="form-control">
-              <option value="change_mind">Đổi ý / Không còn nhu cầu</option>
-              <option value="wrong_info">Đặt nhầm mẫu bánh / sai thông tin nhận</option>
-              <option value="change_schedule">Thay đổi lịch trình / thời gian tiệc</option>
-              <option value="other">Lý do khác...</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Ghi chú chi tiết {{ cancelReasonCode === 'other' ? '*' : '(Không bắt buộc)' }}</label>
-            <textarea
-              rows="3"
-              [(ngModel)]="cancelReasonText"
-              class="form-control"
-              placeholder="Nhập thêm chi tiết để cửa hàng hỗ trợ nhanh nhất..."
-            ></textarea>
-          </div>
-
-          <p *ngIf="modalError" class="error-text">{{ modalError }}</p>
-
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="closeCancelModal()" [disabled]="submittingCancel">Đóng</button>
-            <button class="btn-danger" (click)="submitCancel()" [disabled]="submittingCancel">
-              {{ submittingCancel ? 'Đang xử lý...' : (cancelMode === 'direct' ? 'Xác nhận hủy' : 'Gửi yêu cầu hủy') }}
+            <button class="btn-print" (click)="printReceipt()">
+              <i class="bi bi-printer"></i> In phiếu
             </button>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- ==================== MODAL 2: MUA LẠI ĐƠN HÀNG ==================== -->
-      <div class="modal-backdrop" *ngIf="showReorderModal" (click)="closeReorderModal()">
-        <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
-          <h3>🔄 Mua lại từ đơn #{{ order?.code }}</h3>
-          <p class="modal-desc">Hệ thống đã kiểm tra tình trạng hiện tại và giá bán mới nhất của từng sản phẩm.</p>
+        <!-- 3. TIẾN ĐỘ THỰC HIỆN ĐƠN HÀNG (STEPPER NGANG) -->
+        <section class="card-block stepper-card">
+          <div class="card-head-row">
+            <div>
+              <span class="eyebrow">HÀNH TRÌNH LÀM BÁNH</span>
+              <h2>Tiến độ thực hiện đơn hàng</h2>
+            </div>
+            <span class="live-badge">
+              <i class="bi bi-clock"></i> Cập nhật thực tế: {{ order.updatedAt | date:'HH:mm' }}, hôm nay
+            </span>
+          </div>
 
-          <div *ngIf="loadingPreview" class="loading-mini">Đang kiểm tra sản phẩm...</div>
+          <div class="horizontal-stepper">
+            <div
+              class="h-step"
+              *ngFor="let step of activeStepper; let i = index; let last = last"
+              [class.completed]="getStepState(order.status, step.key) === 'completed'"
+              [class.current]="getStepState(order.status, step.key) === 'current'"
+            >
+              <div class="step-line-right" *ngIf="!last" [class.filled]="getStepState(order.status, step.key) === 'completed'"></div>
 
-          <div *ngIf="!loadingPreview && reorderPreview">
-            <div *ngIf="reorderPreview.unavailableItems?.length > 0" class="unavailable-alert">
-              <strong>⚠️ Một số sản phẩm hiện đã ngừng bán và không thể đặt lại:</strong>
-              <ul>
-                <li *ngFor="let u of reorderPreview.unavailableItems">
-                  {{ u.name }} — <em>{{ u.reason }}</em>
-                </li>
-              </ul>
+              <div class="step-circle">
+                <i class="bi bi-check-lg" *ngIf="getStepState(order.status, step.key) === 'completed'"></i>
+                <i class="bi" [ngClass]="step.icon" *ngIf="getStepState(order.status, step.key) !== 'completed'"></i>
+              </div>
+
+              <div class="step-name">{{ step.label }}</div>
+              <div class="step-time">{{ getStepTime(step.key) }}</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. ẢNH THỰC TẾ TỪ TIỆM BÁNH -->
+        <section class="card-block photo-showcase-card">
+          <div class="card-head-row">
+            <div>
+              <span class="eyebrow"><i class="bi bi-camera"></i> ẢNH THỰC TẾ TỪ TIỆM BÁNH</span>
+              <h2>{{ isCakeReady ? 'Bánh đã hoàn thành' : 'Mẫu bánh nghệ thuật từ xưởng SweetCake' }}</h2>
+            </div>
+          </div>
+
+          <div class="showcase-grid">
+            <div class="showcase-img-wrap">
+              <img [src]="showcaseImage" [alt]="primaryItem?.name || 'Bánh SweetCake'" />
+              <span class="qc-tag">Mã kiểm duyệt: QA-{{ order.code }}</span>
+              <div class="img-overlay-bottom">
+                <div>
+                  <strong>{{ primaryItem?.name || 'Bánh kem thủ công SweetCake' }}</strong>
+                  <small *ngIf="primaryItem?.config?.message">Chữ viết trên bánh: "{{ primaryItem.config.message }}"</small>
+                </div>
+                <button class="btn-zoom" (click)="zoomOpen = true">
+                  <i class="bi bi-arrows-fullscreen"></i> Phóng to ảnh
+                </button>
+              </div>
             </div>
 
-            <div *ngIf="reorderPreview.availableItems?.length > 0" class="preview-list">
-              <label class="section-sub">Chọn sản phẩm muốn mua lại:</label>
-              <div class="preview-item" *ngFor="let item of reorderPreview.availableItems">
-                <input
-                  type="checkbox"
-                  [checked]="selectedReorderIds.has(item.orderItemId)"
-                  (change)="toggleReorderItem(item.orderItemId)"
-                />
-                <div class="p-info">
-                  <div class="p-name">{{ item.name }} (x{{ item.qty }})</div>
-                  <div class="p-sub" *ngIf="item.variant">{{ item.variant }}</div>
-                  <div class="price-change-tag" *ngIf="item.priceChanged">
-                    Giá cập nhật: <s>{{ item.oldUnitPrice | number }} đ</s> → <strong>{{ item.unitPrice | number }} đ</strong>
+            <div class="showcase-note-col">
+              <div class="baker-quote-box">
+                <div class="bq-title"><i class="bi bi-chat-quote"></i> Lời nhắn từ tiệm bánh SweetCake</div>
+                <p>
+                  "Chiếc bánh của bạn đang được chăm chút tỉ mỉ theo đúng yêu cầu. Tiệm luôn kiểm tra kỹ phần trang trí và các chi tiết trước khi đóng gói. Cảm ơn bạn đã tin tưởng và lựa chọn SweetCake!"
+                </p>
+              </div>
+
+              <div class="qa-meta-box">
+                <div class="qa-row">
+                  <span>Người thực hiện:</span>
+                  <strong>Nghệ nhân bếp SweetCake</strong>
+                </div>
+                <div class="qa-row">
+                  <span>Thời gian dự kiến:</span>
+                  <strong>{{ order.receiveDate | date:'dd/MM/yyyy' }} ({{ order.slotLabel }})</strong>
+                </div>
+                <div class="qa-row">
+                  <span>Tình trạng:</span>
+                  <strong class="ok-txt">{{ isCakeReady ? 'Đã kiểm duyệt & sẵn sàng' : 'Đang theo dõi tiến độ' }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. BỐ CỤC 2 CỘT CHI TIẾT -->
+        <div class="detail-2col">
+          <!-- CỘT TRÁI -->
+          <div class="col-left">
+            <!-- Sản phẩm & Tùy chỉnh -->
+            <section class="card-block">
+              <div class="card-head-row">
+                <h2>Sản phẩm & Tùy chỉnh</h2>
+                <span class="count-pill">{{ order.items?.length || 1 }} sản phẩm thiết kế</span>
+              </div>
+
+              <div class="prod-item-card" *ngFor="let item of order.items">
+                <div class="pi-top">
+                  <img [src]="getItemImage(item)" [alt]="item.name" />
+                  <div class="pi-info">
+                    <div class="pi-name-row">
+                      <h3>{{ item.name }}</h3>
+                      <strong class="pi-price">{{ item.lineTotal | number }} đ</strong>
+                    </div>
+                    <p class="pi-desc">
+                      Kích thước: {{ item.config?.size || 'Tiêu chuẩn 18cm' }} (6 - 8 người thưởng thức)
+                    </p>
+                    <div class="pi-tags">
+                      <span>Số lượng: {{ item.qty }}</span>
+                      <span>Độ ngọt: {{ item.config?.sweetness || 'Ít ngọt 30%' }}</span>
+                      <span>Tươi trong ngày</span>
+                    </div>
                   </div>
                 </div>
-                <div class="p-total">{{ item.lineTotal | number }} đ</div>
-              </div>
-            </div>
 
-            <div class="slot-picker-grid" *ngIf="reorderPreview.availableItems?.length > 0">
-              <div class="form-group">
-                <label>Ngày nhận bánh mới *</label>
-                <input type="date" [(ngModel)]="reorderDate" [min]="minDate" class="form-control" />
+                <!-- Thông số bánh tùy biến theo yêu cầu -->
+                <div class="custom-specs-box">
+                  <div class="cs-title"><i class="bi bi-sliders"></i> Thông số bánh tùy biến theo yêu cầu</div>
+
+                  <div class="cs-2col">
+                    <div>
+                      <span class="cs-lbl">Hương vị & Cốt bánh:</span>
+                      <strong>{{ item.config?.base || 'Cốt bông lan vani truyền thống, kem phô mai ít ngọt thanh dịu.' }}</strong>
+                    </div>
+                    <div>
+                      <span class="cs-lbl">Trang trí bề mặt:</span>
+                      <strong>{{ item.config?.filling || 'Trái cây tươi tuyển chọn Đà Lạt, lá bạc hà tươi và viền vàng thực phẩm.' }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="cake-msg-pink">
+                    <span class="cmp-lbl">THÔNG ĐIỆP VIẾT TRÊN BÁNH (PHỤ PHÍ: +20.000 Đ)</span>
+                    <div class="cmp-text">"{{ item.config?.message || 'Happy Birthday — Chúc mừng sinh nhật ngọt ngào' }}"</div>
+                    <small>Chất liệu: Chocolate đen nguyên chất Bỉ nung chảy viết thủ công.</small>
+                  </div>
+
+                  <div class="free-acc-wrap">
+                    <span class="cs-lbl">Phụ kiện đính kèm tiêu chuẩn miễn phí:</span>
+                    <div class="acc-grid">
+                      <span><i class="bi bi-check2"></i> 1 Dao cắt bánh mica chuyên dụng</span>
+                      <span><i class="bi bi-check2"></i> Bộ 6 đĩa & dĩa giấy kraft cao cấp</span>
+                      <span><i class="bi bi-check2"></i> 1 Nến pháo hoa sinh nhật cao cấp</span>
+                      <span><i class="bi bi-check2"></i> 1 Thiệp chúc mừng viết tay SweetCake</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="form-group">
-                <label>Khung giờ nhận *</label>
-                <select [(ngModel)]="reorderSlotId" class="form-control">
-                  <option value="slot_morning">08:00 - 11:00 (Buổi sáng)</option>
-                  <option value="slot_afternoon">14:00 - 17:00 (Buổi chiều)</option>
-                  <option value="slot_evening">18:00 - 20:30 (Buổi tối)</option>
-                </select>
+            </section>
+
+            <!-- Hướng dẫn bảo quản & Sử dụng -->
+            <section class="card-block">
+              <h2><i class="bi bi-info-circle"></i> Hướng dẫn bảo quản & Sử dụng</h2>
+              <div class="care-2col">
+                <div class="care-box">
+                  <h4><i class="bi bi-thermometer-snow"></i> Nhiệt độ bảo quản</h4>
+                  <p>Luôn giữ bánh ở 4°C - 6°C trong ngăn mát tủ lạnh. Bánh giữ trọn vẹn hương vị ngon nhất trong vòng 24 - 48 giờ.</p>
+                </div>
+                <div class="care-box">
+                  <h4><i class="bi bi-shield-check"></i> Vận chuyển an toàn</h4>
+                  <p>Shipper SweetCake di chuyển bằng thùng lạnh chống nghiêng. Khi di chuyển bằng xe cá nhân, giữ mặt phẳng đế bánh.</p>
+                </div>
               </div>
+            </section>
+
+            <div class="bottom-print-row">
+              <button class="btn-outline-print" (click)="printReceipt()">
+                <i class="bi bi-printer"></i> In hóa đơn / Lưu ảnh
+              </button>
             </div>
           </div>
 
-          <p *ngIf="modalError" class="error-text">{{ modalError }}</p>
+          <!-- CỘT PHẢI -->
+          <div class="col-right">
+            <!-- Thông tin nhận bánh -->
+            <section class="card-block">
+              <div class="card-head-row">
+                <h2>Thông tin nhận bánh</h2>
+                <span class="method-badge">
+                  {{ order.receiveMethod === 'delivery' ? '🚚 Giao tận nơi' : '🏪 Lấy tại tiệm' }}
+                </span>
+              </div>
 
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="closeReorderModal()" [disabled]="submittingReorder">Hủy</button>
-            <button
-              class="btn-primary"
-              (click)="submitReorder()"
-              [disabled]="submittingReorder || loadingPreview || selectedReorderIds.size === 0"
-            >
-              {{ submittingReorder ? 'Đang tạo đơn...' : 'Đặt đơn mới ngay' }}
-            </button>
+              <div class="info-list">
+                <div class="info-item">
+                  <i class="bi bi-person"></i>
+                  <div>
+                    <span class="i-lbl">Người nhận hàng</span>
+                    <strong>{{ order.receiver?.fullName }}</strong>
+                    <small>{{ order.receiver?.phone }}</small>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <i class="bi bi-clock"></i>
+                  <div>
+                    <span class="i-lbl">{{ order.receiveMethod === 'delivery' ? 'Thời gian giao dự kiến' : 'Thời gian nhận bánh tại tiệm' }}</span>
+                    <strong>{{ order.slotLabel }} — {{ order.receiveDate | date:'dd/MM/yyyy' }}</strong>
+                    <small>Đúng giờ hẹn như đã đăng ký</small>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <i class="bi bi-geo-alt"></i>
+                  <div>
+                    <span class="i-lbl">{{ order.receiveMethod === 'delivery' ? 'Địa chỉ nhận bánh' : 'Địa chỉ cửa hàng nhận bánh' }}</span>
+                    <strong *ngIf="order.receiveMethod === 'delivery'; else storeAddr">
+                      {{ order.shippingAddress?.detail }}, {{ order.shippingAddress?.ward }}, {{ order.shippingAddress?.district }}, {{ order.shippingAddress?.province }}
+                    </strong>
+                    <ng-template #storeAddr>
+                      <strong>SweetCake Quận 3 — 128 Nguyễn Đình Chiểu, Phường Võ Thị Sáu, Quận 3, TP.HCM</strong>
+                    </ng-template>
+                  </div>
+                </div>
+
+                <div class="note-box">
+                  <i class="bi bi-sticky"></i>
+                  <div>
+                    <span class="i-lbl">{{ order.receiveMethod === 'delivery' ? 'Ghi chú giao hàng:' : 'Ghi chú nhận tại tiệm:' }}</span>
+                    <p>"{{ order.note || 'Gọi trước khi giao 15 phút, bánh bảo quản lạnh xin giao cẩn thận.' }}"</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Chi tiết thanh toán -->
+            <section class="card-block">
+              <div class="card-head-row">
+                <h2>Chi tiết thanh toán</h2>
+                <span class="paid-pill" [class.unpaid]="order.payment?.status !== 'paid'">
+                  {{ order.payment?.status === 'paid' ? '✓ Đã thanh toán 100%' : 'Chờ thanh toán' }}
+                </span>
+              </div>
+
+              <div class="pay-meta-box">
+                <div class="pm-row">
+                  <span>Phương thức:</span>
+                  <strong>VietQR Dynamic</strong>
+                </div>
+                <div class="pm-row">
+                  <span>Mã giao dịch:</span>
+                  <strong>VQR{{ order.code }}</strong>
+                </div>
+                <div class="pm-row">
+                  <span>Thời gian xác nhận:</span>
+                  <strong>{{ order.createdAt | date:'HH:mm:ss — dd/MM/yyyy' }}</strong>
+                </div>
+              </div>
+
+              <div class="price-breakdown">
+                <div class="pb-row">
+                  <span>Tiền bánh ({{ primaryItem?.name || 'Bánh kem' }})</span>
+                  <span>{{ order.subtotal | number }} đ</span>
+                </div>
+                <div class="pb-row">
+                  <span>Phụ phí trang trí chữ chocolate</span>
+                  <span>{{ (order.addonFee || 0) | number }} đ</span>
+                </div>
+                <div class="pb-row">
+                  <span>Phí vận chuyển thùng lạnh</span>
+                  <span>{{ (order.shippingFee || 0) | number }} đ</span>
+                </div>
+                <div class="pb-row discount" *ngIf="order.discount">
+                  <span>Voucher tri ân khách hàng</span>
+                  <span>-{{ order.discount | number }} đ</span>
+                </div>
+              </div>
+
+              <div class="grand-total-box">
+                <div>
+                  <strong>Tổng thanh toán</strong>
+                  <small>Đã bao gồm VAT & Phụ kiện</small>
+                </div>
+                <div class="gt-right">
+                  <span class="gt-amount">{{ order.total | number }} đ</span>
+                  <small>{{ order.payment?.status === 'paid' ? 'Hoàn tất qua chuyển khoản' : 'Thanh toán theo hướng dẫn' }}</small>
+                </div>
+              </div>
+            </section>
+
+            <!-- Khung hỗ trợ thay đổi giờ nhận -->
+            <section class="help-callout-card">
+              <div class="hc-icon"><i class="bi bi-headset"></i></div>
+              <div>
+                <h4>Cần thay đổi thông tin giờ nhận?</h4>
+                <p>Vui lòng gọi trực tiếp hotline hỗ trợ vận chuyển để điều phối lộ trình kịp thời.</p>
+                <strong>Hotline: 0900 123 456</strong>
+              </div>
+            </section>
           </div>
         </div>
+
+        <!-- 6. DẢI 3 CAM KẾT CHẤT LƯỢNG -->
+        <section class="guarantees-strip">
+          <div class="g-item">
+            <div class="g-icon"><i class="bi bi-flower1"></i></div>
+            <div>
+              <h4>Chứng nhận Organic</h4>
+              <p>Chúng tôi sử dụng 100% nguyên liệu hữu cơ từ các nông trại địa phương.</p>
+            </div>
+          </div>
+
+          <div class="g-item">
+            <div class="g-icon"><i class="bi bi-hand-thumbs-up"></i></div>
+            <div>
+              <h4>Thủ công 100%</h4>
+              <p>Mỗi chiếc bánh là một tác phẩm được nhào nặn tỉ mỉ bởi nghệ nhân.</p>
+            </div>
+          </div>
+
+          <div class="g-item">
+            <div class="g-icon"><i class="bi bi-shield-check"></i></div>
+            <div>
+              <h4>Chuẩn ATVSTP</h4>
+              <p>Quy trình sản xuất khép kín, đạt tiêu chuẩn vệ sinh an toàn quốc tế.</p>
+            </div>
+          </div>
+        </section>
+
       </div>
+
+      <!-- LIGHTBOX PHÓNG TO ẢNH -->
+      <div class="zoom-backdrop" *ngIf="zoomOpen" (click)="zoomOpen = false">
+        <div class="zoom-box" (click)="$event.stopPropagation()">
+          <button class="zoom-close" (click)="zoomOpen = false">✕</button>
+          <img [src]="showcaseImage" [alt]="primaryItem?.name" />
+        </div>
+      </div>
+
+      <ng-template #stateTpl>
+        <div class="page-wrapper empty-state">
+          <p *ngIf="loading">Đang tải chi tiết đơn hàng...</p>
+          <p *ngIf="!loading && errorMsg" class="err-txt">{{ errorMsg }}</p>
+          <a routerLink="/orders" class="btn-back">← Quay lại danh sách đơn hàng</a>
+        </div>
+      </ng-template>
     </div>
   `,
   styles: [`
-    .page-wrapper { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fcfbfa; color: #2c221e; min-height: 100vh; display: flex; flex-direction: column; }
-    
-    /* Header đồng bộ 100% */
-    .site-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 60px; background: #fff; border-bottom: 1px solid #f0e9e4; position: sticky; top: 0; z-index: 100; }
-    .logo-text { font-size: 26px; font-weight: bold; font-family: serif; color: #2c221e; text-decoration: none; }
-    .nav-links { display: flex; gap: 40px; }
-    .nav-item { text-decoration: none; color: #555; font-weight: 500; font-size: 15px; }
-    .nav-item:hover, .nav-item.active { color: #9c4128; }
-    .header-actions { display: flex; gap: 15px; }
-    .icon-btn { font-size: 18px; text-decoration: none; }
+    .detail-page {
+      background-color: #F9F6F2;
+      color: #2D1B10;
+      font-family: 'Inter', sans-serif;
+      padding: 22px 20px 60px;
+    }
 
-    /* Main Content */
-    .main-container { flex: 1; width: 100%; max-width: 860px; margin: 40px auto; padding: 0 20px; box-sizing: border-box; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .btn-back { background: #fff; border: 1px solid #dcd3cb; padding: 8px 16px; border-radius: 8px; cursor: pointer; color: #443831; font-weight: 500; }
-    
-    .status-pill { padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #f0e9e4; color: #593e32; }
-    .status-cancelled { background: #fde8e8; color: #c81e1e; }
-    .status-done { background: #def7ec; color: #03543f; }
+    .page-wrapper {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
 
-    .alert-banner { background: #def7ec; color: #03543f; padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-weight: 500; }
-    .alert-banner.error { background: #fde8e8; color: #c81e1e; }
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #8C7564;
+      margin-bottom: 18px;
+    }
+    .breadcrumb a { color: #7D6B5D; text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb strong { color: #2D1B10; }
 
-    .detail-card { background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #f0e9e4; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-    .order-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #f3efe9; padding-bottom: 24px; margin-bottom: 24px; flex-wrap: wrap; gap: 15px; }
-    .mini-label { font-size: 11px; color: #8c7b72; font-weight: 600; letter-spacing: 0.8px; }
-    h1 { font-family: serif; font-size: 28px; margin: 4px 0; }
-    .sub-date { font-size: 13px; color: #777; margin: 0; }
+    /* Top Header */
+    .order-top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
 
-    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn-primary { background: #593e32; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    .btn-primary:hover:not(:disabled) { background: #422d24; }
-    .btn-danger-outline { background: #fff; color: #c81e1e; border: 1px solid #f8b4b4; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    .btn-warning-outline { background: #fff; color: #b45309; border: 1px solid #fcd34d; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .meta-pills {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
 
-    .info-box { padding: 16px; border-radius: 10px; margin-bottom: 24px; font-size: 14px; line-height: 1.6; }
-    .warning-box { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
-    .cancel-box { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-    .cancel-box h4 { margin: 0 0 8px 0; }
-    .refund-subbox { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #fca5a5; }
-    .refund-subbox h5 { margin: 0 0 6px 0; font-size: 14px; }
-    .price-highlight { font-weight: bold; font-size: 16px; }
-    .refund-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-    .ref-pending { background: #fef3c7; color: #92400e; }
-    .ref-completed { background: #def7ec; color: #03543f; }
+    .pill-tracking {
+      background: #F4E8DC;
+      color: #7D562D;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+      letter-spacing: 0.4px;
+    }
 
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
-    .info-col h4 { font-size: 14px; color: #8c7b72; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-    .info-col p { margin: 4px 0; font-size: 14px; }
+    .pill-date {
+      font-size: 12px;
+      color: #7D6B5D;
+    }
 
-    .items-section h4 { font-size: 15px; margin: 0 0 12px 0; border-bottom: 1px solid #f3efe9; padding-bottom: 8px; }
-    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9f7f5; }
-    .item-title { font-weight: 600; font-size: 15px; }
-    .qty { color: #8c7b72; font-weight: normal; margin-left: 6px; }
-    .item-meta { font-size: 12px; color: #777; margin-top: 2px; }
-    .item-price { font-weight: 600; }
+    .order-top-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      margin: 0 0 4px 0;
+      color: #2D1B10;
+    }
 
-    .summary-section { margin-top: 20px; max-width: 320px; margin-left: auto; }
-    .sum-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #665c54; }
-    .sum-row.total { font-size: 17px; font-weight: bold; color: #9c4128; border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; }
+    .workshop-sub {
+      font-size: 13px;
+      color: #7D6B5D;
+      margin: 0;
+    }
 
-    /* Footer đồng bộ 100% */
-    .site-footer { background: #2c221e; color: #d4ccc6; padding: 60px 50px 25px 50px; margin-top: 80px; text-align: left; }
-    .footer-content { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; max-width: 1100px; margin: 0 auto 35px auto; }
-    .footer-logo { color: #fff; font-size: 22px; font-family: serif; margin-bottom: 12px; }
-    .footer-desc { font-size: 13px; line-height: 1.6; color: #a3968e; margin-bottom: 20px; }
-    .social-icons { display: flex; gap: 10px; }
-    .soc-icon { width: 32px; height: 32px; background: #3f322b; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff; text-decoration: none; font-size: 13px; }
-    .footer-col h5 { color: #fff; font-size: 13px; margin-bottom: 15px; font-weight: 600; letter-spacing: 0.5px; }
-    .footer-col a, .footer-col p { display: block; color: #a3968e; text-decoration: none; font-size: 13px; margin-bottom: 10px; line-height: 1.5; }
-    .footer-col a:hover { color: #fff; }
-    .footer-newsletter-row { max-width: 1100px; margin: 0 auto 35px auto; border-top: 1px solid #3f322b; border-bottom: 1px solid #3f322b; padding: 25px 0; display: flex; justify-content: flex-end; }
-    .newsletter-inner { display: flex; align-items: center; gap: 20px; }
-    .newsletter-label { font-size: 12px; font-weight: 600; letter-spacing: 1px; color: #fff; }
-    .newsletter-input-group { display: flex; background: #3f322b; border-radius: 6px; overflow: hidden; }
-    .newsletter-input-group input { background: transparent; border: none; padding: 10px 15px; color: #fff; outline: none; font-size: 13px; width: 240px; }
-    .newsletter-input-group button { background: #593e32; color: #fff; border: none; padding: 0 22px; font-weight: bold; cursor: pointer; font-size: 13px; }
-    .footer-bottom { text-align: center; font-size: 12px; color: #8c7b72; max-width: 1100px; margin: 0 auto; }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-    /* Modal */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .modal-card { background: #fff; border-radius: 16px; padding: 28px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-    .modal-card.modal-lg { max-width: 600px; }
-    .modal-card h3 { margin: 0 0 8px 0; font-family: serif; font-size: 22px; }
-    .modal-desc { font-size: 13px; color: #665c54; margin-bottom: 18px; line-height: 1.5; }
-    .policy-preview { background: #fdf8f3; border: 1px solid #f3e5d8; padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; color: #593e32; }
+    .status-pill-main {
+      background: #FDF3E7;
+      color: #B45309;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 20px;
+    }
 
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-    .form-control { width: 100%; padding: 10px 12px; border: 1px solid #dcd3cb; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-    .error-text { color: #c81e1e; font-size: 13px; margin: 8px 0; }
+    .st-done { background: #E6F6EC; color: #15803D; }
+    .st-cancelled { background: #FEE2E2; color: #B91C1C; }
 
-    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
-    .btn-secondary { background: #f3efe9; color: #443831; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    .btn-danger { background: #c81e1e; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-print {
+      background: #FFFFFF;
+      border: 1px solid #DCD2C8;
+      color: #2D1B10;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
 
-    /* Reorder Preview */
-    .unavailable-alert { background: #fef2f2; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; font-size: 13px; color: #991b1b; margin-bottom: 14px; }
-    .unavailable-alert ul { margin: 6px 0 0 18px; padding: 0; }
-    .preview-list { max-height: 220px; overflow-y: auto; border: 1px solid #f0e9e4; border-radius: 10px; padding: 12px; margin-bottom: 16px; }
-    .section-sub { font-size: 12px; font-weight: 600; color: #8c7b72; display: block; margin-bottom: 8px; }
-    .preview-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f7f4f0; }
-    .p-info { flex: 1; }
-    .p-name { font-weight: 600; font-size: 14px; }
-    .p-sub { font-size: 12px; color: #777; }
-    .price-change-tag { font-size: 12px; color: #b45309; margin-top: 2px; }
-    .p-total { font-weight: 600; font-size: 14px; }
-    .slot-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .loading-state { text-align: center; padding: 80px 20px; }
+    /* Card Block Common */
+    .card-block {
+      background: #FFFFFF;
+      border: 1px solid #EAE2D9;
+      border-radius: 16px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 10px rgba(45, 27, 16, 0.02);
+    }
+
+    .card-head-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #8C7564;
+      letter-spacing: 0.6px;
+      margin-bottom: 3px;
+    }
+
+    .card-block h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 19px;
+      margin: 0;
+      color: #2D1B10;
+    }
+
+    .live-badge {
+      background: #FAF6F1;
+      border: 1px solid #EAE0D5;
+      color: #6B584C;
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 16px;
+    }
+
+    /* Horizontal Stepper */
+    .horizontal-stepper {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 12px 10px 4px;
+      overflow-x: auto;
+    }
+
+    .h-step {
+      position: relative;
+      flex: 1;
+      min-width: 105px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .step-line-right {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: #E6DDD3;
+      z-index: 1;
+    }
+
+    .step-line-right.filled {
+      background: #7D562D;
+    }
+
+    .step-circle {
+      position: relative;
+      z-index: 2;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #F3ECE4;
+      color: #8C7564;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      margin-bottom: 8px;
+      border: 2px solid #FFFFFF;
+    }
+
+    .h-step.completed .step-circle {
+      background: #7D562D;
+      color: #FFFFFF;
+    }
+
+    .h-step.current .step-circle {
+      background: #2D1B10;
+      color: #FFFFFF;
+      box-shadow: 0 0 0 4px #EFE5DA;
+    }
+
+    .step-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #2D1B10;
+    }
+
+    .h-step:not(.completed):not(.current) .step-name {
+      color: #9C8B7E;
+      font-weight: 500;
+    }
+
+    .step-time {
+      font-size: 11px;
+      color: #8C7564;
+      margin-top: 2px;
+    }
+
+    /* Photo Showcase */
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .showcase-img-wrap {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      min-height: 270px;
+      background: #EFE8E0;
+    }
+
+    .showcase-img-wrap img {
+      width: 100%;
+      height: 100%;
+      max-height: 310px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .qc-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(45, 27, 16, 0.8);
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .img-overlay-bottom {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 16px;
+      background: linear-gradient(transparent, rgba(25, 14, 8, 0.85));
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .img-overlay-bottom strong { display: block; font-size: 15px; }
+    .img-overlay-bottom small { font-size: 11px; opacity: 0.9; }
+
+    .btn-zoom {
+      background: rgba(255, 255, 255, 0.92);
+      color: #2D1B10;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .showcase-note-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .baker-quote-box {
+      background: #FAF7F4;
+      border: 1px solid #EDE4DA;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .bq-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #7D562D;
+      margin-bottom: 8px;
+    }
+
+    .baker-quote-box p {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #3E2A1E;
+      margin: 0;
+    }
+
+    .qa-meta-box {
+      background: #FAF8F5;
+      border: 1px solid #EDE4DA;
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .qa-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .qa-row span { color: #7D6B5D; }
+    .qa-row strong { color: #2D1B10; }
+    .ok-txt { color: #15803D !important; }
+
+    /* 2 Columns Detail */
+    .detail-2col {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .count-pill {
+      background: #F6EFE7;
+      color: #7D562D;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .prod-item-card {
+      margin-bottom: 16px;
+    }
+
+    .pi-top {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .pi-top img {
+      width: 82px;
+      height: 82px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1px solid #EDE4DA;
+    }
+
+    .pi-info { flex: 1; }
+    .pi-name-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .pi-name-row h3 { font-family: 'Playfair Display', serif; font-size: 17px; margin: 0; }
+    .pi-price { font-size: 15px; color: #2D1B10; }
+    .pi-desc { font-size: 12px; color: #7D6B5D; margin: 4px 0 8px; }
+    .pi-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pi-tags span { background: #FAF6F1; border: 1px solid #E8DFD5; font-size: 11px; padding: 3px 9px; border-radius: 6px; color: #5E4B3E; }
+
+    .custom-specs-box {
+      background: #FAF8F5;
+      border: 1px solid #EDE4DA;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .cs-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: #2D1B10; }
+    .cs-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 12px; margin-bottom: 14px; }
+    .cs-lbl { display: block; font-size: 11px; color: #8C7564; margin-bottom: 3px; }
+    .cs-2col strong { color: #2D1B10; line-height: 1.45; }
+
+    .cake-msg-pink {
+      background: #FDF4F6;
+      border: 1px solid #F6DCE2;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+    .cmp-lbl { display: block; font-size: 10px; font-weight: 700; color: #9D4B63; margin-bottom: 4px; }
+    .cmp-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 15px; font-weight: 600; color: #2D1B10; margin-bottom: 3px; }
+    .cake-msg-pink small { font-size: 11px; color: #7D6B5D; }
+
+    .acc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      font-size: 11px;
+      color: #4B3B30;
+      margin-top: 6px;
+    }
+    .acc-grid i { color: #7D562D; margin-right: 4px; }
+
+    /* Care boxes */
+    .care-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .care-box { background: #FAF8F5; border: 1px solid #EDE4DA; border-radius: 10px; padding: 14px; }
+    .care-box h4 { font-size: 13px; margin: 0 0 6px 0; color: #2D1B10; }
+    .care-box p { font-size: 12px; color: #6B584C; line-height: 1.5; margin: 0; }
+
+    .btn-outline-print {
+      background: #FFFFFF;
+      border: 1px solid #DCD2C8;
+      color: #2D1B10;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Right Column Info */
+    .method-badge { font-size: 11px; font-weight: 600; color: #7D562D; background: #F6EFE7; padding: 4px 10px; border-radius: 10px; }
+    .info-list { display: flex; flex-direction: column; gap: 14px; }
+    .info-item { display: flex; gap: 12px; align-items: flex-start; font-size: 13px; }
+    .info-item i { color: #7D562D; font-size: 16px; margin-top: 2px; }
+    .i-lbl { display: block; font-size: 11px; color: #8C7564; margin-bottom: 2px; }
+    .info-item strong { display: block; color: #2D1B10; line-height: 1.4; }
+    .info-item small { display: block; font-size: 11px; color: #7D6B5D; margin-top: 2px; }
+
+    .note-box { display: flex; gap: 10px; background: #FAF7F4; border: 1px solid #EDE4DA; border-radius: 10px; padding: 10px 12px; font-size: 12px; }
+    .note-box p { margin: 2px 0 0 0; font-style: italic; color: #5E4B3E; }
+
+    .paid-pill { background: #E6F6EC; color: #15803D; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+    .paid-pill.unpaid { background: #FDF3E7; color: #B45309; }
+
+    .pay-meta-box { background: #FAF8F5; border-radius: 10px; padding: 12px 14px; font-size: 12px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .pm-row { display: flex; justify-content: space-between; }
+    .pm-row span { color: #8C7564; }
+
+    .price-breakdown { display: flex; flex-direction: column; gap: 8px; font-size: 12px; padding-bottom: 14px; border-bottom: 1px dashed #E2D6C8; margin-bottom: 14px; }
+    .pb-row { display: flex; justify-content: space-between; color: #5E4B3E; }
+    .pb-row.discount { color: #15803D; font-weight: 600; }
+
+    .grand-total-box { display: flex; justify-content: space-between; align-items: center; }
+    .grand-total-box strong { display: block; font-size: 14px; }
+    .grand-total-box small { display: block; font-size: 11px; color: #8C7564; }
+    .gt-right { text-align: right; }
+    .gt-amount { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #7D562D; }
+
+    .help-callout-card {
+      background: #FAF6F1;
+      border: 1px solid #E8DFD5;
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .hc-icon { width: 36px; height: 36px; border-radius: 50%; background: #FFFFFF; color: #7D562D; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .help-callout-card h4 { font-size: 13px; margin: 0 0 4px 0; }
+    .help-callout-card p { font-size: 11px; color: #6B584C; margin: 0 0 6px 0; line-height: 1.45; }
+    .help-callout-card strong { font-size: 13px; color: #2D1B10; }
+
+    /* Guarantees Strip */
+    .guarantees-strip { margin-top: 36px; padding-top: 28px; border-top: 1px solid #E5DDD4; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .g-item { display: flex; gap: 14px; align-items: flex-start; }
+    .g-icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #D8CBBF; display: flex; align-items: center; justify-content: center; color: #7D562D; font-size: 18px; flex-shrink: 0; }
+    .g-item h4 { font-size: 14px; margin: 0 0 4px 0; color: #2D1B10; }
+    .g-item p { font-size: 12px; color: #7D6B5D; line-height: 1.5; margin: 0; }
+
+    /* Lightbox */
+    .zoom-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center; z-index: 3000; padding: 20px; }
+    .zoom-box { position: relative; max-width: 820px; width: 100%; }
+    .zoom-box img { width: 100%; border-radius: 14px; display: block; }
+    .zoom-close { position: absolute; top: -14px; right: -14px; width: 34px; height: 34px; border-radius: 50%; background: #fff; border: none; font-weight: 700; cursor: pointer; }
+
+    .empty-state { text-align: center; padding: 80px 20px; }
+    .err-txt { color: #BA1A1A; }
+    .btn-back { display: inline-block; margin-top: 12px; color: #7D562D; font-weight: 600; }
+
+    @media (max-width: 900px) {
+      .showcase-grid, .detail-2col, .cs-2col, .acc-grid, .care-2col, .guarantees-strip {
+        grid-template-columns: 1fr;
+      }
+    }
   `]
 })
 export class OrderDetailComponent implements OnInit {
-  orderId = '';
   order: any = null;
-  loadError = '';
-  toastMessage = '';
-  toastType: 'success' | 'error' = 'success';
+  loading = false;
+  errorMsg = '';
+  zoomOpen = false;
 
-  showCancelModal = false;
-  cancelMode: 'direct' | 'request' = 'direct';
-  cancelReasonCode = 'change_mind';
-  cancelReasonText = '';
-  submittingCancel = false;
-
-  showReorderModal = false;
-  loadingPreview = false;
-  reorderPreview: any = null;
-  selectedReorderIds = new Set<string>();
-  reorderDate = '';
-  reorderSlotId = 'slot_morning';
-  minDate = new Date().toISOString().split('T')[0];
-  submittingReorder = false;
-
-  modalError = '';
-
-  private slotLabels: Record<string, string> = {
-    slot_morning: '08:00 - 11:00 (Buổi sáng)',
-    slot_afternoon: '14:00 - 17:00 (Buổi chiều)',
-    slot_evening: '18:00 - 20:30 (Buổi tối)'
+  private statusRank: Record<string, number> = {
+    pending_payment: 1,
+    pending_approval: 2,
+    accepted: 3,
+    baking: 4,
+    delivering: 5,
+    delivered: 6,
+    done: 7,
+    cancelled: 0
   };
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
-    private orderService: OrderService
+    private orderService: OrderService,
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.orderId = id;
-        this.fetchOrder();
+    if (isPlatformBrowser(this.platformId)) {
+      const id = this.route.snapshot.paramMap.get('id');
+      if (id) this.loadOrder(id);
+    }
+  }
+
+  get primaryItem(): any {
+    return this.order?.items?.[0] || null;
+  }
+
+  get isCakeReady(): boolean {
+    return ['delivering', 'delivered', 'done'].includes(this.order?.status);
+  }
+
+  get showcaseImage(): string {
+    return this.getItemImage(this.primaryItem);
+  }
+
+  get activeStepper() {
+    const baseSteps = [
+      { key: 'pending_payment', label: 'Chờ thanh toán', icon: 'bi-credit-card' },
+      { key: 'pending_approval', label: 'Chờ duyệt', icon: 'bi-clipboard-check' },
+      { key: 'accepted', label: 'Đã tiếp nhận', icon: 'bi-shop' },
+      { key: 'baking', label: 'Đang làm bánh', icon: 'bi-cake2' }
+    ];
+
+    if (this.order?.receiveMethod === 'pickup') {
+      return [
+        ...baseSteps,
+        { key: 'delivering', label: 'Đã xong', icon: 'bi-box-seam' },
+        { key: 'done', label: 'Đã nhận bánh', icon: 'bi-bag-heart' }
+      ];
+    }
+
+    return [
+      ...baseSteps,
+      { key: 'delivered', label: 'Đã xong', icon: 'bi-box-seam' },
+      { key: 'delivering', label: 'Đang giao', icon: 'bi-truck' },
+      { key: 'done', label: 'Đã giao', icon: 'bi-house-check' }
+    ];
+  }
+
+  loadOrder(id: string) {
+    this.loading = true;
+    this.orderService.getCustomerOrderById(id).subscribe({
+      next: (res: any) => {
+        this.order = res;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.loading = false;
+        this.errorMsg = err.error?.message || 'Không tìm thấy thông tin đơn hàng.';
+        this.cdr.detectChanges();
       }
     });
   }
 
-  fetchOrder() {
-    this.orderService.getCustomerOrderById(this.orderId).subscribe({
-      next: (res) => {
-        this.order = res;
-      },
-      error: (err) => {
-        this.loadError = err.error?.message || 'Không thể tải chi tiết đơn hàng.';
-      }
-    });
+  getStepState(orderStatus: string, stepKey: string): 'completed' | 'current' | 'upcoming' {
+    const currentRank = this.statusRank[orderStatus] || 1;
+    const stepRank = this.statusRank[stepKey] || 1;
+    if (stepRank < currentRank) return 'completed';
+    if (stepRank === currentRank) return 'current';
+    return 'upcoming';
+  }
+
+  getStepTime(stepKey: string): string {
+    const state = this.getStepState(this.order?.status, stepKey);
+    if (state === 'upcoming') return 'Dự kiến';
+    const d = new Date(this.order?.createdAt || Date.now());
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  getItemImage(item: any): string {
+    if (!item) return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&q=80';
+    if (item.imageUrl) return item.imageUrl;
+    if (item.imageId) return `http://localhost:3000/api/files/${item.imageId}`;
+    const name = (item.name || '').toLowerCase();
+    if (name.includes('wedding') || name.includes('cưới')) {
+      return 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=600&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&q=80';
   }
 
   getStatusLabel(status: string): string {
     const map: Record<string, string> = {
       pending_payment: 'Chờ thanh toán',
-      pending_approval: 'Chờ duyệt đơn',
+      pending_approval: 'Chờ duyệt',
       accepted: 'Đã tiếp nhận',
       baking: 'Đang làm bánh',
-      delivering: 'Đang giao hàng',
-      delivered: 'Đã giao tới nơi',
+      delivering: 'Đang giao',
+      delivered: 'Đã xong',
       done: 'Hoàn thành',
       cancelled: 'Đã hủy'
     };
     return map[status] || status;
   }
 
-  canDirectCancel(): boolean {
-    return ['pending_payment', 'pending_approval'].includes(this.order?.status);
-  }
-
-  canRequestCancel(): boolean {
-    return (
-      ['accepted', 'baking', 'delivering'].includes(this.order?.status) &&
-      !this.order?.cancelRequest?.status
-    );
-  }
-
-  canReorder(): boolean {
-    return ['done', 'cancelled'].includes(this.order?.status);
-  }
-
-  openCancelModal(mode: 'direct' | 'request') {
-    this.cancelMode = mode;
-    this.cancelReasonCode = 'change_mind';
-    this.cancelReasonText = '';
-    this.modalError = '';
-    this.showCancelModal = true;
-  }
-
-  closeCancelModal() {
-    this.showCancelModal = false;
-  }
-
-  submitCancel() {
-    if (this.cancelReasonCode === 'other' && !this.cancelReasonText.trim()) {
-      this.modalError = 'Vui lòng nhập chi tiết lý do hủy đơn.';
-      return;
+  printReceipt() {
+    if (isPlatformBrowser(this.platformId)) {
+      window.print();
     }
-
-    this.submittingCancel = true;
-    this.modalError = '';
-
-    const obs =
-      this.cancelMode === 'direct'
-        ? this.orderService.cancelOrder(this.orderId, this.cancelReasonCode, this.cancelReasonText)
-        : this.orderService.createCancelRequest(this.orderId, this.cancelReasonCode, this.cancelReasonText);
-
-    obs.subscribe({
-      next: (updatedOrder) => {
-        this.order = updatedOrder;
-        this.submittingCancel = false;
-        this.showCancelModal = false;
-        this.showToast(
-          this.cancelMode === 'direct'
-            ? 'Đã hủy đơn hàng thành công.'
-            : 'Đã gửi yêu cầu hủy đơn tới cửa hàng!',
-          'success'
-        );
-      },
-      error: (err) => {
-        this.submittingCancel = false;
-        this.modalError = err.error?.message || 'Có lỗi xảy ra, vui lòng thử lại.';
-      }
-    });
-  }
-
-  openReorderModal() {
-    this.showReorderModal = true;
-    this.loadingPreview = true;
-    this.modalError = '';
-    this.selectedReorderIds.clear();
-
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    this.reorderDate = tomorrow.toISOString().split('T')[0];
-
-    this.orderService.reorderOrder(this.orderId, { mode: 'preview' }).subscribe({
-      next: (res) => {
-        this.reorderPreview = res;
-        this.loadingPreview = false;
-        (res.availableItems || []).forEach((item: any) => {
-          this.selectedReorderIds.add(item.orderItemId);
-        });
-      },
-      error: (err) => {
-        this.loadingPreview = false;
-        this.modalError = err.error?.message || 'Không thể kiểm tra dữ liệu đơn cũ.';
-      }
-    });
-  }
-
-  closeReorderModal() {
-    this.showReorderModal = false;
-  }
-
-  toggleReorderItem(itemId: string) {
-    if (this.selectedReorderIds.has(itemId)) {
-      this.selectedReorderIds.delete(itemId);
-    } else {
-      this.selectedReorderIds.add(itemId);
-    }
-  }
-
-  submitReorder() {
-    if (!this.reorderDate) {
-      this.modalError = 'Vui lòng chọn ngày nhận bánh mới.';
-      return;
-    }
-
-    this.submittingReorder = true;
-    this.modalError = '';
-
-    const payload = {
-      mode: 'create',
-      selectedItemIds: Array.from(this.selectedReorderIds),
-      receiveDate: this.reorderDate,
-      slotId: this.reorderSlotId,
-      slotLabel: this.slotLabels[this.reorderSlotId] || this.reorderSlotId
-    };
-
-    this.orderService.reorderOrder(this.orderId, payload).subscribe({
-      next: (res) => {
-        this.submittingReorder = false;
-        this.showReorderModal = false;
-        this.showToast(`Đã tạo đơn mới #${res.order.code} thành công!`, 'success');
-        this.router.navigate(['/orders', res.order._id]);
-      },
-      error: (err) => {
-        this.submittingReorder = false;
-        this.modalError = err.error?.message || 'Không thể tạo đơn mua lại.';
-      }
-    });
-  }
-
-  showToast(msg: string, type: 'success' | 'error') {
-    this.toastMessage = msg;
-    this.toastType = type;
-    setTimeout(() => (this.toastMessage = ''), 4500);
-  }
-
-  goBack() {
-    this.router.navigate(['/orders']);
   }
 }
