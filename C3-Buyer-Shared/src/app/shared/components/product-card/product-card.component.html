@@ -1,0 +1,24 @@
+<article class="sc-card sc-product-card">
+  <button class="sc-product-card__image-button" type="button" (click)="onViewDetail()"
+    [attr.aria-label]="'Xem chi tiết ' + product.name">
+    <img
+      class="sc-product-card__image"
+      [src]="product.image || 'assets/images/product-placeholder.png'"
+      [alt]="product.name"
+      loading="lazy"
+    />
+  </button>
+
+  <div class="sc-card__body sc-product-card__body">
+    <h3 class="sc-product-card__name">{{ product.name }}</h3>
+    <p class="sc-product-card__description" *ngIf="product.description">{{ product.description }}</p>
+    <div class="sc-product-card__bottom">
+      <strong class="sc-product-card__price">{{ product.price | vnd }}</strong>
+      <div class="sc-product-card__actions">
+        <button type="button" class="sc-btn sc-btn--outline sc-btn--sm" (click)="onViewDetail()">Chi tiết</button>
+        <button *ngIf="showAddToCart" type="button" class="sc-btn sc-btn--primary sc-btn--sm"
+          (click)="onAddToCart()">Thêm</button>
+      </div>
+    </div>
+  </div>
+</article>

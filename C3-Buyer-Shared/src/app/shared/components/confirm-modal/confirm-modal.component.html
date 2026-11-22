@@ -1,0 +1,12 @@
+<div *ngIf="visible" class="sc-modal-backdrop" (click)="onBackdropClick($event)" (keydown.escape)="close()">
+  <section class="sc-modal" role="dialog" aria-modal="true" [attr.aria-label]="title">
+    <button class="sc-modal__close" type="button" aria-label="Đóng hộp thoại" (click)="close()">×</button>
+    <h2 class="sc-modal__title">{{ title }}</h2>
+    <div class="sc-modal__content">{{ message }}</div>
+    <div class="sc-modal__actions">
+      <button type="button" class="sc-btn sc-btn--outline" (click)="close()">{{ cancelText }}</button>
+      <button type="button" class="sc-btn" [class.sc-btn--danger]="danger"
+        [class.sc-btn--primary]="!danger" (click)="confirm()">{{ confirmText }}</button>
+    </div>
+  </section>
+</div>
