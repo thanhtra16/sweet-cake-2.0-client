@@ -1,16 +1,18 @@
-
 import {
   Component,
+  EventEmitter,
   HostListener,
+  Input,
   OnInit,
-  inject
+  Output,
+  inject,
 } from '@angular/core';
-
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { environment } from '../../../../environments/environment';
+import { CartService } from '../../services/cart.service';
 
 interface Product {
   id: number | string;
@@ -18,30 +20,26 @@ interface Product {
   name: string;
   description: string;
 }
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink
-  ],
+  imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.css'
+  styleUrl: './header.component.css',
 })
 export class HeaderComponent implements OnInit {
-
-  private http = inject(HttpClient);
-
-  isMenuOpen = false;
-
-  products: Product[] = [];
+  private readonly http = inject(HttpClient);
+  private readonly cartService = inject(CartService);
 
   readonly apiUrl = environment.apiUrl;
+  readonly cartCount$ = this.cartService.totalItems$;
+
+  @Input() userName: string | null = null;
+  @Output() logout = new EventEmitter<void>();
+
+  isMenuOpen = false;
+  products: Product[] = [];
 
   ngOnInit(): void {
     this.loadProducts();
@@ -72,23 +70,15 @@ export class HeaderComponent implements OnInit {
 
   // Lấy danh sách sản phẩm nổi bật
   loadProducts(): void {
-    this.http
-      .get<Product[]>(`${this.apiUrl}/data/products`)
-      .subscribe({
-        next: (data) => {
-          this.products = Array.isArray(data)
-            ? data.slice(0, 6)
-            : [];
-        },
-        error: (error) => {
-          console.error(
-            'Lỗi khi kết nối hoặc tải sản phẩm:',
-            error
-          );
-
-          this.products = [];
-        }
-      });
+    this.http.get<Product[]>(`${this.apiUrl}/data/products`).subscribe({
+      next: (data) => {
+        this.products = Array.isArray(data) ? data.slice(0, 6) : [];
+      },
+      error: (error) => {
+        console.error('Lỗi khi kết nối hoặc tải sản phẩm:', error);
+        this.products = [];
+      },
+    });
   }
 
   // Giới hạn mô tả sản phẩm
@@ -101,16 +91,4 @@ export class HeaderComponent implements OnInit {
       ? description.substring(0, 55) + '...'
       : description;
   }
-  imports: [CommonModule, RouterLink, RouterLinkActive],
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.css'],
-})
-export class HeaderComponent {
-  private readonly cartService = inject(CartService);
-
-  readonly cartCount$ = this.cartService.totalItems$;
-
-  @Input() userName: string | null = null;
-
-  @Output() logout = new EventEmitter<void>();
 }

@@ -1,47 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-
 import { environment } from '../../../environments/environment';
 
 /** Định dạng phản hồi chung của Backend (utils/response.js). */
 export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class ApiService {
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = environment.apiUrl;
-
-  /** Gọi GET và trả về trực tiếp phần `data` của phản hồi. */
-  get<T>(path: string): Observable<T> {
-    return this.http
-      .get<ApiResponse<T>>(`${this.baseUrl}${path}`)
-      .pipe(map((res) => res.data));
-  }
-
-  post<T>(path: string, body: unknown): Observable<T> {
-    return this.http
-      .post<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
-      .pipe(map((res) => res.data));
-  }
-
-  patch<T>(path: string, body: unknown = {}): Observable<T> {
-    return this.http
-      .patch<ApiResponse<T>>(`${this.baseUrl}${path}`, body)
-      .pipe(map((res) => res.data));
-import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-
-// Cấu trúc response chung từ Backend
-interface ApiResponse<T> {
   success: boolean;
   message?: string;
   data: T;
@@ -175,11 +138,32 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
+  /** Gọi GET và trả về trực tiếp phần `data` của phản hồi. */
+  get<T>(path: string): Observable<T> {
+    return this.http
+      .get<ApiResponse<T>>(`${this.apiUrl}${path}`)
+      .pipe(map((res) => res.data));
+  }
+
+  /** Gọi POST và trả về trực tiếp phần `data` của phản hồi. */
+  post<T>(path: string, body: unknown): Observable<T> {
+    return this.http
+      .post<ApiResponse<T>>(`${this.apiUrl}${path}`, body)
+      .pipe(map((res) => res.data));
+  }
+
+  /** Gọi PATCH và trả về trực tiếp phần `data` của phản hồi. */
+  patch<T>(path: string, body: unknown = {}): Observable<T> {
+    return this.http
+      .patch<ApiResponse<T>>(`${this.apiUrl}${path}`, body)
+      .pipe(map((res) => res.data));
+  }
+
   // GET /api/products/:id
   getProductById(id: string): Observable<Product> {
     return this.http
       .get<ApiResponse<Product>>(`${this.apiUrl}/products/${id}`)
-      .pipe(map(response => response.data));
+      .pipe(map((response) => response.data));
   }
 
   // GET /api/products/customization
@@ -188,17 +172,17 @@ export class ApiService {
       .get<ApiResponse<ProductCustomization>>(
         `${this.apiUrl}/products/customization`
       )
-      .pipe(map(response => response.data));
+      .pipe(map((response) => response.data));
   }
 
   // GET /api/products?kind=accessory
-getAccessories(): Observable<Product[]> {
-  return this.http
-    .get<ProductListResponse>(
-      `${this.apiUrl}/products?kind=accessory&page=1&limit=100`
-    )
-    .pipe(map(response => response.data));
-}
+  getAccessories(): Observable<Product[]> {
+    return this.http
+      .get<ProductListResponse>(
+        `${this.apiUrl}/products?kind=accessory&page=1&limit=100`
+      )
+      .pipe(map((response) => response.data));
+  }
 
   // POST /api/orders/quote
   quoteOrder(request: QuoteRequest): Observable<OrderQuote> {
@@ -207,7 +191,7 @@ getAccessories(): Observable<Product[]> {
         `${this.apiUrl}/orders/quote`,
         request
       )
-      .pipe(map(response => response.data));
+      .pipe(map((response) => response.data));
   }
 
   // URL ảnh GridFS: GET /api/images/:fileId
