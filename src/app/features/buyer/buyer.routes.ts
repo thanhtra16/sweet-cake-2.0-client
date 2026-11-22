@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { BlogListComponent } from './pages/blog/blog-list/blog-list.component';
+import { BlogDetailComponent } from './pages/blog/blog-detail/blog-detail.component';
 import { OrderTrackComponent } from './pages/order-track/order-track.component';
 import { OrderListComponent } from './pages/order-list/order-list.component';
 import { OrderDetailComponent } from './pages/order-detail/order-detail.component';
@@ -41,6 +43,14 @@ export const BUYER_ROUTES: Routes = [
           import('./pages/policies/policies.component').then(
             (m) => m.PoliciesComponent
           ),
+      },
+      {
+        path: 'blog',
+        component: BlogListComponent,
+      },
+      {
+        path: 'blog/:slug',
+        component: BlogDetailComponent,
       },
       {
         path: 'product/:id',
