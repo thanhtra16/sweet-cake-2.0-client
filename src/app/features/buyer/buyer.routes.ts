@@ -17,7 +17,7 @@ export const BUYER_ROUTES: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'danh-sach-san-pham', // hoặc giữ 'gioi-thieu' tùy luồng trang chủ của nhóm
+        redirectTo: 'danh-sach-san-pham',
       },
       {
         path: 'danh-sach-san-pham',
@@ -28,7 +28,17 @@ export const BUYER_ROUTES: Routes = [
           ),
       },
       {
+        path: 'products',
+        redirectTo: 'danh-sach-san-pham',
+        pathMatch: 'full',
+      },
+      {
         path: 'menu',
+        redirectTo: 'danh-sach-san-pham',
+        pathMatch: 'full',
+      },
+      {
+        path: 'accessories',
         redirectTo: 'danh-sach-san-pham',
         pathMatch: 'full',
       },
@@ -103,6 +113,11 @@ export const BUYER_ROUTES: Routes = [
       {
         path: 'orders/:id',
         component: OrderDetailComponent,
+      },
+      {
+        path: 'quan-ly-tai-khoan',
+        redirectTo: '/auth/login',
+        pathMatch: 'full',
       },
     ],
   },

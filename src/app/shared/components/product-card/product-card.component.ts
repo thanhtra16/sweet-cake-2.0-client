@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { VndPipe } from '../../pipes/vnd.pipe';
+import { Product } from '../../models/product.model';
 
-export interface BuyerProduct {
+export interface BuyerProduct extends Partial<Product>{
   _id?: string;
   id?: string;
   name: string;

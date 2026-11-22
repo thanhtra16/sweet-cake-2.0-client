@@ -10,7 +10,7 @@ import {
 import { Product } from '../../../../shared/models/product.model';
 import { ProductService } from '../../../../core/services/product.service';
 import { CartService } from '../../../../core/services/cart.service';
-import { ProductCardComponent } from '../../../../shared/components/product-card/product-card.component';
+import { BuyerProduct, ProductCardComponent } from '../../../../shared/components/product-card/product-card.component';
 
 type FilterKey = 'occasion' | 'filling' | 'cakeType' | 'price';
 type SortMode = 'newest' | 'price-asc' | 'price-desc';
@@ -373,8 +373,8 @@ export class ProductListComponent implements OnInit {
 
   // ---------- Cart ----------
 
-  onAddToCart(product: Product): void {
-    this.cart.add(product);
+  onAddToCart(product: BuyerProduct): void {
+    this.cart.add(product as Product);
 
     this.toastMessage.set(
       `Đã thêm "${product.name}" vào giỏ hàng`
@@ -394,10 +394,8 @@ export class ProductListComponent implements OnInit {
       return true;
     }
 
-    const normalizedValue = normalizeValue(value);
+    const parts = value.split(',').map((part) => normalizeValue(part));
 
-    return selected.some(
-      (item) => normalizeValue(item) === normalizedValue
-    );
+    return selected.some((item) => parts.includes(normalizeValue(item)));
   }
 }
