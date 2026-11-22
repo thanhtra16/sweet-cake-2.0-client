@@ -2,12 +2,23 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
   {
-    // Trang FAQ lấy dữ liệu từ API Backend nên render ở trình duyệt, không prerender lúc build
     path: 'faq',
-    renderMode: RenderMode.Client
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'product/:id',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'checkout',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'payment/:orderId',
+    renderMode: RenderMode.Client,
   },
   {
     path: '**',
-    renderMode: RenderMode.Prerender
-  }
+    renderMode: RenderMode.Prerender,
+  },
 ];

@@ -1,329 +1,190 @@
-
 :host {
   display: block;
 }
 
-.site-header {
-  position: relative;
-  z-index: 1000;
+.sc-header {
+  position: sticky;
+  z-index: 50;
+  top: 0;
+  border-bottom: var(--sc-border);
+  background: rgba(255, 250, 247, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.sc-header__inner {
   display: flex;
-  background-color: #f9f6f2;
-  padding: 0;
-  margin: 0 20px;
+  width: min(100% - 2rem, var(--sc-content-width));
+  min-height: 78px;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
+  gap: 1.5rem;
+  margin: 0 auto;
 }
 
-.site-header .header-logo .tieu-de-lon {
-  margin: 0;
-  padding: 0;
-  font-family: 'Playfair Display', serif;
-  font-size: 64px;
-  color: #2D1B10;
-  font-weight: 700;
-  line-height: 72px;
-  letter-spacing: -0.02em;
-  text-decoration: none;
-}
-
-.site-header .chu-thuong {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: #4B454A;
-  line-height: 24px;
-  letter-spacing: -0.01em;
-}
-
-.site-header .chu-thuong a {
-  text-decoration: none;
-  margin-right: 20px;
-  color: #2D1B10;
-  font-weight: 600;
-  transition: .3s;
-}
-
-.site-header .chu-thuong a:hover {
-  color: #7D562D;
-}
-
-.site-header .header-icons {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-
-.site-header .header-icons a {
-  color: #2D1B10;
-  font-size: 24px;
-  transition: .3s;
-  text-decoration: none;
-}
-
-.site-header .header-icons a:hover {
-  color: #7D562D;
-  transform: scale(1.15);
-}
-
-/* MEGA MENU */
-
-.site-header .khung-menu-tha-lon {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background-color: #fff;
-  z-index: 999;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
-  border-top: 1px solid #f2e7df;
-  display: none;
-  border-radius: 12px;
-}
-
-.site-header .khung-menu-tha-lon.dang-kich-hoat {
-  display: block;
-}
-
-.site-header .hop-chia-hai-vung-menu {
-  display: flex;
-  width: 100%;
-}
-
-/* DANH MỤC BÊN TRÁI */
-
-.site-header .vung-danh-muc-trai {
-  width: 24%;
-  background-color: #F6F3EF;
-  padding: 40px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.site-header .vung-danh-muc-trai a {
-  display: block;
-  padding: 10px 20px 10px 35px;
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  color: #2D1B10;
-  letter-spacing: -0.01em;
-  text-decoration: none;
-  font-weight: 100;
-}
-
-.site-header .vung-danh-muc-trai a:hover {
-  background-color: #FFFFFF;
-}
-
-.site-header .vung-danh-muc-trai a.dang-chon {
-  color: #2D1B10;
-  font-weight: 700;
-  border-right: 3px solid #7a5232;
-}
-
-/* KHU VỰC SẢN PHẨM */
-
-.site-header .vung-hien-thi-phai {
-  width: 76%;
-  padding: 40px 50px;
-  display: flex;
-  flex-direction: column;
-}
-
-.site-header .chu-de-muc-menu-phai {
-  margin-bottom: 25px;
-  font-family: 'Playfair Display', serif;
-  font-size: 24px;
-  color: #2D1B10;
-  font-weight: 300;
-  letter-spacing: -0.01em;
-  border-bottom: 1px solid #f2e7df;
-  padding-bottom: 10px;
-}
-
-.site-header .luoi-hai-cot-menu {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  row-gap: 25px;
-  column-gap: 40px;
-  margin-bottom: 35px;
-}
-
-.site-header .dong-chi-tiet-mon-an {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  text-decoration: none;
-}
-
-.site-header .dong-chi-tiet-mon-an img {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  object-fit: cover;
+.sc-header__brand {
+  display: inline-flex;
   flex-shrink: 0;
-}
-
-.site-header .chu-khoi-mon-an h4 {
-  font-family: 'Playfair Display', serif;
-  font-size: 15px;
-  color: #2D1B10;
-  margin-bottom: 3px;
-  font-weight: bold;
-}
-
-.site-header .chu-khoi-mon-an p {
-  font-size: 12px;
-  color: #777;
-  line-height: 1.4;
-  margin-bottom: 0;
-}
-
-/* BANNER ƯU ĐÃI */
-
-.site-header .hop-banner-nho-uu-dai {
-  background-color: #fdf5f7;
-  border-radius: 8px;
-  padding: 20px 30px;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: auto;
+  gap: 0.7rem;
+  text-decoration: none;
 }
 
-.site-header .hop-banner-nho-uu-dai .tieu-de-nho {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
+.sc-header__brand-mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sc-pink);
+  color: var(--sc-deep);
+  font-family: var(--sc-font-heading);
+  font-size: 1.6rem;
+}
+
+.sc-header__brand-text {
+  display: grid;
+  line-height: 1.15;
+}
+
+.sc-header__brand-text strong {
+  color: var(--sc-deep);
+  font-family: var(--sc-font-heading);
+  font-size: 1.25rem;
   font-weight: 600;
-  line-height: 28px;
-  color: #2D1B10;
-  margin-bottom: 5px;
 }
 
-.site-header .hop-banner-nho-uu-dai .chu-thuong {
-  font-size: 14px;
-  line-height: 24px;
-  color: #4B454A;
-  margin-bottom: 0;
+.sc-header__brand-text small {
+  margin-top: 4px;
+  color: var(--sc-muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
 }
 
-.site-header .nut-bam {
-  background-color: #7D562D;
-  color: #FFFFFF;
-  border: none;
-  border-radius: 8px;
-  height: 60px;
-  padding: 0 20px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color .15s ease;
-}
-
-.site-header .nut-bam:hover {
-  background-color: #623F18;
-}
-
-/* THANH DƯỚI MEGA MENU */
-
-.site-header .thanh-day-menu-duoi {
-  background-color: #2D1B10;
-  color: #fff;
-  padding: 12px 40px;
+.sc-header__nav {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 12px;
-  border-radius: 0 0 12px 12px;
+  gap: 1.35rem;
 }
 
-.site-header .thanh-day-menu-duoi .nhom-icon-m-duoi {
+.sc-header__nav a {
+  padding: 0.5rem 0;
+  color: var(--sc-muted);
+  font-size: var(--sc-text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color var(--sc-transition);
+}
+
+.sc-header__nav a:hover,
+.sc-header__nav a.is-active {
+  color: var(--sc-deep);
+}
+
+/* Cụm 3 icon Thông báo - Giỏ hàng - Tài khoản */
+.sc-header__actions {
   display: flex;
-  gap: 15px;
-  font-size: 15px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sc-header__icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: var(--sc-deep);
+  font-size: 1.35rem;
+  text-decoration: none;
+  transition: background-color var(--sc-transition), transform var(--sc-transition);
+}
+
+.sc-header__icon-btn:hover {
+  background-color: var(--sc-pink, #fdf5f7);
+  transform: scale(1.08);
+}
+
+.sc-header__cart-badge {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background-color: var(--sc-deep, #7d562d);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
 }
 
 /* RESPONSIVE */
-
-@media (max-width: 900px) {
-  .site-header .header-navigation {
-    display: none;
+@media (max-width: 960px) {
+  .sc-header__inner {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.65rem 1rem;
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
   }
 
-  .site-header .khung-menu-tha-lon {
-    max-height: 80vh;
-    overflow-y: auto;
+  .sc-header__nav {
+    order: 3;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1.1rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid rgba(45, 27, 16, 0.08);
   }
 
-  .site-header .vung-danh-muc-trai {
-    width: 30%;
+  .sc-header__nav a {
+    padding: 0.25rem 0;
+    font-size: 0.85rem;
   }
 
-  .site-header .vung-hien-thi-phai {
-    width: 70%;
-    padding: 25px;
-  }
-
-  .site-header .vung-danh-muc-trai a {
-    font-size: 15px;
-    padding: 10px;
-  }
-
-  .site-header .luoi-hai-cot-menu {
-    column-gap: 15px;
+  .sc-header__actions {
+    gap: 0.35rem;
   }
 }
 
-@media (max-width: 520px) {
-  .site-header {
-    margin: 0 10px;
+@media (max-width: 480px) {
+  .sc-header__inner {
+    padding: 0.5rem 0.75rem;
   }
 
-  .site-header .header-logo .tieu-de-lon {
-    font-size: 35px;
-    line-height: 45px;
+  .sc-header__brand-mark {
+    width: 36px;
+    height: 36px;
+    font-size: 1.35rem;
   }
 
-  .site-header .header-icons {
-    gap: 12px;
+  .sc-header__brand-text strong {
+    font-size: 1.1rem;
   }
 
-  .site-header .header-icons a {
-    font-size: 19px;
+  .sc-header__brand-text small {
+    display: none;
   }
 
-  .site-header .khung-menu-tha-lon {
-    left: -10px;
-    width: calc(100% + 20px);
+  .sc-header__icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 1.2rem;
   }
 
-  .site-header .hop-chia-hai-vung-menu {
-    flex-direction: column;
+  .sc-header__nav {
+    gap: 0.35rem 0.85rem;
   }
 
-  .site-header .vung-danh-muc-trai,
-  .site-header .vung-hien-thi-phai {
-    width: 100%;
-  }
-
-  .site-header .vung-danh-muc-trai {
-    padding: 10px 0;
-  }
-
-  .site-header .vung-hien-thi-phai {
-    padding: 20px;
-  }
-
-  .site-header .luoi-hai-cot-menu {
-    grid-template-columns: 1fr;
-  }
-
-  .site-header .hop-banner-nho-uu-dai {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-
-  .site-header .thanh-day-menu-duoi {
-    padding: 12px 15px;
+  .sc-header__nav a {
+    font-size: 0.8rem;
   }
 }
