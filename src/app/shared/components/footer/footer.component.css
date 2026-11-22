@@ -195,6 +195,7 @@
     width: 100%;
     min-width: 0;
   }
+}
 .sc-footer {
   margin-top: auto;
   border-top: var(--sc-border);
