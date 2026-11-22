@@ -1,10 +1,20 @@
-import { Component, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  afterNextRender,
+  inject,
+  signal,
+  viewChild
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../../core/services/auth.service';
 import { parseApiError } from '../../../../core/services/api-error';
-import { isValidPhone, normalizePhone } from '../../../../shared/validators/auth.validators';
+import {
+  isValidPhone,
+  normalizePhone
+} from '../../../../shared/validators/auth.validators';
 
 type Field = 'phone' | 'password' | 'form';
 
@@ -27,20 +37,33 @@ export class LoginComponent {
   readonly success = signal(false);
   readonly errors = signal<Partial<Record<Field, string>>>({});
 
-  private readonly phoneInput = viewChild<ElementRef<HTMLInputElement>>('phoneInput');
-  private readonly passwordInput = viewChild<ElementRef<HTMLInputElement>>('passwordInput');
+  private readonly phoneInput =
+    viewChild<ElementRef<HTMLInputElement>>('phoneInput');
+
+  private readonly passwordInput =
+    viewChild<ElementRef<HTMLInputElement>>('passwordInput');
 
   constructor() {
-    afterNextRender(() => this.phoneInput()?.nativeElement.focus());
+    afterNextRender(() => {
+      this.phoneInput()?.nativeElement.focus();
+    });
+  }
+
+  // Xác định người dùng đang đăng nhập từ trang Admin hay Buyer
+  get isAdminLogin(): boolean {
+    return this.router.url.startsWith('/admin/login');
   }
 
   togglePassword(): void {
-    this.showPassword.update((v) => !v);
+    this.showPassword.update(value => !value);
   }
 
   clearError(field: Field): void {
     if (this.errors()[field]) {
-      this.errors.update((e) => ({ ...e, [field]: undefined }));
+      this.errors.update(errors => ({
+        ...errors,
+        [field]: undefined
+      }));
     }
   }
 
@@ -49,32 +72,83 @@ export class LoginComponent {
 
     const phone = this.phone().trim();
     const password = this.password();
+
     const errors: Partial<Record<Field, string>> = {};
 
+    // Kiểm tra số điện thoại
     if (!phone) {
       errors.phone = 'Vui lòng nhập số điện thoại.';
     } else if (!isValidPhone(phone)) {
-      errors.phone = 'Số điện thoại phải gồm 10 chữ số, bắt đầu bằng số 0.';
+      errors.phone =
+        'Số điện thoại phải gồm 10 chữ số, bắt đầu bằng số 0.';
     }
+
+    // Kiểm tra mật khẩu
     if (!password) {
       errors.password = 'Vui lòng nhập mật khẩu.';
     }
 
     this.errors.set(errors);
-    if (errors.phone) return this.phoneInput()?.nativeElement.focus();
-    if (errors.password) return this.passwordInput()?.nativeElement.focus();
+
+    if (errors.phone) {
+      this.phoneInput()?.nativeElement.focus();
+      return;
+    }
+
+    if (errors.password) {
+      this.passwordInput()?.nativeElement.focus();
+      return;
+    }
 
     this.loading.set(true);
 
     this.auth.login(normalizePhone(phone), password).subscribe({
-      next: () => {
+      next: (res) => {
+        // Admin phải đăng nhập bằng tài khoản có role admin
+        if (this.isAdminLogin && res.user.role !== 'admin') {
+          this.auth.logout();
+
+          this.errors.set({
+            form: 'Tài khoản không có quyền truy cập quản trị viên.'
+          });
+
+          this.loading.set(false);
+          return;
+        }
+
+        // Buyer không sử dụng tài khoản Admin để đăng nhập
+        if (!this.isAdminLogin && res.user.role === 'admin') {
+          this.auth.logout();
+
+          this.errors.set({
+            form: 'Vui lòng sử dụng trang đăng nhập quản trị viên.'
+          });
+
+          this.loading.set(false);
+          return;
+        }
+
         this.success.set(true);
-        setTimeout(() => this.router.navigate(['/']), 500);
+
+        const redirectUrl = this.isAdminLogin
+          ? '/admin/orders'
+          : '/';
+
+        setTimeout(() => {
+          this.router.navigateByUrl(redirectUrl);
+        }, 500);
       },
+
       error: (err) => {
-        const info = parseApiError(err, 'Không thể đăng nhập lúc này, vui lòng thử lại sau.');
-        // Backend dùng chung 1 thông báo "SĐT hoặc mật khẩu không đúng" nên hiện ở dưới form
-        this.errors.set({ form: info.message });
+        const info = parseApiError(
+          err,
+          'Không thể đăng nhập lúc này, vui lòng thử lại sau.'
+        );
+
+        this.errors.set({
+          form: info.message
+        });
+
         this.loading.set(false);
       }
     });

@@ -1,0 +1,281 @@
+
+<header class="ad-head">
+  <div>
+    <h1 class="ad-title">Cấu hình tùy biến</h1>
+    <p class="ad-sub">
+      Quản lý các lựa chọn khách có thể chọn khi đặt bánh và giá cộng thêm của từng lựa chọn.
+    </p>
+  </div>
+
+  <div class="head-actions">
+    <button
+      type="button"
+      class="sc-btn sc-btn--outline"
+      [disabled]="loading || saving"
+      (click)="load()"
+    >
+      Hủy thay đổi
+    </button>
+
+    <button
+      type="button"
+      class="sc-btn sc-btn--primary"
+      [disabled]="loading || saving || !!error"
+      (click)="save()"
+    >
+      {{ saving ? 'Đang lưu...' : 'Lưu cấu hình' }}
+    </button>
+  </div>
+</header>
+
+@if (error) {
+  <div class="ad-error" role="alert">
+    {{ error }}
+
+    <button
+      type="button"
+      class="sc-btn sc-btn--outline sc-btn--sm"
+      [disabled]="loading || saving"
+      (click)="load()"
+    >
+      Thử lại
+    </button>
+  </div>
+} @else if (loading) {
+  <app-loading-empty
+    [loading]="true"
+    loadingText="Đang tải cấu hình..."
+  ></app-loading-empty>
+} @else {
+  <div class="tabs" role="tablist" aria-label="Nhóm cấu hình tùy biến">
+    @for (g of groups; track g.key) {
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.is-active]="activeTab === g.key"
+        [attr.aria-selected]="activeTab === g.key"
+        (click)="activeTab = g.key"
+      >
+        {{ g.label }}
+      </button>
+    }
+
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.is-active]="activeTab === 'rules'"
+      [attr.aria-selected]="activeTab === 'rules'"
+      (click)="activeTab = 'rules'"
+    >
+      Bắt buộc và từ cấm
+    </button>
+  </div>
+
+  @if (currentGroup; as g) {
+    <section class="ad-card">
+      <div class="ad-card__head">
+        <div>
+          <h2 class="ad-card__title">{{ g.label }}</h2>
+          <p class="ad-sub">{{ g.hint }}</p>
+        </div>
+
+        <button
+          type="button"
+          class="sc-btn sc-btn--secondary sc-btn--sm"
+          [disabled]="saving"
+          (click)="addRow(g.key)"
+        >
+          + Thêm tùy chọn
+        </button>
+      </div>
+
+      @if (rows[g.key].length === 0) {
+        <app-loading-empty
+          [isEmpty]="true"
+          emptyTitle="Chưa có tùy chọn"
+          emptyMessage="Nhấn “Thêm tùy chọn” để tạo lựa chọn đầu tiên."
+        ></app-loading-empty>
+      } @else {
+        <div class="sc-table-wrapper">
+          <table class="sc-table">
+            <thead>
+              <tr>
+                <th scope="col">Tùy chọn</th>
+                <th scope="col" class="ad-num">Giá chênh lệch (đ)</th>
+
+                @if (g.showMaxChars) {
+                  <th scope="col" class="ad-num">
+                    Tối đa ký tự lời nhắn
+                  </th>
+                }
+
+                <th scope="col">Mặc định</th>
+                <th scope="col">Trạng thái</th>
+                <th scope="col">Thao tác</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (r of rows[g.key]; track $index; let i = $index) {
+                <tr [class.ad-dim]="!r.active">
+                  <td>
+                    <input
+                      class="sc-input"
+                      type="text"
+                      [(ngModel)]="r.name"
+                      [disabled]="saving"
+                      placeholder="Tên tùy chọn"
+                      [attr.aria-label]="'Tên tùy chọn ' + (i + 1)"
+                    />
+                  </td>
+
+                  <td>
+                    <input
+                      class="sc-input ad-num"
+                      type="number"
+                      min="0"
+                      [(ngModel)]="r.priceDiff"
+                      [disabled]="saving"
+                      [attr.aria-label]="'Giá chênh lệch ' + (i + 1)"
+                    />
+                  </td>
+
+                  @if (g.showMaxChars) {
+                    <td>
+                      <input
+                        class="sc-input ad-num"
+                        type="number"
+                        min="0"
+                        step="1"
+                        [(ngModel)]="r.maxChars"
+                        [disabled]="saving"
+                        placeholder="Không giới hạn"
+                        [attr.aria-label]="'Giới hạn ký tự ' + (i + 1)"
+                      />
+                    </td>
+                  }
+
+                  <td>
+                    <label class="ad-switch">
+                      <input
+                        type="checkbox"
+                        [checked]="r.isDefault"
+                        [disabled]="!r.active || saving"
+                        (change)="toggleDefault(g.key, i)"
+                      />
+                      Mặc định
+                    </label>
+                  </td>
+
+                  <td>
+                    <label class="ad-switch">
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="r.active"
+                        [disabled]="saving"
+                      />
+                      {{ r.active ? 'Hoạt động' : 'Tắt' }}
+                    </label>
+                  </td>
+
+                  <td>
+                    <button
+                      type="button"
+                      class="sc-btn sc-btn--outline sc-btn--sm"
+                      [disabled]="saving"
+                      (click)="removeRow(g.key, i)"
+                    >
+                      Xóa
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <p class="sc-help-text note">
+          Giá chênh lệch chỉ dùng để cấu hình. Hệ thống tự tính lại giá khi
+          khách đặt hàng. Các thay đổi chỉ được áp dụng sau khi bạn nhấn
+          “Lưu cấu hình”.
+        </p>
+      }
+    </section>
+  } @else {
+    <section class="ad-card">
+      <div class="ad-card__head">
+        <h2 class="ad-card__title">
+          Lựa chọn bắt buộc khi đặt bánh
+        </h2>
+      </div>
+
+      <div class="ad-chips">
+        @for (f of requiredFields; track f.key) {
+          <label class="ad-switch ad-chip">
+            <input
+              type="checkbox"
+              [(ngModel)]="required[f.key]"
+              [disabled]="saving"
+            />
+            {{ f.label }}
+          </label>
+        }
+      </div>
+    </section>
+
+    <section class="ad-card">
+      <div class="ad-card__head">
+        <div>
+          <h2 class="ad-card__title">Từ khóa bị cấm</h2>
+          <p class="ad-sub">
+            Lời nhắn trên bánh chứa các từ này sẽ bị từ chối.
+          </p>
+        </div>
+      </div>
+
+      <div class="word-add">
+        <input
+          class="sc-input"
+          type="text"
+          [(ngModel)]="newWord"
+          [disabled]="saving"
+          (keydown.enter)="addWord(); $event.preventDefault()"
+          placeholder="Nhập từ khóa rồi nhấn Enter"
+          aria-label="Từ khóa bị cấm mới"
+        />
+
+        <button
+          type="button"
+          class="sc-btn sc-btn--secondary"
+          [disabled]="saving || !newWord.trim()"
+          (click)="addWord()"
+        >
+          Thêm
+        </button>
+      </div>
+
+      <div class="ad-chips">
+        @for (w of bannedWords; track w) {
+          <span class="ad-chip">
+            {{ w }}
+
+            <button
+              type="button"
+              [disabled]="saving"
+              (click)="removeWord(w)"
+              [attr.aria-label]="'Xóa từ ' + w"
+            >
+              ×
+            </button>
+          </span>
+        } @empty {
+          <span class="sc-help-text">
+            Chưa có từ khóa nào.
+          </span>
+        }
+      </div>
+    </section>
+  }
+}

@@ -1,9 +1,23 @@
-
 import { HttpInterceptorFn } from '@angular/common/http';
 
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  // Chuẩn bị Interceptor.
-  // Sẽ bổ sung xử lý JWT, X-Track-Token và lỗi HTTP sau khi thống nhất với Backend.
+const TOKEN_KEY = 'sweetcake_access_token';
 
-  return next(req);
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  if (typeof localStorage === 'undefined') {
+    return next(req);
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY);
+
+  if (!token) {
+    return next(req);
+  }
+
+  const authReq = req.clone({
+    setHeaders: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return next(authReq);
 };

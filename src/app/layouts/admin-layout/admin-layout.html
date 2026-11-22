@@ -1,0 +1,499 @@
+<div class="ad-layout">
+  <!-- SIDEBAR -->
+  <aside class="ad-side" aria-label="Điều hướng quản trị">
+    <a class="ad-brand" routerLink="/admin/orders">
+      <span class="ad-brand__name">SweetCake</span>
+      <span class="ad-brand__sub">Quản trị đơn hàng</span>
+    </a>
+
+    <nav class="ad-nav">
+      @for (item of navItems; track item.path) {
+        <a
+          class="ad-nav__link"
+          [routerLink]="item.path"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{
+            exact: item.path === '/admin/orders'
+          }"
+        >
+          <i [class]="item.icon" aria-hidden="true"></i>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <!-- ADMIN SIDEBAR PROFILE -->
+    <div class="ad-user">
+      <div class="ad-user__row">
+        <span class="ad-user__avatar" aria-hidden="true">
+          {{ (user?.fullName || 'A').charAt(0).toUpperCase() }}
+        </span>
+
+        <div class="ad-user__info">
+          <strong>{{ user?.fullName || 'Quản trị viên' }}</strong>
+          <small>Quản trị viên</small>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="ad-main">
+    <header class="ad-header">
+      <div class="ad-header__heading">
+        <nav class="ad-breadcrumb" aria-label="Breadcrumb">
+          <a routerLink="/admin/orders">Trang quản trị</a>
+          <i
+            class="fa-solid fa-chevron-right"
+            aria-hidden="true"
+          ></i>
+          <span>{{ currentPageTitle }}</span>
+        </nav>
+
+        <h1 class="ad-header__title">
+          {{ currentPageTitle }}
+        </h1>
+      </div>
+
+      <div class="ad-header__actions">
+        <!-- NOTIFICATION -->
+        <div class="ad-header__action-wrap">
+          <button
+            type="button"
+            class="ad-icon-btn"
+            aria-label="Thông báo"
+            [attr.aria-expanded]="isNotificationOpen"
+            (click)="toggleNotification()"
+          >
+            <i class="fa-regular fa-bell" aria-hidden="true"></i>
+          </button>
+
+          @if (isNotificationOpen) {
+            <div class="ad-dropdown ad-notification">
+              <div class="ad-dropdown__heading">
+                <strong>Thông báo</strong>
+              </div>
+
+              <div class="ad-notification__empty">
+                <i
+                  class="fa-regular fa-bell"
+                  aria-hidden="true"
+                ></i>
+                <p>Chưa có thông báo mới</p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ADMIN ACCOUNT -->
+        <div class="ad-header__action-wrap">
+          <button
+            type="button"
+            class="ad-account-btn"
+            [attr.aria-expanded]="isAccountOpen"
+            aria-label="Tài khoản quản trị viên"
+            (click)="toggleAccount()"
+          >
+            <span class="ad-account-btn__avatar">
+              {{ (user?.fullName || 'A').charAt(0).toUpperCase() }}
+            </span>
+
+            <span class="ad-account-btn__info">
+              <strong>
+                {{ user?.fullName || 'Quản trị viên' }}
+              </strong>
+              <small>Quản trị viên</small>
+            </span>
+
+            <i
+              class="fa-solid fa-chevron-down"
+              aria-hidden="true"
+            ></i>
+          </button>
+
+          @if (isAccountOpen) {
+            <div class="ad-dropdown ad-account-menu">
+              <div class="ad-account-menu__profile">
+                <span class="ad-account-btn__avatar">
+                  {{ (user?.fullName || 'A').charAt(0).toUpperCase() }}
+                </span>
+
+                <div>
+                  <strong>
+                    {{ user?.fullName || 'Quản trị viên' }}
+                  </strong>
+                  <small>Quản trị viên</small>
+                </div>
+              </div>
+
+              <div class="ad-dropdown__divider"></div>
+
+              <button
+                type="button"
+                class="ad-account-menu__item"
+                (click)="openProfile()"
+              >
+                <i
+                  class="fa-regular fa-user"
+                  aria-hidden="true"
+                ></i>
+                <span>Thông tin tài khoản</span>
+              </button>
+
+              <button
+                type="button"
+                class="ad-account-menu__item"
+                (click)="openChangePassword()"
+              >
+                <i
+                  class="fa-solid fa-key"
+                  aria-hidden="true"
+                ></i>
+                <span>Đổi mật khẩu</span>
+              </button>
+
+              <div class="ad-dropdown__divider"></div>
+
+              <button
+                type="button"
+                class="ad-account-menu__logout"
+                (click)="logout()"
+              >
+                <i
+                  class="fa-solid fa-arrow-right-from-bracket"
+                  aria-hidden="true"
+                ></i>
+                Đăng xuất
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <section class="ad-content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+
+  <!-- PROFILE MODAL -->
+  @if (isProfileOpen) {
+    <div
+      class="ad-modal-backdrop"
+      (click)="closeProfile()"
+    >
+      <section
+        class="ad-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-modal-title"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="ad-dialog__header">
+          <div>
+            <h2 id="profile-modal-title">
+              Thông tin tài khoản
+            </h2>
+            <p>Thông tin quản trị viên đang đăng nhập</p>
+          </div>
+
+          <button
+            type="button"
+            class="ad-dialog__close"
+            aria-label="Đóng"
+            (click)="closeProfile()"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="ad-profile">
+          <div class="ad-profile__avatar">
+            {{ (user?.fullName || 'A').charAt(0).toUpperCase() }}
+          </div>
+
+          <strong>{{ user?.fullName || 'Quản trị viên' }}</strong>
+          <span>Quản trị viên</span>
+        </div>
+
+        <div class="ad-profile__details">
+          <div class="ad-profile__item">
+            <span>Họ và tên</span>
+            <strong>{{ user?.fullName || 'Chưa cập nhật' }}</strong>
+          </div>
+
+          <div class="ad-profile__item">
+            <span>Số điện thoại</span>
+            <strong>{{ user?.phone || 'Chưa cập nhật' }}</strong>
+          </div>
+
+          <div class="ad-profile__item">
+            <span>Email</span>
+            <strong>{{ user?.email || 'Chưa cập nhật' }}</strong>
+          </div>
+
+          <div class="ad-profile__item">
+            <span>Ngày sinh</span>
+            <strong>
+              {{ user?.birthday ? (user?.birthday | date:'dd/MM/yyyy') : 'Chưa cập nhật' }}
+            </strong>
+          </div>
+
+          <div class="ad-profile__item">
+            <span>Vai trò</span>
+            <strong>Quản trị viên</strong>
+          </div>
+        </div>
+
+        <div class="ad-dialog__footer">
+          <button
+            type="button"
+            class="sc-btn sc-btn--primary"
+            (click)="closeProfile()"
+          >
+            Đóng
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  <!-- CHANGE PASSWORD MODAL -->
+  @if (isChangePasswordOpen) {
+    <div
+      class="ad-modal-backdrop"
+      (click)="closeChangePassword()"
+    >
+      <section
+        class="ad-dialog ad-password-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="password-modal-title"
+        (click)="$event.stopPropagation()"
+      >
+        @if (!isPasswordChanged) {
+          <div class="ad-dialog__header">
+            <div>
+              <h2 id="password-modal-title">Đổi mật khẩu</h2>
+              <p>Cập nhật mật khẩu đăng nhập quản trị</p>
+            </div>
+
+            <button
+              type="button"
+              class="ad-dialog__close"
+              aria-label="Đóng"
+              [disabled]="isChangingPassword"
+              (click)="closeChangePassword()"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <form
+            class="ad-password-form"
+            (ngSubmit)="submitChangePassword()"
+          >
+            <div class="ad-form-group">
+              <label for="currentPassword">
+                Mật khẩu hiện tại
+              </label>
+
+              <div class="ad-password-input">
+                <input
+                  id="currentPassword"
+                  name="currentPassword"
+                  [type]="showCurrentPassword ? 'text' : 'password'"
+                  [(ngModel)]="currentPassword"
+                  placeholder="Nhập mật khẩu hiện tại"
+                  autocomplete="current-password"
+                  required
+                />
+
+                <button
+                  type="button"
+                  (click)="showCurrentPassword = !showCurrentPassword"
+                  [attr.aria-label]="showCurrentPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                >
+                  <i
+                    [class]="showCurrentPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'"
+                  ></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="ad-form-group">
+              <label for="newPassword">
+                Mật khẩu mới
+              </label>
+
+              <div class="ad-password-input">
+                <input
+                  id="newPassword"
+                  name="newPassword"
+                  [type]="showNewPassword ? 'text' : 'password'"
+                  [(ngModel)]="newPassword"
+                  placeholder="Nhập mật khẩu mới"
+                  autocomplete="new-password"
+                  minlength="6"
+                  required
+                />
+
+                <button
+                  type="button"
+                  (click)="showNewPassword = !showNewPassword"
+                  [attr.aria-label]="showNewPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                >
+                  <i
+                    [class]="showNewPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'"
+                  ></i>
+                </button>
+              </div>
+
+              <small class="ad-form-hint">
+                Mật khẩu mới phải có ít nhất 6 ký tự.
+              </small>
+            </div>
+
+            <div class="ad-form-group">
+              <label for="confirmPassword">
+                Xác nhận mật khẩu mới
+              </label>
+
+              <div class="ad-password-input">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  [(ngModel)]="confirmPassword"
+                  placeholder="Nhập lại mật khẩu mới"
+                  autocomplete="new-password"
+                  required
+                />
+
+                <button
+                  type="button"
+                  (click)="showConfirmPassword = !showConfirmPassword"
+                  [attr.aria-label]="showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                >
+                  <i
+                    [class]="showConfirmPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'"
+                  ></i>
+                </button>
+              </div>
+            </div>
+
+            @if (passwordError) {
+              <div class="ad-form-alert ad-form-alert--error">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>{{ passwordError }}</span>
+              </div>
+            }
+
+            <div class="ad-dialog__footer">
+              <button
+                type="button"
+                class="sc-btn sc-btn--outline"
+                [disabled]="isChangingPassword"
+                (click)="closeChangePassword()"
+              >
+                Hủy
+              </button>
+
+              <button
+                type="submit"
+                class="sc-btn sc-btn--primary"
+                [disabled]="isChangingPassword"
+              >
+                @if (isChangingPassword) {
+                  <i class="fa-solid fa-spinner fa-spin"></i>
+                  Đang xử lý...
+                } @else {
+                  Lưu mật khẩu
+                }
+              </button>
+            </div>
+          </form>
+        } @else {
+          <div class="ad-password-success">
+            <div class="ad-password-success__icon">
+              <i class="fa-solid fa-check"></i>
+            </div>
+
+            <h2 id="password-modal-title">
+              Đổi mật khẩu thành công
+            </h2>
+
+            <p>{{ passwordSuccess }}</p>
+
+            <button
+              type="button"
+              class="sc-btn sc-btn--primary"
+              (click)="finishPasswordChange()"
+            >
+              Đăng nhập lại
+            </button>
+          </div>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- LOGOUT CONFIRMATION MODAL -->
+  @if (isLogoutConfirmOpen) {
+    <div
+      class="ad-modal-backdrop"
+      (click)="cancelLogout()"
+    >
+      <section
+        class="ad-confirm-modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="logout-modal-title"
+        aria-describedby="logout-modal-description"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="ad-confirm-modal__icon">
+          <i
+            class="fa-solid fa-arrow-right-from-bracket"
+            aria-hidden="true"
+          ></i>
+        </div>
+
+        <h2
+          class="ad-confirm-modal__title"
+          id="logout-modal-title"
+        >
+          Xác nhận đăng xuất
+        </h2>
+
+        <p
+          class="ad-confirm-modal__message"
+          id="logout-modal-description"
+        >
+          Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?
+        </p>
+
+        <div class="ad-confirm-modal__actions">
+          <button
+            type="button"
+            class="sc-btn sc-btn--outline"
+            (click)="cancelLogout()"
+          >
+            Hủy
+          </button>
+
+          <button
+            type="button"
+            class="sc-btn sc-btn--primary ad-confirm-modal__confirm"
+            (click)="confirmLogout()"
+          >
+            Xác nhận đăng xuất
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  <app-toast-container></app-toast-container>
+</div>
