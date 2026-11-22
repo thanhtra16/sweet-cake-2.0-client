@@ -1,32 +1,52 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { VndPipe } from '../../pipes/vnd.pipe';
 
-import { Product } from '../../models/product.model';
+export interface BuyerProduct {
+  _id?: string;
+  id?: string;
+  name: string;
+  kind?: 'cake' | 'accessory';
+  price: number;
+  image?: string;
+  thumbnail?: string;
+  description?: string;
+  bestSeller?: boolean;
+}
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [RouterLink],
+  imports: [CommonModule, RouterLink, VndPipe],
   templateUrl: './product-card.component.html',
   styleUrl: './product-card.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductCardComponent {
-  readonly product = input.required<Product>();
+  @Input({ required: true }) product!: BuyerProduct;
+  @Input() showAddToCart = true;
 
-  /** Phát ra khi bấm "Thêm vào giỏ"; component cha quyết định xử lý. */
-  readonly addToCart = output<Product>();
+  @Output() viewDetail = new EventEmitter<BuyerProduct>();
+  @Output() addToCart = new EventEmitter<BuyerProduct>();
 
-  private static readonly priceFormat = new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  });
+  get productId(): string {
+    return this.product._id || this.product.id || '';
+  }
 
-  formatPrice(price: number): string {
-    return ProductCardComponent.priceFormat.format(price);
+  get productImage(): string {
+    return (
+      this.product.image ||
+      this.product.thumbnail ||
+      'https://placehold.co/400x400?text=Sweet+Cake'
+    );
+  }
+
+  onViewDetail(): void {
+    this.viewDetail.emit(this.product);
   }
 
   onAddToCart(): void {
-    this.addToCart.emit(this.product());
+    this.addToCart.emit(this.product);
   }
 }
