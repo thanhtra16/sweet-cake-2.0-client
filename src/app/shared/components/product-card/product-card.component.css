@@ -1,16 +1,92 @@
-.sc-product-card { height: 100%; transition: transform var(--sc-transition), box-shadow var(--sc-transition); }
-.sc-product-card:hover { transform: translateY(-3px); box-shadow: var(--sc-shadow-md); }
-.sc-product-card__image-button {
-  display: block; width: 100%; padding: 0; overflow: hidden; border: 0; background: var(--sc-pink);
+:host {
+  display: block;
 }
-.sc-product-card__image { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform 250ms ease; }
-.sc-product-card:hover .sc-product-card__image { transform: scale(1.035); }
-.sc-product-card__body { display: flex; flex:1; flex-direction: column; gap: 0.65rem; }
-.sc-product-card__name { margin: 0; font-family: var(--sc-font-heading); font-size: 1.15rem; }
-.sc-product-card__description {
-  display: -webkit-box; overflow: hidden; margin: 0; color: var(--sc-muted);
-  font-size: var(--sc-text-xs); -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+
+.product-card__media {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--sc-radius-lg);
+  background: var(--sc-pink);
 }
-.sc-product-card__bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.65rem; margin-top: auto; }
-.sc-product-card__price { color: var(--sc-deep); font-size: var(--sc-text-base); }
-.sc-product-card__actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.product-card__image-link {
+  display: block;
+}
+
+.product-card__image {
+  width: 100%;
+  height: 340px;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.product-card:hover .product-card__image {
+  transform: scale(1.06);
+}
+
+.product-card__badge {
+  position: absolute;
+  z-index: 2;
+  top: var(--sc-space-3);
+  left: var(--sc-space-3);
+}
+
+/* Lớp phủ khi hover: chỉ nút bấm nhận chuột, phần còn lại vẫn bấm được vào ảnh */
+.product-card__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(57, 44, 53, 0.4);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.product-card:hover .product-card__overlay,
+.product-card:focus-within .product-card__overlay {
+  opacity: 1;
+}
+
+.product-card__action {
+  min-width: 180px;
+  pointer-events: auto;
+}
+
+.product-card__info {
+  margin-top: var(--sc-space-4);
+}
+
+.product-card__name {
+  margin: 0 0 var(--sc-space-2);
+  font-size: var(--sc-text-lg);
+  font-weight: 700;
+}
+
+.product-card__price {
+  margin: 0;
+  color: var(--sc-deep);
+  font-size: var(--sc-text-base);
+  font-weight: 600;
+}
+
+/* Màn hình cảm ứng không có hover: luôn hiện nút ở đáy ảnh */
+@media (hover: none) {
+  .product-card__overlay {
+    align-items: flex-end;
+    padding: var(--sc-space-3);
+    background: transparent;
+    opacity: 1;
+  }
+
+  .product-card__action {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .product-card__image {
+    height: 280px;
+  }
+}

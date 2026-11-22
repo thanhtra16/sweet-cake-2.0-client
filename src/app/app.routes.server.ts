@@ -20,6 +20,11 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    // Danh sách sản phẩm lấy dữ liệu từ API Backend nên render ở trình duyệt
+    path: 'menu',
+    renderMode: RenderMode.Client
+  },
+  {
     path: 'blog/:id',
     renderMode: RenderMode.Client
   },

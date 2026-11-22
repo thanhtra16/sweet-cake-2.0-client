@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+
 import { BlogListComponent } from './pages/blog/blog-list/blog-list.component';
 import { BlogDetailComponent } from './pages/blog/blog-detail/blog-detail.component';
 import { OrderTrackComponent } from './pages/order-track/order-track.component';
@@ -16,7 +17,20 @@ export const BUYER_ROUTES: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'gioi-thieu',
+        redirectTo: 'danh-sach-san-pham', // hoặc giữ 'gioi-thieu' tùy luồng trang chủ của nhóm
+      },
+      {
+        path: 'danh-sach-san-pham',
+        title: 'SweetCake - Danh mục sản phẩm',
+        loadComponent: () =>
+          import('./pages/product-list/product-list.component').then(
+            (m) => m.ProductListComponent
+          ),
+      },
+      {
+        path: 'menu',
+        redirectTo: 'danh-sach-san-pham',
+        pathMatch: 'full',
       },
       {
         path: 'gioi-thieu',
