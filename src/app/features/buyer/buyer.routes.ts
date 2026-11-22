@@ -6,9 +6,12 @@ import { BlogDetailComponent } from './pages/blog/blog-detail/blog-detail.compon
 
 export const BUYER_ROUTES: Routes = [
   {
-    path: '',
-    redirectTo: 'danh-sach-san-pham',
-    pathMatch: 'full'
+    path: 'trang-chu',
+    pathMatch: 'full',
+    title: 'SweetCake - Tiệm Bánh Thủ Công Ngọt Ngào',
+    loadComponent: () =>
+      import('./pages/home/home.component')
+        .then(m => m.HomeComponent)
   },
   {
     path: 'gioi-thieu',

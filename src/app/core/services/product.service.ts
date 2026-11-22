@@ -18,6 +18,13 @@ export class ProductService {
       .pipe(map((res) => this.extractList(res).map((dto) => this.toProduct(dto))));
   }
 
+ /** Sản phẩm nổi bật cho trang chủ: những sản phẩm có featured = true. */
+getFeaturedProducts(limit = 8): Observable<Product[]> {
+  return this.getProducts().pipe(
+    map((products) => products.filter((p) => p.bestSeller).slice(0, limit))
+  );
+}
+
   /**
    * Backend có thể trả mảng thuần, hoặc bọc trong { data } / { data: { products } }
    * (định dạng chung của utils/response.js). Hàm này chấp nhận cả ba.

@@ -14,6 +14,12 @@ import { Product } from '../../models/product.model';
 export class ProductCardComponent {
   readonly product = input.required<Product>();
 
+  /** Hiện nút "Thêm vào giỏ" khi hover (trang chủ tắt đi). */
+  readonly showAction = input(true);
+
+  /** Hiện dòng "Nhân & loại bánh" dưới tên. */
+  readonly showMeta = input(false);
+
   /** Phát ra khi bấm "Thêm vào giỏ"; component cha quyết định xử lý. */
   readonly addToCart = output<Product>();
 
