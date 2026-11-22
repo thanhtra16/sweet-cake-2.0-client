@@ -36,6 +36,13 @@ export const BUYER_ROUTES: Routes = [
           import('./pages/faq/faq.component').then((m) => m.FaqComponent),
       },
       {
+        path: 'policies',
+        loadComponent: () =>
+          import('./pages/policies/policies.component').then(
+            (m) => m.PoliciesComponent
+          ),
+      },
+      {
         path: 'product/:id',
         loadComponent: () =>
           import('./product/pages/product-detail/product-detail').then(
