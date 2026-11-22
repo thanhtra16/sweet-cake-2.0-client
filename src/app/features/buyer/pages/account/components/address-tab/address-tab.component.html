@@ -1,0 +1,119 @@
+<div class="acc-title-row">
+  <h2 class="acc-main-title">Sổ địa chỉ</h2>
+  <button type="button" class="btn-chinh" (click)="openAdd()"><i class="bi bi-plus-lg"></i> Thêm địa chỉ</button>
+</div>
+
+@if ((account.user()?.addresses ?? []).length === 0) {
+  <div class="acc-empty">Bạn chưa có địa chỉ nhận hàng nào. Hãy thêm địa chỉ để đặt bánh nhanh hơn.</div>
+} @else {
+  <div class="acc-address-list">
+    @for (a of account.user()?.addresses ?? []; track a._id) {
+      <article class="acc-address-card" [class.is-default]="a.isDefault">
+        <div class="acc-address-head">
+          <strong>{{ a.recipientName }}</strong>
+          <span class="acc-address-phone">{{ a.phone }}</span>
+          @if (a.isDefault) { <span class="acc-badge">Mặc định</span> }
+        </div>
+        <p class="acc-address-text">{{ a.street }}, {{ a.ward }}, {{ a.district }}, {{ a.city }}</p>
+
+        <div class="acc-address-actions">
+          <button type="button" class="acc-link" (click)="openEdit(a)">Sửa</button>
+          <button type="button" class="acc-link acc-link--danger" (click)="deleteTarget.set(a)">Xóa</button>
+          @if (!a.isDefault) {
+            <button type="button" class="acc-link" [disabled]="busyId() === a._id" (click)="setDefault(a)">
+              Đặt làm mặc định
+            </button>
+          }
+        </div>
+      </article>
+    }
+  </div>
+}
+
+<!-- Modal thêm / sửa địa chỉ -->
+@if (modalOpen()) {
+  <div class="acc-modal-overlay" (click)="closeModal()">
+    <div class="acc-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h3 class="acc-modal-title">{{ editingId() ? 'Sửa địa chỉ' : 'Thêm địa chỉ mới' }}</h3>
+
+      <form novalidate (ngSubmit)="save()">
+        <div class="acc-modal-grid">
+          <div class="acc-form-group">
+            <label class="acc-label" for="recipientName">Họ tên người nhận</label>
+            <input class="dong-nhap-lieu" [class.dong-nhap-lieu-loi]="errors().recipientName" type="text" id="recipientName" name="recipientName"
+              placeholder="Nhập họ tên người nhận" [ngModel]="recipientName()" (ngModelChange)="recipientName.set($event); clearError('recipientName')" />
+            @if (errors().recipientName) { <p class="chu-loi">{{ errors().recipientName }}</p> }
+          </div>
+
+          <div class="acc-form-group">
+            <label class="acc-label" for="addrPhone">Số điện thoại</label>
+            <input class="dong-nhap-lieu" [class.dong-nhap-lieu-loi]="errors().phone" type="tel" id="addrPhone" name="addrPhone"
+              placeholder="090 1234 567" [ngModel]="phone()" (ngModelChange)="phone.set($event); clearError('phone')" />
+            @if (errors().phone) { <p class="chu-loi">{{ errors().phone }}</p> }
+          </div>
+
+          <div class="acc-form-group">
+            <label class="acc-label" for="city">Tỉnh/Thành phố</label>
+            <input class="dong-nhap-lieu" type="text" id="city" name="city" [value]="city" readonly />
+          </div>
+
+          <div class="acc-form-group">
+            <label class="acc-label" for="district">Quận/Huyện</label>
+            <input class="dong-nhap-lieu" [class.dong-nhap-lieu-loi]="errors().district" type="text" id="district" name="district"
+              placeholder="Ví dụ: Quận 1" [ngModel]="district()" (ngModelChange)="district.set($event); clearError('district')" />
+            @if (errors().district) { <p class="chu-loi">{{ errors().district }}</p> }
+          </div>
+
+          <div class="acc-form-group">
+            <label class="acc-label" for="ward">Phường/Xã</label>
+            <input class="dong-nhap-lieu" [class.dong-nhap-lieu-loi]="errors().ward" type="text" id="ward" name="ward"
+              placeholder="Ví dụ: Phường Bến Nghé" [ngModel]="ward()" (ngModelChange)="ward.set($event); clearError('ward')" />
+            @if (errors().ward) { <p class="chu-loi">{{ errors().ward }}</p> }
+          </div>
+
+          <div class="acc-form-group">
+            <label class="acc-label" for="street">Số nhà, tên đường</label>
+            <input class="dong-nhap-lieu" [class.dong-nhap-lieu-loi]="errors().street" type="text" id="street" name="street"
+              placeholder="Nhập số nhà, tên đường" [ngModel]="street()" (ngModelChange)="street.set($event); clearError('street')" />
+            @if (errors().street) { <p class="chu-loi">{{ errors().street }}</p> }
+          </div>
+        </div>
+
+        @if (errors().form) { <p class="chu-loi thong-bao-form">{{ errors().form }}</p> }
+
+        <div class="acc-modal-footer">
+          <label class="acc-checkbox-label">
+            <input type="checkbox" name="isDefault" [disabled]="editingIsDefault()"
+              [ngModel]="isDefault()" (ngModelChange)="isDefault.set($event)" />
+            Đặt làm địa chỉ mặc định
+          </label>
+
+          <div class="acc-modal-actions">
+            <button type="button" class="btn-phu" [disabled]="saving()" (click)="closeModal()">Hủy</button>
+            <button type="submit" class="btn-chinh" [disabled]="saving()">
+              @if (saving()) { Đang lưu... } @else { Lưu địa chỉ }
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Xác nhận xóa -->
+@if (deleteTarget(); as target) {
+  <div class="acc-modal-overlay" (click)="deleteTarget.set(null)">
+    <div class="acc-modal acc-modal--small" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h3 class="acc-modal-title">Xóa địa chỉ?</h3>
+      <p class="acc-confirm-text">
+        Bạn có chắc muốn xóa địa chỉ của <strong>{{ target.recipientName }}</strong> ({{ target.street }}, {{ target.ward }}, {{ target.district }})?
+      </p>
+      <div class="acc-modal-actions acc-modal-actions--end">
+        <button type="button" class="btn-phu" [disabled]="busyId() === target._id" (click)="deleteTarget.set(null)">Hủy</button>
+        <button type="button" class="btn-chinh btn-nguy-hiem" [disabled]="busyId() === target._id" (click)="confirmDelete()">
+          @if (busyId() === target._id) { Đang xóa... } @else { Xóa }
+        </button>
+      </div>
+    </div>
+  </div>
+}

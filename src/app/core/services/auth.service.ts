@@ -90,6 +90,23 @@ export class AuthService {
     return this.isBrowser ? localStorage.getItem(TOKEN_KEY) : null;
   }
 
+  /** Thông tin người dùng đã lưu lúc đăng nhập (dùng để hiển thị nhanh, không thay cho dữ liệu từ server). */
+  getStoredUser(): AuthUser | null {
+    if (!this.isBrowser) return null;
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null');
+    } catch {
+      return null;
+    }
+  }
+
+  /** Cập nhật lại bản lưu sau khi khách sửa thông tin cá nhân. */
+  updateStoredUser(user: Partial<AuthUser>): void {
+    if (!this.isBrowser) return;
+    const current = this.getStoredUser();
+    if (current) localStorage.setItem(USER_KEY, JSON.stringify({ ...current, ...user }));
+  }
+
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
@@ -100,6 +117,7 @@ export class AuthService {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(USER_ID_KEY);
   }
+
 
   // ==================== LUỒNG QUÊN MẬT KHẨU ====================
 

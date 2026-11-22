@@ -1,6 +1,6 @@
-
 import { Routes } from '@angular/router';
 
+import { authGuard } from '../../core/guards/auth.guard';
 import { BlogListComponent } from './pages/blog/blog-list/blog-list.component';
 import { BlogDetailComponent } from './pages/blog/blog-detail/blog-detail.component';
 
@@ -42,6 +42,14 @@ export const BUYER_ROUTES: Routes = [
   {
     path: 'blog/:slug',
     component: BlogDetailComponent
+  },
+  {
+    path: 'account',
+    canActivate: [authGuard],
+    title: 'SweetCake - Tài khoản của tôi',
+    loadComponent: () =>
+      import('./pages/account/account.component')
+        .then(m => m.AccountComponent)
   },
   {
     path: 'menu',

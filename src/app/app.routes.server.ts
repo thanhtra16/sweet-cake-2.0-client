@@ -6,7 +6,7 @@ export const serverRoutes: ServerRoute[] = [
     path: 'faq',
     renderMode: RenderMode.Client
   },
-    {
+  {
     // Blog lấy dữ liệu từ API Backend (Mongo) nên render ở trình duyệt, không prerender lúc build
     path: 'blog',
     renderMode: RenderMode.Client
@@ -20,7 +20,12 @@ export const serverRoutes: ServerRoute[] = [
     path: 'blog/:id',
     renderMode: RenderMode.Client
   },
-    {
+  {
+    // Trang tài khoản cần token trong localStorage nên render ở trình duyệt
+    path: 'account',
+    renderMode: RenderMode.Client
+  },
+  {
     // Các trang auth dùng sessionStorage/localStorage nên render ở trình duyệt
     path: 'auth/**',
     renderMode: RenderMode.Client

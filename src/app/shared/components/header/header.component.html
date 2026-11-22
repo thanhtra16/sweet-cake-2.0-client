@@ -1,4 +1,3 @@
-
 <header class="site-header">
 
   <!-- LOGO -->
@@ -25,10 +24,10 @@
         ></i>
       </a>
 
-      <a routerLink="/lich-su-mua-hang">Đơn hàng</a>
+      <a routerLink="/account" [queryParams]="{ tab: 'orders' }">Đơn hàng</a>
       <a routerLink="/gioi-thieu">Giới thiệu</a>
       <a routerLink="/blog">Blog</a>
-      <a routerLink="/lien-he">Cửa hàng</a>
+      <a routerLink="/danh-sach-san-pham">Cửa hàng</a>
 
     </nav>
   </div>
@@ -49,7 +48,7 @@
     ></a>
 
     <a
-      routerLink="/quan-ly-tai-khoan"
+      routerLink="/account"
       class="bi bi-person-circle"
       aria-label="Tài khoản"
     ></a>
@@ -73,7 +72,7 @@
           GIỚI THIỆU
         </a>
 
-        <a routerLink="/chinh-sach" (click)="closeMenu()">
+        <a routerLink="/policies" (click)="closeMenu()">
           CHÍNH SÁCH
         </a>
 
@@ -85,7 +84,7 @@
           BLOG
         </a>
 
-        <a routerLink="/lien-he" (click)="closeMenu()">
+        <a routerLink="/danh-sach-san-pham" (click)="closeMenu()">
           CỬA HÀNG
         </a>
 
@@ -151,7 +150,7 @@
             class="nut-bam"
             id="nut-dang-ky-ngay"
             type="button"
-            routerLink="/dang-ky"
+            routerLink="/auth/register"
             (click)="closeMenu()"
           >
             ĐĂNG KÝ NGAY
@@ -172,16 +171,3 @@
         ></i>
 
         LIÊN HỆ VỚI CHÚNG TÔI
-      </div>
-
-      <div class="nhom-icon-m-duoi">
-        <i class="bi bi-telephone"></i>
-        <i class="bi bi-facebook"></i>
-        <i class="bi bi-instagram"></i>
-      </div>
-
-    </div>
-
-  </div>
-
-</header>
