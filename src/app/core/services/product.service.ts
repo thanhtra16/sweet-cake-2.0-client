@@ -14,7 +14,9 @@ export class ProductService {
   /** Lấy toàn bộ sản phẩm: GET {apiUrl}/products */
   getProducts(): Observable<Product[]> {
     return this.http
-      .get<unknown>(`${environment.apiUrl}/products`)
+      .get<unknown>(`${environment.apiUrl}/products`, {
+        params: { kind: 'cake', limit: '100' }
+      })
       .pipe(map((res) => this.extractList(res).map((dto) => this.toProduct(dto))));
   }
 
@@ -44,26 +46,24 @@ export class ProductService {
     return [];
   }
 
+  private toProduct(dto: ProductDto): Product {
+    const createdAt = dto.createdAt
+      ? new Date(dto.createdAt).getTime()
+      : 0;
 
-
-private toProduct(dto: ProductDto): Product {
-  const createdAt = dto.createdAt
-    ? new Date(dto.createdAt).getTime()
-    : 0;
-
-  return {
-    id: String(dto.id ?? dto._id ?? ''),
-    name: dto.name ?? '',
-    price: Number(dto.salePrice ?? dto.basePrice ?? 0),
-    thumbnail: dto.imageIds?.[0]?.url ?? '',
-    category: dto.category ?? '',
-    occasion: dto.occasions?.[0] ?? '',
-    flavor: dto.availableFillings?.[0] ?? '',
-    type: dto.type ?? '',
-    bestSeller: !!dto.featured,
-    createdAt
-  };
-}
-
-
+    return {
+      id: String(dto.id ?? dto._id ?? ''),
+      name: dto.name ?? '',
+      price: Number(dto.salePrice ?? dto.basePrice ?? 0),
+      thumbnail: dto.imageIds?.[0]?.url ?? '',
+      category: dto.category ?? '',
+      // Giữ toàn bộ mảng (nối chuỗi hoặc lưu mảng) để không bị sót khi lọc
+      occasion: Array.isArray(dto.occasions) ? dto.occasions.join(', ') : '',
+      flavor: Array.isArray(dto.availableFillings) ? dto.availableFillings.join(', ') : '',
+      // Map category sang type (ví dụ "Bánh mousse" -> "Mousse", "Bánh Bento" -> "Bento")
+      type: dto.type ?? dto.category?.replace(/^Bánh\s+/i, '') ?? '',
+      bestSeller: !!dto.featured,
+      createdAt
+    };
+  }
 }
