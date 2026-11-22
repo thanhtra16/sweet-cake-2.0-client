@@ -1,0 +1,47 @@
+<main class="khu-vuc-dang-ky">
+  <div class="the-dang-ky">
+    <h1 class="tieu-de-vua">Xác Thực Tài Khoản</h1>
+    <p class="chu-thuong phu-de-dang-ky">Vui lòng nhập mã OTP gồm 6 chữ số vừa được gửi đến số điện thoại của bạn để tiếp tục.</p>
+
+    <form class="form-dang-ky" novalidate (ngSubmit)="submit()">
+      <div class="nhom-otp" (paste)="onPaste($event)">
+        @for (digit of digits(); track $index; let i = $index) {
+          <input
+            #otpBox
+            class="o-nhap-otp"
+            [class.o-nhap-otp-loi]="invalid()[i]"
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            autocomplete="one-time-code"
+            [attr.aria-label]="'Ký tự OTP thứ ' + (i + 1)"
+            [value]="digit"
+            (input)="onInput(i, $event)"
+            (keydown)="onKeydown(i, $event)"
+          />
+        }
+      </div>
+
+      @if (error()) { <p class="chu-loi thong-bao-loi-otp">{{ error() }}</p> }
+
+      <div class="gui-lai-ma">
+        <button
+          type="button"
+          [class.dang-kich-hoat]="countdown() <= 0 && !resending()"
+          [disabled]="countdown() > 0 || resending()"
+          (click)="resend()"
+        >
+          @if (resending()) { Đang gửi... }
+          @else if (countdown() > 0) { Gửi lại mã ({{ countdown() }}s) }
+          @else { Gửi lại mã }
+        </button>
+      </div>
+
+      <button type="submit" class="nut-bam nut-dang-ky" [disabled]="loading()">
+        @if (loading()) { ĐANG XÁC NHẬN... } @else { XÁC NHẬN }
+      </button>
+    </form>
+
+    <p class="lien-ket-dong"><a routerLink="/auth/login">Đóng</a></p>
+  </div>
+</main>
