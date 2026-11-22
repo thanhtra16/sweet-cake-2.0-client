@@ -1,0 +1,347 @@
+<section class="cart-page">
+  <div class="cart-page__container">
+
+    <header class="cart-page__heading">
+      <span class="cart-page__eyebrow">YOUR SHOPPING BAG</span>
+      <h1>Giỏ hàng của bạn</h1>
+      <p>Kiểm tra lại những sản phẩm bạn đã lựa chọn.</p>
+    </header>
+
+    @if (cartItems$ | async; as items) {
+
+      @if (items.length > 0) {
+
+        <div class="cart-page__layout">
+
+          <!-- DANH SÁCH SẢN PHẨM -->
+          <div class="cart-page__items">
+
+            <div class="cart-page__items-heading">
+              <label class="cart-select-all">
+                <input
+                  type="checkbox"
+                  [checked]="isAllSelected"
+                  [indeterminate]="isIndeterminate"
+                  (change)="toggleAll($any($event.target).checked)"
+                />
+                <span>Chọn tất cả ({{ items.length }} sản phẩm)</span>
+              </label>
+            </div>
+
+            @for (item of items; track item.id) {
+
+              <article
+                class="cart-item"
+                [class.cart-item--selected]="isSelected(item.id)"
+              >
+
+                <label class="cart-item__select">
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(item.id)"
+                    (change)="toggleItem(item.id)"
+                    [attr.aria-label]="'Chọn ' + item.productName"
+                  />
+                </label>
+
+                <div class="cart-item__image">
+                  @if (item.imageUrl) {
+                    <img
+                      [src]="item.imageUrl"
+                      [alt]="item.productName"
+                    />
+                  } @else {
+                    <div class="cart-item__image-placeholder">
+                      <span>Sweet Cake</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="cart-item__content">
+
+                  <div class="cart-item__top">
+                    <div>
+                      <h3>{{ item.productName }}</h3>
+
+                      <span class="cart-item__type">
+                        {{ item.productKind === 'cake' ? 'Bánh kem' : 'Phụ kiện' }}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="cart-item__remove"
+                      aria-label="Xóa sản phẩm"
+                      (click)="removeItem(item.id)"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+
+                  <!-- CẤU HÌNH BÁNH -->
+                  @if (item.customization; as config) {
+
+                    <div class="cart-item__customization">
+
+                      <p>
+                        <strong>Kích thước:</strong>
+                        {{ config.size }}
+                      </p>
+
+                      <p>
+                        <strong>Cốt bánh:</strong>
+                        {{ config.base }}
+                      </p>
+
+                      <p>
+                        <strong>Nhân bánh:</strong>
+                        {{ config.filling }}
+                      </p>
+
+                      <p>
+                        <strong>Màu kem:</strong>
+                        {{ config.frostingColor }}
+                      </p>
+
+                      <p>
+                        <strong>Độ ngọt:</strong>
+                        {{ config.sweetness }}
+                      </p>
+
+                      @if (config.message) {
+                        <p>
+                          <strong>Lời nhắn:</strong>
+                          {{ config.message }}
+                        </p>
+                      }
+
+                      <!-- PHỤ KIỆN ĐI KÈM -->
+                      @if (item.accessories.length > 0) {
+
+                        <div class="cart-item__accessories">
+                          <strong>Phụ kiện:</strong>
+
+                          @for (accessory of item.accessories; track accessory.id) {
+                            <p>
+                              <span class="cart-item__accessory-info">
+                                {{ accessory.name }}
+
+                                @if (accessory.variantLabel) {
+                                  <small class="cart-item__variant">
+                                    ({{ accessory.variantLabel }})
+                                  </small>
+                                }
+                              </span>
+
+                              <span>{{ accessory.price | vnd }}</span>
+                            </p>
+                          }
+                        </div>
+                      }
+
+                    </div>
+                  }
+
+                  <!-- GIÁ VÀ SỐ LƯỢNG -->
+                  <div class="cart-item__bottom">
+
+                    <div class="cart-item__price">
+                      <span>Đơn giá</span>
+                      <strong>{{ item.unitPrice | vnd }}</strong>
+                    </div>
+
+                    <div class="cart-item__quantity">
+
+                      <button
+                        type="button"
+                        aria-label="Giảm số lượng"
+                        [disabled]="item.quantity <= 1"
+                        (click)="decreaseQuantity(item)"
+                      >
+                        −
+                      </button>
+
+                      <span>{{ item.quantity }}</span>
+
+                      <button
+                        type="button"
+                        aria-label="Tăng số lượng"
+                        [disabled]="item.quantity >= 10"
+                        (click)="increaseQuantity(item)"
+                      >
+                        +
+                      </button>
+
+                    </div>
+
+                    <div class="cart-item__total">
+                      <span>Thành tiền</span>
+                      <strong>{{ getLineTotal(item) | vnd }}</strong>
+                    </div>
+
+                  </div>
+
+                  <!-- LỖI BÁO GIÁ CỦA SẢN PHẨM -->
+                  @if (getQuoteErrors(item).length > 0) {
+                    <div class="cart-item__quote-errors">
+                      @for (error of getQuoteErrors(item); track error) {
+                        <p>{{ error }}</p>
+                      }
+                    </div>
+                  }
+
+                </div>
+              </article>
+            }
+
+            <button
+              type="button"
+              class="cart-page__continue"
+              [routerLink]="['/product', items[0].productId]"
+            >
+              ← Tiếp tục mua sắm
+            </button>
+
+          </div>
+
+          <!-- TỔNG ĐƠN HÀNG -->
+          <aside class="cart-summary">
+
+            <h2>Tóm tắt đơn hàng</h2>
+
+            <!-- PHƯƠNG THỨC NHẬN HÀNG -->
+            <div class="cart-summary__receive">
+              <label for="receiveMethod">
+                Phương thức nhận hàng
+              </label>
+
+              <select
+                id="receiveMethod"
+                [value]="receiveMethod"
+                (change)="onReceiveMethodChange($any($event.target).value)"
+              >
+                <option value="pickup">Nhận tại cửa hàng</option>
+                <option value="delivery">Giao hàng</option>
+              </select>
+            </div>
+
+            <!-- SỐ LƯỢNG SẢN PHẨM ĐƯỢC CHỌN -->
+            <div class="cart-summary__row">
+              <span>Sản phẩm đã chọn</span>
+              <strong>{{ selectedItems.length }} dòng</strong>
+            </div>
+
+            <div class="cart-summary__row">
+              <span>Tổng số lượng</span>
+              <strong>{{ selectedQuantity }}</strong>
+            </div>
+
+            <div class="cart-summary__divider"></div>
+
+            <!-- TRẠNG THÁI BÁO GIÁ -->
+            @if (quoteLoading) {
+              <p class="cart-summary__status">
+                Đang cập nhật báo giá...
+              </p>
+            }
+
+            @if (quoteError) {
+              <p class="cart-summary__error">
+                {{ quoteError }}
+              </p>
+            }
+
+            <!-- KẾT QUẢ TỪ BACKEND -->
+            @if (quoteResult; as quote) {
+
+              <div class="cart-summary__row">
+                <span>Tạm tính</span>
+                <strong>{{ quote.subtotal | vnd }}</strong>
+              </div>
+
+              <div class="cart-summary__row">
+                <span>Giảm giá</span>
+                <strong>-{{ quote.discount | vnd }}</strong>
+              </div>
+
+              <div class="cart-summary__row">
+                <span>Phí giao hàng</span>
+                <strong>{{ quote.deliveryFee | vnd }}</strong>
+              </div>
+
+              @if (!isQuoteValid) {
+                <p class="cart-summary__error">
+                  Một hoặc nhiều sản phẩm không hợp lệ.
+                  Vui lòng kiểm tra lại giỏ hàng.
+                </p>
+              }
+
+              <div class="cart-summary__total">
+                <span>Tổng thanh toán</span>
+                <strong>{{ quote.total | vnd }}</strong>
+              </div>
+
+            } @else {
+
+              <div class="cart-summary__total">
+                <span>Tạm tính</span>
+                <strong>{{ selectedSubtotal | vnd }}</strong>
+              </div>
+
+            }
+
+            <p class="cart-summary__note">
+              Giá thanh toán chính thức được xác nhận từ hệ thống.
+            </p>
+
+            <!-- CHECKOUT -->
+            <button
+              type="button"
+              class="cart-summary__checkout"
+              [disabled]="
+                selectedItems.length === 0 ||
+                quoteLoading ||
+                !isQuoteValid
+              "
+            >
+              Tiến hành đặt hàng ({{ selectedQuantity }})
+            </button>
+
+            <p class="cart-summary__coming-soon">
+              Chức năng đặt hàng sẽ được tích hợp ở bước Checkout.
+            </p>
+
+          </aside>
+
+        </div>
+
+      } @else {
+
+        <!-- GIỎ HÀNG TRỐNG -->
+        <div class="cart-empty">
+
+          <div class="cart-empty__icon">♡</div>
+
+          <h2>Giỏ hàng đang trống</h2>
+
+          <p>
+            Bạn chưa có sản phẩm nào trong giỏ hàng.
+            Hãy khám phá những chiếc bánh ngọt ngào của Sweet Cake nhé!
+          </p>
+
+          <button
+            type="button"
+            class="cart-empty__button"
+            (click)="goBack()"
+          >
+            Quay lại trang trước
+          </button>
+
+        </div>
+
+      }
+
+    }
+
+  </div>
+</section>

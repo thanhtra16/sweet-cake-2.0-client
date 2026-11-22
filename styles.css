@@ -1,0 +1,501 @@
+/* =========================================================
+   SWEET CAKE - Global design system (Angular)
+   Based on the existing Sweet Cake website design.
+   Import this file as the global stylesheet in angular.json.
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap');
+
+/* 1. Design tokens */
+:root {
+  /* Brand colors - preserved from the original Sweet Cake UI */
+  --sc-ink: #392c35;
+  --sc-muted: #887780;
+  --sc-pink: #f8e7eb;
+  --sc-rose: #c66e83;
+  --sc-deep: #9f4e66;
+  --sc-cream: #fffaf7;
+  --sc-line: #f0e4e4;
+  --sc-green: #5f806d;
+
+  /* Semantic colors */
+  --sc-success: #5f806d;
+  --sc-success-bg: #edf5ef;
+  --sc-warning: #9a6a20;
+  --sc-warning-bg: #fff6e5;
+  --sc-danger: #b33c4a;
+  --sc-danger-bg: #fff0f1;
+  --sc-info: #496b91;
+  --sc-info-bg: #eef4fb;
+
+  /* Typography */
+  --sc-font-heading: 'Playfair Display', Georgia, serif;
+  --sc-font-body: 'DM Sans', Arial, sans-serif;
+  --sc-text-xs: 0.75rem;
+  --sc-text-sm: 0.875rem;
+  --sc-text-base: 1rem;
+  --sc-text-lg: 1.125rem;
+  --sc-text-xl: 1.5rem;
+  --sc-text-2xl: 2rem;
+  --sc-text-3xl: 2.5rem;
+
+  /* Spacing */
+  --sc-space-1: 0.25rem;
+  --sc-space-2: 0.5rem;
+  --sc-space-3: 0.75rem;
+  --sc-space-4: 1rem;
+  --sc-space-5: 1.5rem;
+  --sc-space-6: 2rem;
+  --sc-space-7: 3rem;
+  --sc-space-8: 4rem;
+
+  /* Borders, shadows and layout */
+  --sc-radius-sm: 5px;
+  --sc-radius-md: 8px;
+  --sc-radius-lg: 12px;
+  --sc-radius-xl: 18px;
+  --sc-radius-pill: 999px;
+  --sc-border: 1px solid var(--sc-line);
+  --sc-shadow-sm: 0 2px 12px rgba(50, 27, 37, 0.06);
+  --sc-shadow-md: 0 8px 30px rgba(50, 27, 37, 0.12);
+  --sc-shadow-lg: 0 20px 60px rgba(50, 27, 37, 0.20);
+  --sc-content-width: 1200px;
+  --sc-transition: 180ms ease;
+}
+
+/* 2. Reset and base styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: var(--sc-cream);
+  color: var(--sc-ink);
+  font-family: var(--sc-font-body);
+  font-size: var(--sc-text-base);
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--sc-deep);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+  color: var(--sc-ink);
+  font-family: var(--sc-font-heading);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { font-size: clamp(1.75rem, 3.5vw, 2.5rem); }
+h3 { font-size: 1.375rem; }
+p { margin-top: 0; }
+
+::selection {
+  background: var(--sc-pink);
+  color: var(--sc-deep);
+}
+
+/* 3. Shared text helpers */
+.sc-muted { color: var(--sc-muted); }
+.sc-eyebrow {
+  margin: 0 0 var(--sc-space-3);
+  color: var(--sc-rose);
+  font-size: var(--sc-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.sc-page-title {
+  margin-bottom: var(--sc-space-2);
+  font-family: var(--sc-font-heading);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 500;
+}
+.sc-section-title {
+  margin-bottom: var(--sc-space-4);
+  font-family: var(--sc-font-heading);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 500;
+}
+
+/* 4. Buttons */
+.sc-btn {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sc-space-2);
+  padding: 0.7rem 1.1rem;
+  border: 1px solid transparent;
+  border-radius: var(--sc-radius-sm);
+  font-size: var(--sc-text-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  transition: background var(--sc-transition), border-color var(--sc-transition),
+    color var(--sc-transition), transform var(--sc-transition), box-shadow var(--sc-transition);
+}
+
+.sc-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.sc-btn:focus-visible,
+.sc-icon-btn:focus-visible {
+  outline: 2px solid var(--sc-rose);
+  outline-offset: 3px;
+}
+
+.sc-btn--primary {
+  background: var(--sc-deep);
+  color: #fff;
+}
+.sc-btn--primary:hover:not(:disabled) {
+  background: #803b52;
+  color: #fff;
+}
+
+.sc-btn--secondary {
+  border-color: #e9cbd4;
+  background: #fff8fa;
+  color: var(--sc-deep);
+}
+.sc-btn--secondary:hover:not(:disabled) {
+  border-color: var(--sc-rose);
+  background: var(--sc-pink);
+}
+
+.sc-btn--outline {
+  border-color: var(--sc-line);
+  background: #fff;
+  color: var(--sc-ink);
+}
+.sc-btn--outline:hover:not(:disabled) {
+  border-color: #d6a1af;
+  color: var(--sc-deep);
+}
+
+.sc-btn--danger {
+  background: var(--sc-danger);
+  color: #fff;
+}
+.sc-btn--danger:hover:not(:disabled) {
+  background: #982f3c;
+  color: #fff;
+}
+
+.sc-btn--sm { min-height: 34px; padding: 0.5rem 0.75rem; font-size: var(--sc-text-xs); }
+.sc-btn--lg { min-height: 48px; padding: 0.85rem 1.35rem; }
+.sc-btn--block { width: 100%; }
+
+.sc-icon-btn {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-radius-sm);
+  background: #fff;
+  color: var(--sc-muted);
+  transition: all var(--sc-transition);
+}
+.sc-icon-btn:hover { border-color: #e7bdc6; color: var(--sc-deep); }
+
+/* 5. Form controls */
+.sc-form { display: grid; gap: var(--sc-space-4); }
+.sc-form-field { display: grid; gap: 6px; }
+.sc-label {
+  color: #7d6871;
+  font-size: var(--sc-text-sm);
+  font-weight: 600;
+}
+.sc-required { color: var(--sc-danger); }
+
+.sc-input,
+.sc-select,
+.sc-textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-radius-sm);
+  outline: none;
+  background: #fff;
+  color: var(--sc-ink);
+  font-size: var(--sc-text-sm);
+  transition: border-color var(--sc-transition), box-shadow var(--sc-transition);
+}
+.sc-textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+.sc-input::placeholder,
+.sc-textarea::placeholder { color: #b3a4aa; }
+.sc-input:focus,
+.sc-select:focus,
+.sc-textarea:focus {
+  border-color: #d6a1af;
+  box-shadow: 0 0 0 3px rgba(198, 110, 131, 0.12);
+}
+.sc-input[aria-invalid="true"],
+.sc-select[aria-invalid="true"],
+.sc-textarea[aria-invalid="true"] {
+  border-color: var(--sc-danger);
+}
+.sc-help-text { color: var(--sc-muted); font-size: var(--sc-text-xs); }
+.sc-error-text { color: var(--sc-danger); font-size: var(--sc-text-xs); }
+
+/* 6. Cards and surfaces */
+.sc-card {
+  overflow: hidden;
+  border: var(--sc-border);
+  border-radius: var(--sc-radius-md);
+  background: #fff;
+  box-shadow: var(--sc-shadow-sm);
+}
+.sc-card__body { padding: var(--sc-space-4); }
+
+/* 7. Badges / order statuses */
+.sc-badge {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: var(--sc-radius-pill);
+  font-size: var(--sc-text-xs);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.sc-badge--success { background: var(--sc-success-bg); color: var(--sc-success); }
+.sc-badge--warning { background: var(--sc-warning-bg); color: var(--sc-warning); }
+.sc-badge--danger { background: var(--sc-danger-bg); color: var(--sc-danger); }
+.sc-badge--info { background: var(--sc-info-bg); color: var(--sc-info); }
+.sc-badge--neutral { background: #f4eff1; color: var(--sc-muted); }
+.sc-badge--pink { background: var(--sc-pink); color: var(--sc-deep); }
+
+/* 8. Modal */
+.sc-modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(44, 26, 35, 0.58);
+}
+.sc-modal {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: min(85vh, 760px);
+  overflow: auto;
+  padding: var(--sc-space-6);
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-radius-lg);
+  background: var(--sc-cream);
+  box-shadow: var(--sc-shadow-lg);
+}
+.sc-modal__title {
+  margin: 0 2rem var(--sc-space-3) 0;
+  font-family: var(--sc-font-heading);
+  font-size: var(--sc-text-xl);
+  font-weight: 500;
+}
+.sc-modal__content { color: var(--sc-muted); font-size: var(--sc-text-sm); line-height: 1.7; }
+.sc-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sc-space-2);
+  margin-top: var(--sc-space-5);
+}
+.sc-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sc-muted);
+  font-size: 1.5rem;
+}
+.sc-modal__close:hover { background: var(--sc-pink); color: var(--sc-deep); }
+
+/* 9. Toast */
+.sc-toast-container {
+  position: fixed;
+  z-index: 1100;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: min(360px, calc(100vw - 2rem));
+  gap: var(--sc-space-2);
+}
+.sc-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sc-space-3);
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--sc-line);
+  border-left: 4px solid var(--sc-rose);
+  border-radius: var(--sc-radius-md);
+  background: #fff;
+  box-shadow: var(--sc-shadow-md);
+  color: var(--sc-ink);
+  font-size: var(--sc-text-sm);
+}
+.sc-toast--success { border-left-color: var(--sc-success); }
+.sc-toast--warning { border-left-color: #d39a3c; }
+.sc-toast--error { border-left-color: var(--sc-danger); }
+.sc-toast__title { display: block; margin-bottom: 2px; font-weight: 700; }
+.sc-toast__message { color: var(--sc-muted); line-height: 1.5; }
+
+/* 10. Tables */
+.sc-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-radius-md);
+  background: #fff;
+}
+.sc-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--sc-ink);
+  font-size: var(--sc-text-sm);
+  text-align: left;
+}
+.sc-table th,
+.sc-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--sc-line);
+  vertical-align: middle;
+}
+.sc-table th {
+  background: #fff8fa;
+  color: var(--sc-deep);
+  font-size: var(--sc-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.sc-table tbody tr:last-child td { border-bottom: 0; }
+.sc-table tbody tr:hover { background: #fffafb; }
+
+/* 11. Loading and empty state */
+.sc-loading,
+.sc-empty-state {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  gap: var(--sc-space-2);
+  padding: var(--sc-space-6);
+  color: var(--sc-muted);
+  text-align: center;
+}
+.sc-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--sc-pink);
+  border-top-color: var(--sc-rose);
+  border-radius: 50%;
+  animation: sc-spin 0.8s linear infinite;
+}
+@keyframes sc-spin { to { transform: rotate(360deg); } }
+.sc-empty-state__title {
+  margin: 0;
+  color: var(--sc-ink);
+  font-family: var(--sc-font-heading);
+  font-size: var(--sc-text-lg);
+}
+
+/* 12. Pagination */
+.sc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--sc-space-5) 0;
+}
+.sc-pagination__item {
+  display: inline-grid;
+  min-width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0 0.65rem;
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-radius-sm);
+  background: #fff;
+  color: var(--sc-ink);
+  font-size: var(--sc-text-sm);
+}
+.sc-pagination__item:hover:not(:disabled),
+.sc-pagination__item.is-active {
+  border-color: var(--sc-deep);
+  background: var(--sc-deep);
+  color: #fff;
+}
+.sc-pagination__item:disabled { opacity: 0.45; }
+
+/* 13. Accessibility and responsive behavior */
+:focus-visible {
+  outline: 2px solid var(--sc-rose);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .sc-modal { padding: var(--sc-space-5) var(--sc-space-4); }
+  .sc-modal__actions { flex-direction: column-reverse; }
+  .sc-modal__actions .sc-btn { width: 100%; }
+  .sc-table { min-width: 620px; }
+  .sc-toast-container { top: 0.75rem; right: 0.75rem; }
+}

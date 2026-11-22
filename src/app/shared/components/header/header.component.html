@@ -1,0 +1,45 @@
+<header class="sc-header">
+  <div class="sc-header__inner">
+    <!-- LOGO -->
+    <a class="sc-header__brand" routerLink="/" aria-label="Sweet Cake - Trang chủ">
+      <span class="sc-header__brand-mark" aria-hidden="true">S</span>
+      <span class="sc-header__brand-text">
+        <strong>Sweet Cake</strong>
+        <small>Freshly baked with love</small>
+      </span>
+    </a>
+
+    <!-- NAVIGATION -->
+    <nav class="sc-header__nav" aria-label="Điều hướng chính">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Trang chủ</a>
+      <a routerLink="/products" routerLinkActive="is-active">Sản phẩm</a>
+      <a routerLink="/accessories" routerLinkActive="is-active">Phụ kiện</a>
+      <a routerLink="/orders" routerLinkActive="is-active">Đơn hàng</a>
+      <a routerLink="/gioi-thieu" routerLinkActive="is-active">Giới thiệu</a>
+      <a routerLink="/lien-he" routerLinkActive="is-active">Liên hệ</a>
+    </nav>
+
+    <!-- ACTIONS: THÔNG BÁO, GIỎ HÀNG, TÀI KHOẢN -->
+    <div class="sc-header__actions">
+      <!-- Thông báo -->
+      <a class="sc-header__icon-btn" routerLink="/thong-bao" aria-label="Thông báo" title="Thông báo">
+        <i class="bi bi-bell"></i>
+      </a>
+
+      <!-- Giỏ hàng kèm số lượng -->
+      <a class="sc-header__icon-btn sc-header__cart" routerLink="/cart" aria-label="Giỏ hàng" title="Giỏ hàng">
+        <i class="bi bi-cart"></i>
+        @if ((cartCount$ | async); as count) {
+          @if (count > 0) {
+            <span class="sc-header__cart-badge">{{ count }}</span>
+          }
+        }
+      </a>
+
+      <!-- Tài khoản / Đăng nhập -->
+      <a class="sc-header__icon-btn" routerLink="/quan-ly-tai-khoan" aria-label="Tài khoản" title="Tài khoản">
+        <i class="bi bi-person-circle"></i>
+      </a>
+    </div>
+  </div>
+</header>

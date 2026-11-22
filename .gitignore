@@ -102,3 +102,4 @@ git pull origin main --allow-unrelated-histories
 # Angular IDE
 .vscode-test/
 .history/
+.DS_Store
