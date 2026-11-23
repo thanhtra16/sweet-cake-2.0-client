@@ -1,3 +1,4 @@
+
 import { Routes } from '@angular/router';
 
 import { authGuard } from '../../core/guards/auth.guard';
@@ -53,6 +54,14 @@ export const BUYER_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/account/account.component')
         .then(m => m.AccountComponent)
+  },
+  {
+    path: 'thong-bao',
+    canActivate: [authGuard],
+    title: 'SweetCake - Thông báo',
+    loadComponent: () =>
+      import('./pages/notification/notification.component')
+        .then(m => m.NotificationComponent)
   },
   {
     path: 'menu',
