@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { interval, Subscription, switchMap, catchError, of } from 'rxjs';
-import { CheckoutApiService } from '../../../../../shared/services/checkout-api.service';
+import { CheckoutApiService } from '@core/services/checkout-api.service';
 
 @Component({ selector: 'app-payment-page', standalone: true, imports: [CommonModule], templateUrl: './payment.html', styleUrl: './payment.scss' })
 export class PaymentPage implements OnInit, OnDestroy {
