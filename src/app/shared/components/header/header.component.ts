@@ -1,100 +1,65 @@
 
-import {
-  Component,
-  HostListener,
-  OnInit,
-  inject
-} from '@angular/core';
-
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
-
-import { environment } from '../../../../environments/environment';
-
-interface Product {
-  id: number | string;
-  thumbnail: string;
-  name: string;
-  description: string;
-}
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink
-  ],
+  imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.css'
+  styleUrl: './header.component.css',
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent {
+  private readonly cartService = inject(CartService);
 
-  private http = inject(HttpClient);
+  readonly cartCount$ = this.cartService.totalItems$;
+  readonly cartItems$ = this.cartService.cartItems$;
 
-  isMenuOpen = false;
+  @Input() userName: string | null = null;
+  @Output() logout = new EventEmitter<void>();
 
-  products: Product[] = [];
+  isCartDrawerOpen = false;
 
-  readonly apiUrl = environment.apiUrl;
-
-  ngOnInit(): void {
-    this.loadProducts();
+  openCartDrawer(): void {
+    this.isCartDrawerOpen = true;
   }
 
-  // Mở hoặc đóng mega menu
-  toggleMenu(event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    this.isMenuOpen = !this.isMenuOpen;
+  closeCartDrawer(): void {
+    this.isCartDrawerOpen = false;
   }
 
-  // Đóng mega menu
-  closeMenu(): void {
-    this.isMenuOpen = false;
+  toggleCartDrawer(): void {
+    this.isCartDrawerOpen = !this.isCartDrawerOpen;
   }
 
-  // Click bên ngoài header thì đóng menu
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-
-    if (!target.closest('.site-header')) {
-      this.closeMenu();
-    }
-  }
-
-  // Lấy danh sách sản phẩm nổi bật
-  loadProducts(): void {
-    this.http
-      .get<Product[]>(`${this.apiUrl}/products`)
-      .subscribe({
-        next: (data) => {
-          this.products = Array.isArray(data)
-            ? data.slice(0, 6)
-            : [];
-        },
-        error: (error) => {
-          console.error(
-            'Lỗi khi kết nối hoặc tải sản phẩm:',
-            error
-          );
-
-          this.products = [];
-        }
-      });
-  }
-
-  // Giới hạn mô tả sản phẩm
-  getShortDescription(description: string): string {
-    if (!description) {
-      return '';
+  increaseQuantity(itemId: string, currentQuantity: number): void {
+    if (currentQuantity >= 10) {
+      return;
     }
 
-    return description.length > 55
-      ? description.substring(0, 55) + '...'
-      : description;
+    this.cartService.updateQuantity(itemId, currentQuantity + 1);
+  }
+
+  decreaseQuantity(itemId: string, currentQuantity: number): void {
+    if (currentQuantity <= 1) {
+      return;
+    }
+
+    this.cartService.updateQuantity(itemId, currentQuantity - 1);
+  }
+
+  removeItem(itemId: string): void {
+    this.cartService.removeItem(itemId);
+  }
+
+  getSubtotal(
+    items: { unitPrice: number; quantity: number }[]
+  ): number {
+    return items.reduce(
+      (total, item) => total + item.unitPrice * item.quantity,
+      0
+    );
   }
 }

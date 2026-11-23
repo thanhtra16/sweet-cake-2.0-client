@@ -2,8 +2,16 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
   {
-    // Trang FAQ lấy dữ liệu từ API Backend nên render ở trình duyệt, không prerender lúc build
     path: 'faq',
+    renderMode: RenderMode.Client,
+  },
+    {
+    // Blog lấy dữ liệu từ API Backend (Mongo) nên render ở trình duyệt, không prerender lúc build
+    path: 'blog',
+    renderMode: RenderMode.Client
+  },
+  {
+    path: 'blog/:id',
     renderMode: RenderMode.Client
   },
   {
@@ -31,7 +39,25 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    path: 'product/:id',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'checkout',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'payment/:orderId',
+    renderMode: RenderMode.Client,
+  },
+    // Khu vực Admin cần đăng nhập, không prerender
+  { path: 'admin/**', renderMode: RenderMode.Client },
+
+  // Route Buyer có tham số :id (lỗi có sẵn từ trước)
+  { path: 'orders/:id', renderMode: RenderMode.Client },
+  
+  {
     path: '**',
-    renderMode: RenderMode.Prerender
-  }
+    renderMode: RenderMode.Prerender,
+  },
 ];

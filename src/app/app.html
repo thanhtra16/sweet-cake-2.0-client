@@ -1,11 +1,3 @@
-@if (!isAdminArea()) {
-  <app-header></app-header>
-}
-
 <main class="main-content">
   <router-outlet></router-outlet>
 </main>
-
-@if (!isAdminArea()) {
-  <app-footer></app-footer>
-}

@@ -1,21 +1,33 @@
-
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 export const adminGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
+  const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (!auth.isLoggedIn()) {
-    return router.createUrlTree(['/auth/login']);
+  // Chưa đăng nhập
+  if (!authService.isLoggedIn()) {
+    return router.createUrlTree(['/admin/login']);
   }
 
-  const user = auth.getStoredUser();
+  // Kiểm tra thông tin tài khoản từ backend
+  return authService.getMe().pipe(
+    map((user) => {
+      if (user.role === 'admin') {
+        return true;
+      }
 
-  if (user?.role !== 'admin') {
-    return router.createUrlTree(['/']);
-  }
+      // Đã đăng nhập nhưng không có quyền Admin
+      authService.logout();
+      return router.createUrlTree(['/admin/login']);
+    }),
 
-  return true;
+    catchError(() => {
+      // Token không hợp lệ hoặc phiên đăng nhập hết hạn
+      authService.logout();
+      return of(router.createUrlTree(['/admin/login']));
+    })
+  );
 };

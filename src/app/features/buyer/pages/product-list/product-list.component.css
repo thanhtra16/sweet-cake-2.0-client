@@ -1,9 +1,3 @@
-
-/* =========================================================
-   PRODUCT LIST PAGE - CSS riêng của trang danh sách sản phẩm
-   Không gộp vào styles.css. Dùng token/class của design system.
-   ========================================================= */
-
 :host {
   display: block;
 }

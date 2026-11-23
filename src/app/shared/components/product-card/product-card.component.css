@@ -1,8 +1,3 @@
-/* =========================================================
-   PRODUCT CARD - CSS riêng của component product-card
-   Chỉ dùng token và class từ styles.css (design system).
-   ========================================================= */
-
 :host {
   display: block;
 }

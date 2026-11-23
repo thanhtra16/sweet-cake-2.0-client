@@ -10,10 +10,13 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
-import { Product } from '../../../../shared/models/product.model';
-import { ProductService } from '../../../../core/services/product.service';
-import { CartService } from '../../../../core/services/cart.service';
-import { ProductCardComponent } from '../../../../shared/components/product-card/product-card.component';
+import { Product } from '@shared/models/product.model';
+import { ProductService } from '@core/services/product.service';
+import { CartService } from '@shared/services/cart.service';
+import {
+  BuyerProduct,
+  ProductCardComponent
+} from '@shared/components/product-card/product-card.component';
 
 interface Commitment {
   icon: string;
@@ -102,8 +105,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.startAutoplay();
   }
 
-  onAddToCart(product: Product): void {
-    this.cart.add(product);
+  async onAddToCart(product: BuyerProduct): Promise<void> {
+    const productId = String(product._id ?? product.id ?? '');
+    await this.cart.addItem({
+      productId,
+      productName: product.name,
+      productKind: product.kind ?? 'cake',
+      imageUrl: product.image ?? product.thumbnail ?? null,
+      unitPrice: Number(product.price ?? 0),
+      customization: null,
+      accessories: [],
+    });
   }
 
   private goTo(index: number): void {
