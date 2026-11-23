@@ -2,35 +2,44 @@
   <div class="product-card__media">
     <a
       class="product-card__image-link"
-      [routerLink]="['/chi-tiet', product().id]"
-      [attr.aria-label]="'Xem chi tiết ' + product().name"
+      [routerLink]="['/product', productId]"
+      (click)="onViewDetail()"
+      [attr.aria-label]="'Xem chi tiết ' + product.name"
     >
-      @if (product().bestSeller) {
+      @if (product.bestSeller) {
         <span class="sc-badge sc-badge--pink product-card__badge">Bán chạy</span>
       }
 
       <img
         class="product-card__image"
-        [src]="product().thumbnail"
-        [alt]="product().name"
+        [src]="productImage"
+        [alt]="product.name"
         loading="lazy"
       />
     </a>
 
-    <div class="product-card__overlay">
-      <button type="button" class="sc-btn sc-btn--primary product-card__action" (click)="onAddToCart()">
-        <i class="bi bi-cart-plus" aria-hidden="true"></i>
-        Thêm vào giỏ
-      </button>
-    </div>
+    @if (showAddToCart) {
+      <div class="product-card__overlay">
+        <button
+          type="button"
+          class="sc-btn sc-btn--primary product-card__action"
+          (click)="onAddToCart()"
+        >
+          <i class="fa-solid fa-cart-plus" aria-hidden="true"></i>
+          Thêm vào giỏ
+        </button>
+      </div>
+    }
   </div>
 
   <div class="product-card__info">
     <h3 class="product-card__name">
-      <a [routerLink]="['/chi-tiet', product().id]">{{ product().name }}</a>
+      <a [routerLink]="['/product', productId]" (click)="onViewDetail()">
+        {{ product.name }}
+      </a>
     </h3>
     <p class="product-card__price">
-      {{ formatPrice(product().price) }}
+      {{ product.price | vnd }}
     </p>
   </div>
 </article>

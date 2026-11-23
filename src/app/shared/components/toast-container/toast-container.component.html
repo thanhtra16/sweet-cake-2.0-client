@@ -1,0 +1,11 @@
+<div class="sc-toast-container" aria-live="polite" aria-atomic="false">
+  <article *ngFor="let toast of (toasts$ | async)" class="sc-toast"
+    [ngClass]="'sc-toast--' + toast.type">
+    <div class="sc-toast__body">
+      <strong class="sc-toast__title">{{ toast.title }}</strong>
+      <p class="sc-toast__message">{{ toast.message }}</p>
+    </div>
+    <button type="button" class="sc-toast__close" aria-label="Đóng thông báo"
+      (click)="dismiss(toast.id)">×</button>
+  </article>
+</div>

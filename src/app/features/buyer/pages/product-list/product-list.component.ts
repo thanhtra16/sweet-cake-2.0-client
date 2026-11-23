@@ -9,8 +9,8 @@ import {
 
 import { Product } from '../../../../shared/models/product.model';
 import { ProductService } from '../../../../core/services/product.service';
-import { CartService } from '../../../../core/services/cart.service';
-import { ProductCardComponent } from '../../../../shared/components/product-card/product-card.component';
+import { CartService } from '../../../../shared/services/cart.service';
+import { BuyerProduct, ProductCardComponent } from '../../../../shared/components/product-card/product-card.component';
 
 type FilterKey = 'occasion' | 'filling' | 'cakeType' | 'price';
 type SortMode = 'newest' | 'price-asc' | 'price-desc';
@@ -177,11 +177,11 @@ export class ProductListComponent implements OnInit {
 
   readonly toastMessage = signal('');
   private toastTimer?: ReturnType<typeof setTimeout>;
-//   --
-    selectSort(mode: SortMode): void {
+  //   --
+  selectSort(mode: SortMode): void {
     this.sortMode.set(mode);
     this.currentPage.set(1);
-    }
+  }
 
   // ---------- Filter products ----------
 
@@ -239,8 +239,8 @@ export class ProductListComponent implements OnInit {
         return [...result].sort(
           (a, b) => b.price - a.price
         );
-    default:
-    return result;
+      default:
+        return result;
     }
   });
 
@@ -373,11 +373,22 @@ export class ProductListComponent implements OnInit {
 
   // ---------- Cart ----------
 
-  onAddToCart(product: Product): void {
-    this.cart.add(product);
+  async onAddToCart(product: BuyerProduct): Promise<void> {
+    const productId = String(product._id ?? product.id ?? '');
+    const added = await this.cart.addItem({
+      productId,
+      productName: product.name,
+      productKind: product.kind ?? 'cake',
+      imageUrl: product.image ?? product.thumbnail ?? null,
+      unitPrice: Number(product.price ?? 0),
+      customization: null,
+      accessories: [],
+    });
 
     this.toastMessage.set(
-      `Đã thêm "${product.name}" vào giỏ hàng`
+      added
+        ? `Đã thêm "${product.name}" vào giỏ hàng`
+        : `Sản phẩm "${product.name}" đã đạt số lượng tối đa trong giỏ`
     );
 
     clearTimeout(this.toastTimer);
@@ -386,18 +397,14 @@ export class ProductListComponent implements OnInit {
       this.toastMessage.set('');
     }, 2500);
   }
-
-  // ---------- Helpers ----------
-
+  
   private matches(selected: string[], value: string): boolean {
     if (selected.length === 0) {
       return true;
     }
 
-    const normalizedValue = normalizeValue(value);
+    const parts = value.split(',').map((part) => normalizeValue(part));
 
-    return selected.some(
-      (item) => normalizeValue(item) === normalizedValue
-    );
+    return selected.some((item) => parts.includes(normalizeValue(item)));
   }
 }
