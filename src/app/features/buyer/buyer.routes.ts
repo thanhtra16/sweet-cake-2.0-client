@@ -79,26 +79,26 @@ export const BUYER_ROUTES: Routes = [
       {
         path: 'product/:id',
         loadComponent: () =>
-          import('./product/pages/product-detail/product-detail').then(
+          import('./pages/product-detail/product-detail').then(
             (m) => m.ProductDetail
           ),
       },
       {
         path: 'cart',
         loadComponent: () =>
-          import('./cart/pages/cart/cart').then((m) => m.Cart),
+          import('./pages/cart/cart').then((m) => m.Cart),
       },
       {
         path: 'checkout',
         loadComponent: () =>
-          import('./checkout/pages/checkout/checkout').then(
+          import('./pages/checkout/checkout').then(
             (m) => m.CheckoutPage
           ),
       },
       {
         path: 'payment/:orderId',
         loadComponent: () =>
-          import('./payment/pages/payment/payment').then(
+          import('./pages/payment/payment').then(
             (m) => m.PaymentPage
           ),
       },

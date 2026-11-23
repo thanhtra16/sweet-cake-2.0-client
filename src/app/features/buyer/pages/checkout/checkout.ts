@@ -3,8 +3,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
-import { CheckoutApiService } from '../../../../../shared/services/checkout-api.service';
-import { CreateOrderRequest, OrderQuote, PublicSettings, TimeSlot } from '../../../../../shared/models/checkout.model';
+import { CheckoutApiService } from '@core/services/checkout-api.service';
+import { CreateOrderRequest, OrderQuote, PublicSettings, TimeSlot } from '@shared/models/checkout.model';
 
 @Component({ selector: 'app-checkout-page', standalone: true, imports: [CommonModule, FormsModule], templateUrl: './checkout.html', styleUrl: './checkout.scss' })
 export class CheckoutPage implements OnInit {
