@@ -1,0 +1,33 @@
+<div class="sc-modal-backdrop" (click)="!busy() && cancelled.emit()">
+  <div class="sc-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title"
+       (click)="$event.stopPropagation()">
+    <button type="button" class="sc-modal__close" aria-label="Đóng" [disabled]="busy()"
+            (click)="cancelled.emit()">&times;</button>
+
+    <h3 id="confirm-title" class="sc-modal__title">{{ title() }}</h3>
+    <div class="sc-modal__content">
+      <p>{{ message() }}</p>
+      @if (askReason()) {
+        <div class="sc-form-field confirm-reason">
+          <label class="sc-label" for="confirm-reason">Lý do (không bắt buộc)</label>
+          <textarea id="confirm-reason" class="sc-textarea" maxlength="200" rows="3"
+                    placeholder="Ví dụ: Nhiều lần hủy đơn sát giờ nhận bánh…"
+                    [value]="reason()" (input)="onReasonInput($event)"></textarea>
+          <span class="sc-help-text">{{ reason().length }}/200 ký tự</span>
+        </div>
+      }
+    </div>
+
+    <div class="sc-modal__actions">
+      <button type="button" class="sc-btn sc-btn--outline" [disabled]="busy()" (click)="cancelled.emit()">
+        {{ cancelLabel() }}
+      </button>
+      <button type="button" class="sc-btn"
+              [class.sc-btn--danger]="danger()" [class.sc-btn--primary]="!danger()"
+              [disabled]="busy()" (click)="confirm()">
+        @if (busy()) { <span class="confirm-spinner" aria-hidden="true"></span> }
+        {{ confirmLabel() }}
+      </button>
+    </div>
+  </div>
+</div>
