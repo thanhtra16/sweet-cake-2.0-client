@@ -8,8 +8,8 @@ import { environment } from '../../../environments/environment';
 import {
   ApiResponse,
   UserAccount,
+  UserListData,
   UserListQuery,
-  UserListResponse,
   UserStatus,
 } from '../../shared/models/user.model';
 
@@ -24,7 +24,7 @@ export class AdminUserService {
   /**
    * Lấy danh sách người dùng
    */
-  list(query: UserListQuery): Observable<UserListResponse> {
+  list(query: UserListQuery): Observable<UserListData> {
     let params = new HttpParams();
 
     if (query.search?.trim()) {
@@ -44,7 +44,7 @@ export class AdminUserService {
     }
 
     return this.http
-      .get<ApiResponse<UserListResponse>>(this.baseUrl, { params })
+      .get<ApiResponse<UserListData>>(this.baseUrl, { params })
       .pipe(map((res) => res.data));
   }
 

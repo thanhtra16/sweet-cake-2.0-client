@@ -127,6 +127,7 @@ export class UserManagement implements OnInit, OnDestroy {
     const { page, totalPages } = this.pagination();
 
     const safeTotalPages = Math.max(1, totalPages);
+
     const safePage = Math.min(
       Math.max(1, page),
       safeTotalPages
@@ -137,7 +138,10 @@ export class UserManagement implements OnInit, OnDestroy {
       Math.min(safePage - 2, safeTotalPages - 4)
     );
 
-    const end = Math.min(safeTotalPages, start + 4);
+    const end = Math.min(
+      safeTotalPages,
+      start + 4
+    );
 
     return Array.from(
       { length: end - start + 1 },
@@ -259,27 +263,38 @@ export class UserManagement implements OnInit, OnDestroy {
     this.api.list({
       page: this.page,
       limit: this.limit,
-      search: this.search,
+      search: this.search.trim(),
       status: this.status,
       sort: this.sort,
     }).subscribe({
       next: (res) => {
         try {
-          const items = Array.isArray(res?.items)
-            ? res.items
+          // Service đã map res.data nên đọc trực tiếp res.users
+          const users = Array.isArray(res?.users)
+            ? res.users
             : [];
 
+          // Chuyển đổi dữ liệu API thành Customer
           this.customers.set(
-            items.map(user => this.toCustomer(user))
+            users.map(user => this.toCustomer(user))
           );
-          // Cập nhật thống kê khách hàng từ Backend
-          this.stats.set({
-            total: Number(res?.stats?.total ?? 0),
-            active: Number(res?.stats?.active ?? 0),
-            locked: Number(res?.stats?.locked ?? 0),
-            newThisMonth: Number(res?.stats?.newThisMonth ?? 0),
-          });          
 
+          // Cập nhật thống kê
+          // Backend hiện chưa trả stats nên dùng giá trị mặc định
+          const apiStats = res?.stats;
+
+          this.stats.set({
+            total: Number(
+              apiStats?.total ?? res?.pagination?.total ?? 0
+            ),
+            active: Number(apiStats?.active ?? 0),
+            locked: Number(apiStats?.locked ?? 0),
+            newThisMonth: Number(
+              apiStats?.newThisMonth ?? 0
+            ),
+          });
+
+          // Cập nhật phân trang
           const apiPagination = res?.pagination;
 
           const currentPage = Number(
@@ -291,7 +306,7 @@ export class UserManagement implements OnInit, OnDestroy {
           );
 
           const total = Number(
-            apiPagination?.total ?? items.length
+            apiPagination?.total ?? users.length
           );
 
           const totalPages = Number(
@@ -317,7 +332,11 @@ export class UserManagement implements OnInit, OnDestroy {
               : 1,
           });
 
+          // Đồng bộ page hiện tại
+          this.page = this.pagination().page;
+
           this.loading.set(false);
+
         } catch (error) {
           this.loading.set(false);
           this.customers.set([]);
@@ -462,8 +481,9 @@ export class UserManagement implements OnInit, OnDestroy {
 
           this.showToast('success', successMsg);
 
-          // Tải lại để đồng bộ dữ liệu và thống kê
+          // Tải lại để đồng bộ danh sách và thống kê
           this.load();
+
         } catch (error) {
           this.showToast(
             'error',

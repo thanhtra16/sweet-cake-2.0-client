@@ -58,13 +58,15 @@ export type UserSort = 'newest' | 'oldest' | 'name';
 
 /** Tài khoản người dùng trả về từ API quản trị */
 export interface UserAccount {
-  id?: string;
+  id: string;
   _id?: string;
   fullName: string;
   phone: string;
   email: string | null;
+  birthday?: string | null;
   role: string;
   isLocked: boolean;
+  origin?: string;
   createdAt: string | null;
 }
 
@@ -93,11 +95,18 @@ export interface CustomerStats {
   newThisMonth: number;
 }
 
-/** Dữ liệu danh sách */
-export interface UserListResponse {
-  items: UserAccount[];
+/** Dữ liệu danh sách khách hàng từ Backend */
+export interface UserListData {
+  users: UserAccount[];
   pagination: Pagination;
-  stats: CustomerStats;
+  stats?: CustomerStats;
+}
+
+/** Response danh sách khách hàng */
+export interface UserListResponse {
+  success: boolean;
+  message?: string;
+  data: UserListData;
 }
 
 /** Response chung từ Backend */
