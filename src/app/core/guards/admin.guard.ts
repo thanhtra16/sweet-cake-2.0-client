@@ -14,7 +14,7 @@ export const adminGuard: CanActivateFn = () => {
 
   // Kiểm tra thông tin tài khoản từ backend
   return authService.getMe().pipe(
-    map(user => {
+    map((user) => {
       if (user.role === 'admin') {
         return true;
       }

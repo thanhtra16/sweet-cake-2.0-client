@@ -1,0 +1,33 @@
+/* 12. Pagination */
+.sc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--sc-space-5) 0;
+}
+.sc-pagination__item {
+  display: inline-grid;
+  min-width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0 0.65rem;
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-radius-sm);
+  background: #fff;
+  color: var(--sc-ink);
+  font-size: var(--sc-text-sm);
+}
+.sc-pagination__item:hover:not(:disabled),
+.sc-pagination__item.is-active {
+  border-color: var(--sc-deep);
+  background: var(--sc-deep);
+  color: #fff;
+}
+.sc-pagination__item:disabled { opacity: 0.45; }
+
+/* Bổ sung riêng cho pagination */
+.sc-pagination__gap { padding: 0 4px; color: var(--sc-muted); }
+.sc-pagination__item { cursor: pointer; }
+.sc-pagination__item:disabled { cursor: not-allowed; }
