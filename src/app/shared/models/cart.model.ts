@@ -26,7 +26,12 @@ export interface CartItem {
   // Cấu hình bánh; null nếu sản phẩm không phải bánh.
   customization: CakeCustomization | null;
 
-  // Lưu thông tin phụ kiện và biến thể đã chọn.
+  // Biến thể của chính sản phẩm đang mua.
+  // Chủ yếu dùng cho phụ kiện mua riêng.
+  variantId?: string | null;
+  variantLabel?: string | null;
+
+  // Các phụ kiện đi kèm bánh.
   accessories: CartAccessory[];
 
   // Khóa dùng để nhận diện các sản phẩm có cùng cấu hình.

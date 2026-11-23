@@ -1,5 +1,7 @@
+
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
   DestroyRef,
   EventEmitter,
@@ -78,10 +80,8 @@ type CakeCustomizerForm = FormGroup<{
   templateUrl: './cake-customizer.html',
   styleUrl: './cake-customizer.scss',
 })
-export class CakeCustomizer implements OnInit, OnChanges {
-  // ========================================
-  // INPUTS
-  // ========================================
+export class CakeCustomizer
+  implements OnInit, OnChanges, AfterViewInit {
 
   @Input() basePrice = 0;
   @Input() promotionPrice: number | null = null;
@@ -89,36 +89,21 @@ export class CakeCustomizer implements OnInit, OnChanges {
 
   @Input() accessoryOptions: AccessoryOption[] = [];
 
-  // Cấu hình lấy từ GET /api/products/customization
   @Input() customizationConfig: ProductCustomization | null = null;
 
-  // Các lựa chọn riêng của sản phẩm
   @Input() productAvailableSizes: string[] = [];
   @Input() productAvailableFillings: string[] = [];
-
-  // ========================================
-  // OUTPUT
-  // ========================================
 
   @Output() customizationChange =
     new EventEmitter<CakeCustomization>();
 
-  // ========================================
-  // REACTIVE FORM
-  // ========================================
-
   readonly form: CakeCustomizerForm;
-
-  // ========================================
-  // PRICE AND MESSAGE STATE
-  // ========================================
 
   maxMessageLength = 30;
   sizeSurcharge = 0;
   accessoryTotal = 0;
   estimatedPrice = 0;
 
-  // Lưu variant ID theo từng accessory ID
   selectedAccessoryVariants: Record<string, string> = {};
 
   constructor(
@@ -140,7 +125,6 @@ export class CakeCustomizer implements OnInit, OnChanges {
   // CONFIGURATION OPTIONS
   // ========================================
 
-  // Chỉ lấy kích thước đang hoạt động và sản phẩm hỗ trợ
   get sizeOptions(): CakeSizeOption[] {
     const configuredSizes = this.customizationConfig?.sizes ?? [];
 
@@ -161,7 +145,6 @@ export class CakeCustomizer implements OnInit, OnChanges {
       .map(option => option.name);
   }
 
-  // Chỉ hiển thị nhân bánh có trong availableFillings của sản phẩm
   get fillingOptions(): string[] {
     const configuredFillings =
       this.customizationConfig?.fillings ?? [];
@@ -190,7 +173,6 @@ export class CakeCustomizer implements OnInit, OnChanges {
       }));
   }
 
-  // Ánh xạ tên màu từ Backend thành màu CSS để hiển thị
   private getFrostingColor(name: string): string {
     const colors: Record<string, string> = {
       'Trắng': '#fffaf7',
@@ -220,6 +202,10 @@ export class CakeCustomizer implements OnInit, OnChanges {
         this.calculatePrice();
         this.emitCustomization();
       });
+
+    if (this.customizationConfig) {
+      this.syncConfigurationToForm();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -242,8 +228,28 @@ export class CakeCustomizer implements OnInit, OnChanges {
     }
   }
 
-  // Chọn giá trị mặc định hợp lệ sau khi API trả cấu hình
+  /**
+   * Phát cấu hình mặc định sau khi view đã được khởi tạo.
+   * Giúp ProductDetail nhận được dữ liệu ngay khi mở trang,
+   * không cần khách hàng phải bấm chọn một tùy chọn.
+   */
+  ngAfterViewInit(): void {
+    if (!this.customizationConfig) {
+      return;
+    }
+
+    this.syncConfigurationToForm();
+  }
+
+  // ========================================
+  // SYNC CONFIGURATION
+  // ========================================
+
   private syncConfigurationToForm(): void {
+    if (!this.customizationConfig) {
+      return;
+    }
+
     const sizeOptions = this.sizeOptions;
     const baseOptions = this.baseOptions;
     const fillingOptions = this.fillingOptions;
@@ -275,27 +281,27 @@ export class CakeCustomizer implements OnInit, OnChanges {
     this.form.patchValue(
       {
         size: getDefault(
-          config?.sizes ?? [],
+          config.sizes ?? [],
           sizeOptions.map(option => option.name),
           current.size
         ),
         base: getDefault(
-          config?.bases ?? [],
+          config.bases ?? [],
           baseOptions,
           current.base
         ),
         filling: getDefault(
-          config?.fillings ?? [],
+          config.fillings ?? [],
           fillingOptions,
           current.filling
         ),
         frostingColor: getDefault(
-          config?.frostingColors ?? [],
+          config.frostingColors ?? [],
           frostingOptions.map(option => option.name),
           current.frostingColor
         ),
         sweetness: getDefault(
-          config?.sweetnessLevels ?? [],
+          config.sweetnessLevels ?? [],
           sweetnessOptions.map(option => option.value),
           current.sweetness
         ),
@@ -417,7 +423,6 @@ export class CakeCustomizer implements OnInit, OnChanges {
       ? (current.includes(id) ? current : [...current, id])
       : current.filter(item => item !== id);
 
-    // Nếu bỏ chọn phụ kiện thì xóa luôn biến thể đã chọn
     if (!checked) {
       const nextVariants = { ...this.selectedAccessoryVariants };
       delete nextVariants[id];
@@ -428,7 +433,6 @@ export class CakeCustomizer implements OnInit, OnChanges {
     this.form.controls.accessories.setValue(next);
   }
 
-  // Chọn biến thể phụ kiện
   onAccessoryVariantChange(
     accessoryId: string,
     variantId: string

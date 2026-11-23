@@ -1,3 +1,4 @@
+
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
@@ -17,6 +18,8 @@ export interface AddCartItemInput {
   unitPrice: number;
   customization: CakeCustomization | null;
   accessories: CartItem['accessories'];
+  variantId?: string | null;
+  variantLabel?: string | null;
 }
 
 @Injectable({
@@ -58,11 +61,6 @@ export class CartService {
     );
   }
 
-  /**
-   * Thêm sản phẩm vào giỏ.
-   * Trả về false nếu dữ liệu không hợp lệ hoặc dòng sản phẩm
-   * đã đạt giới hạn 10 sản phẩm.
-   */
   addItem(input: AddCartItemInput): boolean {
     if (
       !input.productId ||
@@ -78,8 +76,15 @@ export class CartService {
       input.customization
     );
 
+    const normalizedInput: AddCartItemInput = {
+      ...input,
+      variantId: input.variantId ?? null,
+      variantLabel: input.variantLabel ?? null,
+      accessories: normalizedAccessories,
+    };
+
     const configurationKey = this.createConfigurationKey(
-      input,
+      normalizedInput,
       normalizedAccessories
     );
 
@@ -87,7 +92,7 @@ export class CartService {
 
     const existingIndex = currentItems.findIndex(
       item =>
-        item.productId === input.productId &&
+        item.productId === normalizedInput.productId &&
         item.configurationKey === configurationKey
     );
 
@@ -104,22 +109,29 @@ export class CartService {
       };
     } else {
       const newItem: CartItem = {
-        id: `${input.productId}-${Date.now()}`,
-        productId: input.productId,
-        productName: input.productName,
-        productKind: input.productKind,
-        imageUrl: input.imageUrl,
-        unitPrice: Math.round(input.unitPrice),
+        id: this.createItemId(normalizedInput.productId),
+        productId: normalizedInput.productId,
+        productName: normalizedInput.productName,
+        productKind: normalizedInput.productKind,
+        imageUrl: normalizedInput.imageUrl,
+        unitPrice: Math.round(normalizedInput.unitPrice),
         quantity: 1,
-        customization: input.customization
+
+        customization: normalizedInput.customization
           ? {
-              ...input.customization,
-              accessories: [...input.customization.accessories],
+              ...normalizedInput.customization,
+              accessories: [
+                ...normalizedInput.customization.accessories,
+              ],
               accessoryVariants: {
-                ...input.customization.accessoryVariants,
+                ...normalizedInput.customization.accessoryVariants,
               },
             }
           : null,
+
+        variantId: normalizedInput.variantId ?? null,
+        variantLabel: normalizedInput.variantLabel ?? null,
+
         accessories: normalizedAccessories,
         configurationKey,
       };
@@ -131,15 +143,17 @@ export class CartService {
     return true;
   }
 
-  /**
-   * Chuẩn hóa phụ kiện trước khi lưu.
-   * Nếu phụ kiện chưa có variantId thì lấy từ cấu hình bánh.
-   */
+  private createItemId(productId: string): string {
+    return `${productId}-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+  }
+
   private normalizeAccessories(
     accessories: CartItem['accessories'],
     customization: CakeCustomization | null
   ): CartItem['accessories'] {
-    return accessories.map(accessory => {
+    return (accessories ?? []).map(accessory => {
       const variantId =
         accessory.variantId ||
         customization?.accessoryVariants?.[accessory.id] ||
@@ -153,10 +167,6 @@ export class CartService {
     });
   }
 
-  /**
-   * Cập nhật số lượng một dòng sản phẩm.
-   * Số lượng hợp lệ từ 1 đến 10.
-   */
   updateQuantity(itemId: string, quantity: number): void {
     if (!Number.isFinite(quantity)) {
       return;
@@ -188,39 +198,53 @@ export class CartService {
 
   /**
    * Tạo khóa cấu hình.
-   * Hai dòng chỉ được gộp khi có cùng cấu hình bánh,
-   * cùng phụ kiện và cùng biến thể phụ kiện.
+   * Giữ thứ tự thuộc tính tương thích với khóa cũ.
    */
   private createConfigurationKey(
-    input: AddCartItemInput,
-    accessories: CartItem['accessories']
-  ): string {
-    const customization = input.customization;
+  input: AddCartItemInput,
+  accessories: CartItem['accessories']
+): string {
+  const customization = input.customization;
 
-    const sortedAccessories = accessories
-      .map(accessory => ({
-        id: accessory.id,
-        variantId: accessory.variantId ?? null,
-      }))
-      .sort((a, b) => a.id.localeCompare(b.id));
+  const sortedAccessories = accessories
+    .map(accessory => ({
+      id: accessory.id,
+      variantId: accessory.variantId ?? null,
+    }))
+    .sort((a, b) => {
+      const idCompare = a.id.localeCompare(b.id);
 
-    if (!customization) {
-      return JSON.stringify({
-        customization: null,
-        accessories: sortedAccessories,
-      });
-    }
+      if (idCompare !== 0) {
+        return idCompare;
+      }
 
-    return JSON.stringify({
-      size: customization.size,
-      base: customization.base,
-      filling: customization.filling,
-      frostingColor: customization.frostingColor,
-      sweetness: customization.sweetness,
-      message: customization.message.trim(),
-      accessories: sortedAccessories,
+      return (a.variantId ?? '').localeCompare(
+        b.variantId ?? ''
+      );
     });
+
+  const configuration: Record<string, unknown> = {
+    customization: null,
+    accessories: sortedAccessories,
+  };
+
+  if (customization) {
+    configuration['size'] = customization.size;
+    configuration['base'] = customization.base;
+    configuration['filling'] = customization.filling;
+    configuration['frostingColor'] = customization.frostingColor;
+    configuration['sweetness'] = customization.sweetness;
+    configuration['message'] = customization.message.trim();
+
+    delete configuration['customization'];
   }
+
+  if (input.variantId) {
+    configuration['variantId'] = input.variantId;
+  }
+
+  return JSON.stringify(configuration);
+}
 
   private updateCart(items: CartItem[]): void {
     this.cartSubject.next(items);
@@ -253,24 +277,66 @@ export class CartService {
           typeof item.productId === 'string' &&
           typeof item.productName === 'string' &&
           typeof item.unitPrice === 'number' &&
+          Number.isFinite(item.unitPrice) &&
           typeof item.quantity === 'number' &&
+          Number.isInteger(item.quantity) &&
           item.quantity >= 1 &&
           item.quantity <= MAX_QUANTITY_PER_ITEM
       );
 
-      // Tương thích với giỏ hàng cũ chưa có thông tin biến thể.
-      const normalizedItems = validItems.map(item => ({
-        ...item,
-        accessories: Array.isArray(item.accessories)
+      const normalizedItems = validItems.map(item => {
+        const normalizedAccessories = Array.isArray(item.accessories)
           ? item.accessories.map(accessory => ({
               ...accessory,
               variantId: accessory.variantId ?? null,
               variantLabel: accessory.variantLabel ?? null,
             }))
-          : [],
-      }));
+          : [];
+
+        const normalizedItem: CartItem = {
+          ...item,
+          variantId: item.variantId ?? null,
+          variantLabel: item.variantLabel ?? null,
+
+          customization: item.customization
+            ? {
+                ...item.customization,
+                accessories: [
+                  ...(item.customization.accessories ?? []),
+                ],
+                accessoryVariants: {
+                  ...(item.customization.accessoryVariants ?? {}),
+                },
+              }
+            : null,
+
+          accessories: normalizedAccessories,
+
+          configurationKey:
+            typeof item.configurationKey === 'string' &&
+            item.configurationKey.length > 0
+              ? item.configurationKey
+              : this.createConfigurationKey(
+                  {
+                    productId: item.productId,
+                    productName: item.productName,
+                    productKind: item.productKind,
+                    imageUrl: item.imageUrl ?? null,
+                    unitPrice: item.unitPrice,
+                    customization: item.customization ?? null,
+                    accessories: normalizedAccessories,
+                    variantId: item.variantId ?? null,
+                    variantLabel: item.variantLabel ?? null,
+                  },
+                  normalizedAccessories
+                ),
+        };
+
+        return normalizedItem;
+      });
 
       this.cartSubject.next(normalizedItems);
+      this.saveCart(normalizedItems);
     } catch (error) {
       console.error('[CartService] Không thể đọc giỏ hàng:', error);
       this.cartSubject.next([]);

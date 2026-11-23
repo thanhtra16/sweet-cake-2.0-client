@@ -1,3 +1,4 @@
+
 import { CommonModule, Location } from '@angular/common';
 import { Component, inject, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -28,6 +29,7 @@ export class Cart implements OnDestroy {
   private readonly location = inject(Location);
 
   private quoteSubscription?: Subscription;
+  private cartSubscription?: Subscription;
 
   readonly cartItems$ = this.cartService.cartItems$;
 
@@ -41,26 +43,22 @@ export class Cart implements OnDestroy {
   quoteLoading = false;
   quoteError = '';
 
-  // Lưu thông tin từng dòng gửi lên Backend để đối chiếu kết quả.
   private quoteLines: {
     cartItemId: string;
     productName: string;
   }[] = [];
 
   constructor() {
-    // Đồng bộ lựa chọn và tính lại báo giá khi giỏ hàng thay đổi.
-    this.cartItems$.subscribe(items => {
+    this.cartSubscription = this.cartItems$.subscribe(items => {
       const currentIds = new Set(items.map(item => item.id));
       const nextSelected = new Set<string>();
 
-      // Giữ lựa chọn cũ nếu sản phẩm vẫn còn trong giỏ.
       for (const id of this.selectedItemIds) {
         if (currentIds.has(id)) {
           nextSelected.add(id);
         }
       }
 
-      // Tự động chọn các dòng sản phẩm mới được thêm vào.
       for (const item of items) {
         if (!this.selectedItemIds.has(item.id)) {
           nextSelected.add(item.id);
@@ -73,6 +71,7 @@ export class Cart implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.cartSubscription?.unsubscribe();
     this.quoteSubscription?.unsubscribe();
   }
 
@@ -93,7 +92,6 @@ export class Cart implements OnDestroy {
     );
   }
 
-  // Đây chỉ là số tiền tham khảo từ Frontend.
   get selectedSubtotal(): number {
     return this.selectedItems.reduce(
       (total, item) => total + item.unitPrice * item.quantity,
@@ -181,7 +179,7 @@ export class Cart implements OnDestroy {
 
   /**
    * Tạo các dòng báo giá từ sản phẩm được chọn.
-   * Bánh và từng phụ kiện được gửi thành các dòng riêng.
+   * Bánh và phụ kiện đi kèm được gửi thành các dòng riêng.
    */
   private buildQuoteRequest(): QuoteRequest {
     const items: QuoteRequestItem[] = [];
@@ -213,7 +211,7 @@ export class Cart implements OnDestroy {
           productName: cartItem.productName,
         });
 
-        // Phụ kiện được báo giá riêng, số lượng theo số bánh.
+        // Phụ kiện đi kèm bánh được báo giá riêng.
         for (const accessory of cartItem.accessories) {
           items.push({
             productId: accessory.id,
@@ -229,10 +227,13 @@ export class Cart implements OnDestroy {
           });
         }
       } else {
-        // Sản phẩm phụ kiện được thêm độc lập vào giỏ.
+        // Phụ kiện mua riêng: gửi cả mã biến thể nếu có.
         items.push({
           productId: cartItem.productId,
           qty: cartItem.quantity,
+          ...(cartItem.variantId
+            ? { variant: cartItem.variantId }
+            : {}),
         });
 
         this.quoteLines.push({
@@ -250,7 +251,7 @@ export class Cart implements OnDestroy {
 
   /**
    * Gọi Backend tính lại báo giá.
-   * Hủy request cũ nếu người dùng tiếp tục thay đổi giỏ hàng.
+   * Hủy request cũ nếu người dùng thay đổi giỏ hàng.
    */
   refreshQuote(): void {
     this.quoteSubscription?.unsubscribe();
@@ -287,12 +288,13 @@ export class Cart implements OnDestroy {
 
   /**
    * Cộng giá các dòng Backend thuộc cùng một dòng giỏ hàng.
-   * Ví dụ: một bánh + hai phụ kiện.
    */
   getLineTotal(item: CartItem): number {
     if (this.quoteResult) {
       const indexes = this.quoteLines
-        .map((line, index) => line.cartItemId === item.id ? index : -1)
+        .map((line, index) =>
+          line.cartItemId === item.id ? index : -1
+        )
         .filter(index => index >= 0);
 
       if (indexes.length > 0) {
@@ -302,11 +304,14 @@ export class Cart implements OnDestroy {
 
         if (
           results.every(
-            result => result?.valid && typeof result.lineTotal === 'number'
+            result =>
+              result?.valid &&
+              typeof result.lineTotal === 'number'
           )
         ) {
           return results.reduce(
-            (total, result) => total + (result.lineTotal ?? 0),
+            (total, result) =>
+              total + (result.lineTotal ?? 0),
             0
           );
         }
@@ -334,7 +339,9 @@ export class Cart implements OnDestroy {
       )
       .map(
         entry =>
-          `${entry.line.productName}: ${entry.result.reason || 'Sản phẩm không hợp lệ'}`
+          `${entry.line.productName}: ${
+            entry.result.reason || 'Sản phẩm không hợp lệ'
+          }`
       );
   }
 
