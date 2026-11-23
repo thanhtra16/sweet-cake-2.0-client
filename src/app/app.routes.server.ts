@@ -45,6 +45,12 @@ export const serverRoutes: ServerRoute[] = [
     path: 'payment/:orderId',
     renderMode: RenderMode.Client,
   },
+    // Khu vực Admin cần đăng nhập, không prerender
+  { path: 'admin/**', renderMode: RenderMode.Client },
+
+  // Route Buyer có tham số :id (lỗi có sẵn từ trước)
+  { path: 'orders/:id', renderMode: RenderMode.Client },
+  
   {
     path: '**',
     renderMode: RenderMode.Prerender,

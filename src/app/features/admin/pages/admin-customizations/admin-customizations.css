@@ -1,0 +1,10 @@
+:host { display: block; }
+.head-actions { display: flex; flex-wrap: wrap; gap: var(--sc-space-2); }
+.tabs { display: flex; flex-wrap: wrap; gap: var(--sc-space-2); margin-bottom: var(--sc-space-4); }
+.tab { padding: 0.55rem 1rem; border: 1px solid var(--sc-line); border-radius: var(--sc-radius-pill); background: #fff; color: var(--sc-ink); font-size: var(--sc-text-sm); font-weight: 600; }
+.tab:hover { border-color: var(--sc-deep); }
+.tab.is-active { border-color: var(--sc-deep); background: var(--sc-deep); color: #fff; }
+.note { margin: var(--sc-space-3) 0 0; }
+.word-add { display: flex; gap: var(--sc-space-2); max-width: 460px; margin-bottom: var(--sc-space-4); }
+.ad-error { display: flex; align-items: center; justify-content: space-between; gap: var(--sc-space-3); flex-wrap: wrap; }
+.sc-table .sc-input { min-width: 120px; }

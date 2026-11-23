@@ -1,0 +1,28 @@
+/* Lớp dùng chung cho các trang F9 (nhập qua styleUrls). Chỉ dùng biến --sc-* có sẵn. */
+.ad-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--sc-space-4); margin-bottom: var(--sc-space-5); }
+.ad-title { margin: 0; font-family: var(--sc-font-heading); font-size: 1.75rem; font-weight: 600; }
+.ad-sub { margin: 0.25rem 0 0; color: var(--sc-muted); font-size: var(--sc-text-sm); }
+
+.ad-card { margin-bottom: var(--sc-space-5); padding: var(--sc-space-5); border: var(--sc-border); border-radius: var(--sc-radius-xl); background: #fff; box-shadow: var(--sc-shadow-sm); }
+.ad-card__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sc-space-3); margin-bottom: var(--sc-space-4); }
+.ad-card__title { margin: 0; font-family: var(--sc-font-body); font-size: var(--sc-text-base); font-weight: 700; }
+.ad-count { margin-left: var(--sc-space-2); padding: 2px 10px; border-radius: var(--sc-radius-pill); background: var(--sc-warning-bg); color: var(--sc-warning); font-size: var(--sc-text-xs); font-weight: 700; }
+
+.ad-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--sc-space-4); }
+.ad-span-all { grid-column: 1 / -1; }
+.ad-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--sc-space-2); margin-top: var(--sc-space-4); }
+
+.ad-thumb { width: 52px; height: 52px; border-radius: var(--sc-radius-md); object-fit: cover; background: var(--sc-pink); }
+.ad-thumb--empty { display: grid; place-items: center; color: var(--sc-muted); }
+.ad-num { text-align: right; white-space: nowrap; }
+.ad-dim { opacity: 0.65; }
+.ad-row-actions { display: flex; gap: var(--sc-space-2); }
+.ad-error { padding: var(--sc-space-4); border: 1px solid var(--sc-danger); border-radius: var(--sc-radius-md); background: var(--sc-danger-bg); color: var(--sc-danger); font-size: var(--sc-text-sm); }
+
+.ad-switch { display: inline-flex; align-items: center; gap: var(--sc-space-2); font-size: var(--sc-text-sm); cursor: pointer; }
+.ad-switch input { width: 18px; height: 18px; accent-color: var(--sc-deep); }
+
+.ad-chips { display: flex; flex-wrap: wrap; gap: var(--sc-space-2); }
+.ad-chip { display: inline-flex; align-items: center; gap: 6px; padding: 0.35rem 0.8rem; border: 1px solid var(--sc-line); border-radius: var(--sc-radius-pill); background: var(--sc-pink); font-size: var(--sc-text-sm); }
+.ad-chip button { border: 0; background: transparent; color: var(--sc-muted); line-height: 1; }
+.ad-chip button:hover { color: var(--sc-danger); }
