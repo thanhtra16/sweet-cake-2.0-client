@@ -1,0 +1,57 @@
+<main class="acc-page-wrapper">
+  <section class="acc-header-section">
+    <h1 class="acc-page-title">Tài khoản của tôi</h1>
+  </section>
+
+  @if (account.notice(); as notice) {
+    <div class="acc-toast" [class.acc-toast--error]="notice.type === 'error'" role="status">
+      <i class="bi" [class.bi-check-circle-fill]="notice.type === 'success'" [class.bi-exclamation-circle-fill]="notice.type === 'error'"></i>
+      <span>{{ notice.text }}</span>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="acc-state">Đang tải thông tin tài khoản...</div>
+  } @else if (loadError()) {
+    <div class="acc-state acc-state--error">
+      <p>{{ loadError() }}</p>
+      <button type="button" class="btn-chinh" (click)="loadProfile()">Thử lại</button>
+    </div>
+  } @else if (account.user(); as user) {
+    <div class="acc-layout">
+      <aside class="acc-sidebar">
+        <div class="acc-profile-header">
+          <div class="acc-avatar">{{ initial() }}</div>
+          <h2 class="acc-user-name">{{ user.fullName }}</h2>
+          <span class="acc-user-phone">{{ user.phone }}</span>
+        </div>
+
+        <nav class="acc-nav">
+          @for (tab of tabs; track tab.id) {
+            <a
+              class="acc-nav-link"
+              [class.active]="activeTab() === tab.id"
+              [routerLink]="[]"
+              [queryParams]="{ tab: tab.id }"
+            >
+              <i class="bi" [class]="tab.icon"></i> {{ tab.label }}
+            </a>
+          }
+          <hr class="acc-divider" />
+          <a href="#" class="acc-nav-link acc-logout" (click)="logout($event)">
+            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+          </a>
+        </nav>
+      </aside>
+
+      <div class="acc-main-content">
+        @switch (activeTab()) {
+          @case ('profile') { <app-profile-tab /> }
+          @case ('addresses') { <app-address-tab /> }
+          @case ('orders') { <app-orders-tab /> }
+          @case ('password') { <app-password-tab /> }
+        }
+      </div>
+    </div>
+  }
+</main>

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { authGuard } from '../../core/guards/auth.guard';
 import { BlogListComponent } from './pages/blog/blog-list/blog-list.component';
 import { BlogDetailComponent } from './pages/blog/blog-detail/blog-detail.component';
 import { OrderTrackComponent } from './pages/order-track/order-track.component';
@@ -17,7 +18,13 @@ export const BUYER_ROUTES: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'danh-sach-san-pham',
+        redirectTo: 'trang-chu',
+      },
+      {
+        path: 'trang-chu',
+        title: 'SweetCake - Tiệm Bánh Thủ Công Ngọt Ngào',
+        loadComponent: () =>
+          import('./pages/home/home.component').then((m) => m.HomeComponent),
       },
       {
         path: 'danh-sach-san-pham',
@@ -115,8 +122,17 @@ export const BUYER_ROUTES: Routes = [
         component: OrderDetailComponent,
       },
       {
+        path: 'account',
+        canActivate: [authGuard],
+        title: 'SweetCake - Tài khoản của tôi',
+        loadComponent: () =>
+          import('./pages/account/account.component').then(
+            (m) => m.AccountComponent
+          ),
+      },
+      {
         path: 'quan-ly-tai-khoan',
-        redirectTo: '/auth/login',
+        redirectTo: 'account',
         pathMatch: 'full',
       },
     ],

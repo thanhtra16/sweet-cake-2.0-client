@@ -286,6 +286,19 @@ export class ApiService {
       .get<ApiResponse<Product>>(`${this.apiUrl}/admin/products/${id}`)
       .pipe(map((res) => res.data));
   }
+/** Gọi PUT và trả về trực tiếp phần data của phản hồi. */
+  put<T>(path: string, body: unknown = {}): Observable<T> {
+    return this.http
+      .put<ApiResponse<T>>(`${this.apiUrl}${path}`, body)
+      .pipe(map((res) => res.data));
+  }
+
+  /** Gọi DELETE và trả về trực tiếp phần data của phản hồi. */
+  delete<T>(path: string): Observable<T> {
+    return this.http
+      .delete<ApiResponse<T>>(`${this.apiUrl}${path}`)
+      .pipe(map((res) => res.data));
+  }
 
   /** POST /api/admin/products */
   createAdminProduct(body: ProductPayload): Observable<Product> {
@@ -302,7 +315,7 @@ export class ApiService {
   }
 
   /**
-   * POST /api/images  (multer: upload.array('images', 10))
+   * POST /api/images (multer: upload.array('images', 10))
    * Backend tự thêm id ảnh vào Product.imageIds.
    */
   uploadProductImages(productId: string, files: File[]): Observable<UploadedImage[]> {
@@ -328,5 +341,4 @@ export class ApiService {
       .put<ApiResponse<ProductCustomization>>(`${this.apiUrl}/admin/customizations`, body)
       .pipe(map((res) => res.data));
   }
-
 }
