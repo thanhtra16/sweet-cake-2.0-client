@@ -1,0 +1,249 @@
+
+<main class="content">
+
+  <!-- TIÊU ĐỀ -->
+  <div class="khoi-tieu-de-lien-he">
+    <h1 class="tieu-de-vua">Liên Hệ Với SweetCake</h1>
+
+    <p class="chu-thuong mo-ta-lien-he">
+      Mỗi chiếc bánh là một câu chuyện, và chúng tôi luôn sẵn sàng lắng nghe câu
+      chuyện của bạn. Hãy để SweetCake cùng bạn sẻ chia những khoảnh khắc ngọt
+      ngào nhất.
+    </p>
+  </div>
+
+  <!-- BỐ CỤC LIÊN HỆ -->
+  <div class="luoi-lien-he">
+
+    <!-- CỘT TRÁI: FORM LIÊN HỆ -->
+    <div class="hop-form-lien-he">
+      <form #contactForm="ngForm" (ngSubmit)="onSubmit(contactForm)">
+
+        <div class="hang-2-cot">
+          <div class="truong-nhap">
+            <label for="lh-ho-ten">Họ tên</label>
+
+            <input
+              class="dong-nhap-lieu"
+              type="text"
+              id="lh-ho-ten"
+              name="fullName"
+              [(ngModel)]="contact.fullName"
+              placeholder="Nguyễn Văn A"
+              required
+              #fullName="ngModel"
+            />
+          </div>
+
+          <div class="truong-nhap">
+            <label for="lh-email">Email</label>
+
+            <input
+              class="dong-nhap-lieu"
+              type="email"
+              id="lh-email"
+              name="email"
+              [(ngModel)]="contact.email"
+              placeholder="sweetcake@gmail.com"
+              required
+              email
+              #email="ngModel"
+            />
+          </div>
+        </div>
+
+        <div class="truong-nhap">
+          <label for="lh-sdt">Số điện thoại</label>
+
+          <input
+            class="dong-nhap-lieu"
+            type="tel"
+            id="lh-sdt"
+            name="phone"
+            [(ngModel)]="contact.phone"
+            placeholder="090 1234 567"
+          />
+        </div>
+
+        <div class="truong-nhap truong-loi-nhan">
+          <label for="lh-loi-nhan">Lời nhắn</label>
+
+          <textarea
+            class="dong-nhap-lieu"
+            id="lh-loi-nhan"
+            name="message"
+            [(ngModel)]="contact.message"
+            rows="4"
+            placeholder="Bạn muốn chia sẻ điều gì cùng SweetCake?"
+            required
+          ></textarea>
+        </div>
+
+        <button type="submit" class="nut-bam nut-gui-lien-he">
+          Gửi liên hệ
+        </button>
+      </form>
+
+      <!-- GHI CHÚ -->
+      <p class="ghi-chu-dau-bep">
+        <i class="bi bi-cup-hot"></i>
+
+        <span>
+          <strong>The Baker's Note:</strong>
+          "Chúng tôi cam kết phản hồi cho mọi tin nhắn trong vòng 24 giờ làm
+          việc. Sự hài lòng của bạn là hương vị tuyệt vời nhất mà SweetCake
+          hướng tới."
+        </span>
+      </p>
+    </div>
+
+    <!-- CỘT PHẢI: THÔNG TIN CỬA HÀNG -->
+    <div class="cot-thong-tin-cua-hang">
+      <h2 class="tieu-de-nho tieu-de-ghe-tham">
+        <i class="bi bi-geo-alt-fill"></i>
+        Ghé Thăm Cửa Hàng
+      </h2>
+
+      @for (store of stores; track store.name) {
+        <div class="the-cua-hang">
+          <h3>{{ store.name }}</h3>
+
+          <p>
+            <i class="bi bi-geo-alt"></i>
+            {{ store.address }}
+          </p>
+
+          <p>
+            <i class="bi bi-telephone"></i>
+            {{ store.phone }}
+          </p>
+
+          <p>
+            <i class="bi bi-clock"></i>
+
+            <span>
+              Giờ mở cửa:
+              @for (hour of store.hours; track hour) {
+                <br />{{ hour }}
+              }
+            </span>
+          </p>
+        </div>
+      }
+
+      <!-- CTA -->
+      <div class="hop-cta-dat-banh">
+        <h4>ĐẶT BÁNH TRỰC TUYẾN</h4>
+
+        <p>Nhận bánh tận nơi chỉ trong 60 phút tại khu vực nội thành.</p>
+
+        <a routerLink="/san-pham">
+          Khám phá thực đơn
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- BẢN ĐỒ MINH HỌA -->
+  <div class="khung-ban-do">
+    <svg
+      viewBox="0 0 1200 380"
+      preserveAspectRatio="xMidYMid slice"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect width="1200" height="380" fill="#F3E7D8" />
+
+      <g
+        stroke="#E9D7C0"
+        stroke-width="18"
+        fill="none"
+        stroke-linecap="round"
+      >
+        <path d="M-20 90 C 250 60, 420 160, 700 120 S 1100 40, 1230 90" />
+        <path d="M-20 230 C 300 200, 480 300, 760 250 S 1050 190, 1230 240" />
+        <path d="M120 -20 C 160 120, 90 220, 150 400" />
+        <path d="M520 -20 C 480 140, 560 240, 500 400" />
+        <path d="M900 -20 C 940 130, 860 250, 920 400" />
+      </g>
+
+      <g
+        stroke="#FBF3E9"
+        stroke-width="4"
+        fill="none"
+        stroke-linecap="round"
+        stroke-dasharray="14 14"
+      >
+        <path d="M-20 90 C 250 60, 420 160, 700 120 S 1100 40, 1230 90" />
+        <path d="M-20 230 C 300 200, 480 300, 760 250 S 1050 190, 1230 240" />
+        <path d="M120 -20 C 160 120, 90 220, 150 400" />
+        <path d="M520 -20 C 480 140, 560 240, 500 400" />
+        <path d="M900 -20 C 940 130, 860 250, 920 400" />
+      </g>
+
+      <g fill="#EAD9C4" opacity="0.7">
+        <rect x="230" y="150" width="46" height="34" rx="4" />
+        <rect x="650" y="60" width="52" height="38" rx="4" />
+        <rect x="820" y="260" width="44" height="32" rx="4" />
+        <rect x="330" y="270" width="50" height="36" rx="4" />
+        <rect x="980" y="140" width="40" height="30" rx="4" />
+      </g>
+    </svg>
+
+    <div class="ghim-ban-do ghim-1" title="SweetCake Thủ Đức">
+      <i class="bi bi-cake-fill"></i>
+    </div>
+
+    <div class="ghim-ban-do ghim-2" title="SweetCake Quận 1">
+      <i class="bi bi-cake-fill"></i>
+    </div>
+
+    <div class="the-noi-ban-do">
+      <strong>SweetCake Artisanal Bakery</strong>
+      <span>Thủ Đức &amp; Quận 1 Flagship Stores</span>
+    </div>
+  </div>
+
+  <!-- GALLERY -->
+  <div class="khoi-goc-nho">
+    <div class="hang-tieu-de-goc-nho">
+      <div>
+        <h2 class="tieu-de-nho">Góc Nhỏ Ngọt Ngào</h2>
+
+        <p class="chu-thuong">
+          Cảm hứng từ không gian của chúng tôi tại tiệm
+        </p>
+      </div>
+
+      <div class="icon-mang-xa-hoi">
+        <a
+          href="https://www.google.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Google"
+        >
+          <i class="bi bi-google"></i>
+        </a>
+
+        <a
+          href="https://www.facebook.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Facebook"
+        >
+          <i class="bi bi-facebook"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="luoi-goc-nho">
+      @for (item of gallery; track item.title) {
+        <img
+          [src]="item.image"
+          [alt]="item.title"
+          loading="lazy"
+        />
+      }
+    </div>
+  </div>
+</main>
