@@ -10,7 +10,10 @@ import {
 import { Product } from '../../../../shared/models/product.model';
 import { ProductService } from '../../../../core/services/product.service';
 import { CartService } from '../../../../shared/services/cart.service';
-import { BuyerProduct, ProductCardComponent } from '../../../../shared/components/product-card/product-card.component';
+import {
+  BuyerProduct,
+  ProductCardComponent
+} from '../../../../shared/components/product-card/product-card.component';
 
 type FilterKey = 'occasion' | 'filling' | 'cakeType' | 'price';
 type SortMode = 'newest' | 'price-asc' | 'price-desc';
@@ -177,11 +180,6 @@ export class ProductListComponent implements OnInit {
 
   readonly toastMessage = signal('');
   private toastTimer?: ReturnType<typeof setTimeout>;
-  //   --
-  selectSort(mode: SortMode): void {
-    this.sortMode.set(mode);
-    this.currentPage.set(1);
-  }
 
   // ---------- Filter products ----------
 
@@ -228,7 +226,6 @@ export class ProductListComponent implements OnInit {
       );
     });
 
-    // Sắp xếp sản phẩm.
     switch (this.sortMode()) {
       case 'price-asc':
         return [...result].sort(
@@ -239,6 +236,7 @@ export class ProductListComponent implements OnInit {
         return [...result].sort(
           (a, b) => b.price - a.price
         );
+
       default:
         return result;
     }
@@ -315,6 +313,11 @@ export class ProductListComponent implements OnInit {
   }
 
   // ---------- Sort ----------
+
+  selectSort(mode: SortMode): void {
+    this.sortMode.set(mode);
+    this.currentPage.set(1);
+  }
 
   onSortChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
@@ -397,14 +400,20 @@ export class ProductListComponent implements OnInit {
       this.toastMessage.set('');
     }, 2500);
   }
-  
+
+  // ---------- Helpers ----------
+
   private matches(selected: string[], value: string): boolean {
     if (selected.length === 0) {
       return true;
     }
 
-    const parts = value.split(',').map((part) => normalizeValue(part));
+    const parts = value
+      .split(',')
+      .map((part) => normalizeValue(part));
 
-    return selected.some((item) => parts.includes(normalizeValue(item)));
+    return selected.some((item) =>
+      parts.includes(normalizeValue(item))
+    );
   }
 }

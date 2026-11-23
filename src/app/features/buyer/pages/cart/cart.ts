@@ -70,8 +70,8 @@ export class Cart implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.quoteSubscription?.unsubscribe();
     this.cartSubscription?.unsubscribe();
+    this.quoteSubscription?.unsubscribe();
   }
 
   get totalItems(): number {
@@ -164,6 +164,10 @@ export class Cart implements OnDestroy {
     this.selectedItemIds = next;
   }
 
+  /**
+   * Tạo các dòng báo giá từ sản phẩm được chọn.
+   * Bánh và phụ kiện đi kèm được gửi thành các dòng riêng.
+   */
   private buildQuoteRequest(): QuoteRequest {
     const items: QuoteRequestItem[] = [];
     this.quoteLines = [];
@@ -194,6 +198,7 @@ export class Cart implements OnDestroy {
           productName: cartItem.productName,
         });
 
+        // Phụ kiện đi kèm bánh được báo giá riêng.
         for (const accessory of cartItem.accessories || []) {
           items.push({
             productId: accessory.id,
@@ -207,10 +212,14 @@ export class Cart implements OnDestroy {
           });
         }
       } else {
+        // Phụ kiện mua riêng: gửi cả mã biến thể nếu có.
+        const resolvedVariant =
+          cartItem.variantId ?? (cartItem as any).variant ?? null;
+
         items.push({
           productId: cartItem.productId,
           qty: cartItem.quantity,
-          ...((cartItem as any).variant ? { variant: (cartItem as any).variant } : {}),
+          ...(resolvedVariant ? { variant: resolvedVariant } : {}),
         });
 
         this.quoteLines.push({
@@ -226,6 +235,10 @@ export class Cart implements OnDestroy {
     };
   }
 
+  /**
+   * Gọi Backend tính lại báo giá.
+   * Hủy request cũ nếu người dùng thay đổi giỏ hàng.
+   */
   refreshQuote(): void {
     this.quoteSubscription?.unsubscribe();
 
@@ -255,6 +268,9 @@ export class Cart implements OnDestroy {
     });
   }
 
+  /**
+   * Cộng giá các dòng Backend thuộc cùng một dòng giỏ hàng.
+   */
   getLineTotal(item: CartItem): number {
     if (this.quoteResult) {
       const indexes = this.quoteLines
@@ -297,7 +313,9 @@ export class Cart implements OnDestroy {
       )
       .map(
         (entry) =>
-          `${entry.line.productName}: ${entry.result.reason || 'Sản phẩm không hợp lệ'}`
+          `${entry.line.productName}: ${
+            entry.result.reason || 'Sản phẩm không hợp lệ'
+          }`
       );
   }
 

@@ -7,7 +7,7 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('../buyer/pages/login/login.component')
+      import('../auth/pages/login/login.component')
         .then(m => m.LoginComponent),
   },
   {

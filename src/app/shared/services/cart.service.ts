@@ -19,8 +19,10 @@ export interface AddCartItemInput {
   unitPrice: number;
   customization: CakeCustomization | null;
   accessories: CartItem['accessories'];
-  quantity?: number;
+  variantId?: string | null;
+  variantLabel?: string | null;
   variant?: string | null;
+  quantity?: number;
 }
 
 @Injectable({
@@ -66,9 +68,10 @@ export class CartService {
 
   private get isAuthenticated(): boolean {
     if (!this.isBrowser) return false;
-    // Đổi 'access_token' nếu project của bạn lưu token dưới key khác (vd: 'token', 'jwt')
     return !!(
-      localStorage.getItem('access_token') || localStorage.getItem('token')
+      localStorage.getItem('access_token') ||
+      localStorage.getItem('token') ||
+      localStorage.getItem('sweetcake_access_token')
     );
   }
 
@@ -189,23 +192,34 @@ export class CartService {
       input.customization
     );
 
+    const resolvedVariantId = input.variantId ?? input.variant ?? null;
+    const resolvedVariantLabel = input.variantLabel ?? null;
+
+    const normalizedInput: AddCartItemInput = {
+      ...input,
+      variantId: resolvedVariantId,
+      variantLabel: resolvedVariantLabel,
+      variant: resolvedVariantId,
+      accessories: normalizedAccessories,
+    };
+
     // 1. LUỒNG BUYER: Lưu vào collection carts qua REST API
     if (this.isAuthenticated) {
       try {
         const serverPayload = {
-          productId: input.productId,
-          kind: input.productKind,
-          config: input.customization
+          productId: normalizedInput.productId,
+          kind: normalizedInput.productKind,
+          config: normalizedInput.customization
             ? {
-                size: input.customization.size,
-                filling: input.customization.filling,
-                base: input.customization.base,
-                frostingColor: input.customization.frostingColor,
-                sweetness: input.customization.sweetness,
-                message: input.customization.message,
+                size: normalizedInput.customization.size,
+                filling: normalizedInput.customization.filling,
+                base: normalizedInput.customization.base,
+                frostingColor: normalizedInput.customization.frostingColor,
+                sweetness: normalizedInput.customization.sweetness,
+                message: normalizedInput.customization.message,
               }
             : {},
-          variant: input.variant ?? null,
+          variant: resolvedVariantId,
           surcharges: 0,
           qty: qtyToAdd,
         };
@@ -229,14 +243,14 @@ export class CartService {
 
     // 2. LUỒNG GUEST: Lưu vào localStorage
     const configurationKey = this.createConfigurationKey(
-      input,
+      normalizedInput,
       normalizedAccessories
     );
     const currentItems = [...this.cartSubject.value];
 
     const existingIndex = currentItems.findIndex(
       (item) =>
-        item.productId === input.productId &&
+        item.productId === normalizedInput.productId &&
         item.configurationKey === configurationKey
     );
 
@@ -251,22 +265,24 @@ export class CartService {
       };
     } else {
       const newItem: CartItem = {
-        id: `${input.productId}-${Date.now()}`,
-        productId: input.productId,
-        productName: input.productName,
-        productKind: input.productKind,
-        imageUrl: input.imageUrl,
-        unitPrice: Math.round(input.unitPrice),
+        id: this.createItemId(normalizedInput.productId),
+        productId: normalizedInput.productId,
+        productName: normalizedInput.productName,
+        productKind: normalizedInput.productKind,
+        imageUrl: normalizedInput.imageUrl,
+        unitPrice: Math.round(normalizedInput.unitPrice),
         quantity: qtyToAdd,
-        customization: input.customization
+        customization: normalizedInput.customization
           ? {
-              ...input.customization,
-              accessories: [...input.customization.accessories],
+              ...normalizedInput.customization,
+              accessories: [...(normalizedInput.customization.accessories ?? [])],
               accessoryVariants: {
-                ...input.customization.accessoryVariants,
+                ...(normalizedInput.customization.accessoryVariants ?? {}),
               },
             }
           : null,
+        variantId: resolvedVariantId,
+        variantLabel: resolvedVariantLabel,
         accessories: normalizedAccessories,
         configurationKey,
       };
@@ -368,12 +384,18 @@ export class CartService {
 
   // ==================== HELPER & MAPPING METHODS ====================
 
+  private createItemId(productId: string): string {
+    return `${productId}-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+  }
+
   private mapServerItemToClient(serverItem: any): CartItem {
     const cfg = serverItem.config || {};
     const isCake = serverItem.kind === 'cake';
 
     const customization: CakeCustomization | null = isCake
-      ? {
+      ? ({
           size: cfg.size || '',
           base: cfg.base || '',
           filling: cfg.filling || '',
@@ -382,7 +404,7 @@ export class CartService {
           message: cfg.message || '',
           accessories: [],
           accessoryVariants: {},
-        } as unknown as CakeCustomization
+        } as unknown as CakeCustomization)
       : null;
 
     return {
@@ -396,6 +418,8 @@ export class CartService {
       unitPrice: Number(serverItem.unitPrice || 0),
       quantity: Number(serverItem.qty || 1),
       customization,
+      variantId: serverItem.variant ?? null,
+      variantLabel: serverItem.variantLabel ?? null,
       accessories: [],
       configurationKey: JSON.stringify({
         kind: serverItem.kind,
@@ -420,7 +444,7 @@ export class CartService {
             message: cfg.message,
           }
         : {},
-      variant: (item as any).variant ?? null,
+      variant: item.variantId ?? (item as any).variant ?? null,
       surcharges: 0,
       qty: item.quantity,
     };
@@ -430,7 +454,7 @@ export class CartService {
     accessories: CartItem['accessories'],
     customization: CakeCustomization | null
   ): CartItem['accessories'] {
-    return accessories.map((accessory) => {
+    return (accessories ?? []).map((accessory) => {
       const variantId =
         accessory.variantId ||
         customization?.accessoryVariants?.[accessory.id] ||
@@ -455,25 +479,36 @@ export class CartService {
         id: accessory.id,
         variantId: accessory.variantId ?? null,
       }))
-      .sort((a, b) => a.id.localeCompare(b.id));
-
-    if (!customization) {
-      return JSON.stringify({
-        variant: input.variant ?? null,
-        customization: null,
-        accessories: sortedAccessories,
+      .sort((a, b) => {
+        const idCompare = a.id.localeCompare(b.id);
+        if (idCompare !== 0) {
+          return idCompare;
+        }
+        return (a.variantId ?? '').localeCompare(b.variantId ?? '');
       });
+
+    const configuration: Record<string, unknown> = {
+      customization: null,
+      accessories: sortedAccessories,
+    };
+
+    if (customization) {
+      configuration['size'] = customization.size;
+      configuration['base'] = customization.base;
+      configuration['filling'] = customization.filling;
+      configuration['frostingColor'] = customization.frostingColor;
+      configuration['sweetness'] = customization.sweetness;
+      configuration['message'] = customization.message.trim();
+
+      delete configuration['customization'];
     }
 
-    return JSON.stringify({
-      size: customization.size,
-      base: customization.base,
-      filling: customization.filling,
-      frostingColor: customization.frostingColor,
-      sweetness: customization.sweetness,
-      message: customization.message.trim(),
-      accessories: sortedAccessories,
-    });
+    const resolvedVariant = input.variantId ?? input.variant ?? null;
+    if (resolvedVariant) {
+      configuration['variantId'] = resolvedVariant;
+    }
+
+    return JSON.stringify(configuration);
   }
 
   private updateGuestCart(items: CartItem[]): void {
@@ -491,29 +526,64 @@ export class CartService {
       const parsed: unknown = JSON.parse(storedValue);
       if (!Array.isArray(parsed)) return [];
 
-      return parsed
-        .filter(
-          (item): item is CartItem =>
-            item !== null &&
-            typeof item === 'object' &&
-            typeof item.id === 'string' &&
-            typeof item.productId === 'string' &&
-            typeof item.productName === 'string' &&
-            typeof item.unitPrice === 'number' &&
-            typeof item.quantity === 'number' &&
-            item.quantity >= 1 &&
-            item.quantity <= MAX_QUANTITY_PER_ITEM
-        )
-        .map((item) => ({
+      const validItems = parsed.filter(
+        (item): item is CartItem =>
+          item !== null &&
+          typeof item === 'object' &&
+          typeof item.id === 'string' &&
+          typeof item.productId === 'string' &&
+          typeof item.productName === 'string' &&
+          typeof item.unitPrice === 'number' &&
+          Number.isFinite(item.unitPrice) &&
+          typeof item.quantity === 'number' &&
+          Number.isInteger(item.quantity) &&
+          item.quantity >= 1 &&
+          item.quantity <= MAX_QUANTITY_PER_ITEM
+      );
+
+      return validItems.map((item) => {
+        const normalizedAccessories = Array.isArray(item.accessories)
+          ? item.accessories.map((accessory) => ({
+              ...accessory,
+              variantId: accessory.variantId ?? null,
+              variantLabel: accessory.variantLabel ?? null,
+            }))
+          : [];
+
+        return {
           ...item,
-          accessories: Array.isArray(item.accessories)
-            ? item.accessories.map((accessory) => ({
-                ...accessory,
-                variantId: accessory.variantId ?? null,
-                variantLabel: accessory.variantLabel ?? null,
-              }))
-            : [],
-        }));
+          variantId: item.variantId ?? null,
+          variantLabel: item.variantLabel ?? null,
+          customization: item.customization
+            ? {
+                ...item.customization,
+                accessories: [...(item.customization.accessories ?? [])],
+                accessoryVariants: {
+                  ...(item.customization.accessoryVariants ?? {}),
+                },
+              }
+            : null,
+          accessories: normalizedAccessories,
+          configurationKey:
+            typeof item.configurationKey === 'string' &&
+            item.configurationKey.length > 0
+              ? item.configurationKey
+              : this.createConfigurationKey(
+                  {
+                    productId: item.productId,
+                    productName: item.productName,
+                    productKind: item.productKind,
+                    imageUrl: item.imageUrl ?? null,
+                    unitPrice: item.unitPrice,
+                    customization: item.customization ?? null,
+                    accessories: normalizedAccessories,
+                    variantId: item.variantId ?? null,
+                    variantLabel: item.variantLabel ?? null,
+                  },
+                  normalizedAccessories
+                ),
+        };
+      });
     } catch (error) {
       console.error('[CartService] Không thể đọc giỏ hàng:', error);
       return [];
@@ -521,7 +591,11 @@ export class CartService {
   }
 
   private loadGuestCartFromStorage(): void {
-    this.cartSubject.next(this.readGuestCartRaw());
+    const normalizedItems = this.readGuestCartRaw();
+    this.cartSubject.next(normalizedItems);
+    if (normalizedItems.length > 0) {
+      this.saveGuestCartToStorage(normalizedItems);
+    }
   }
 
   private saveGuestCartToStorage(items: CartItem[]): void {
