@@ -1,0 +1,161 @@
+@let isOpen = (isOpen$ | async) ?? false;
+
+<!-- Lớp phủ nền tối -->
+<div
+  class="cart-drawer-backdrop"
+  [class.is-open]="isOpen"
+  (click)="close()"
+  aria-hidden="true"
+></div>
+
+<!-- Ngăn kéo giỏ hàng trượt từ phải sang -->
+<aside
+  class="cart-drawer"
+  [class.is-open]="isOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Giỏ hàng của bạn"
+>
+  <header class="cart-drawer__header">
+    <div>
+      <span class="cart-drawer__eyebrow">YOUR BAG</span>
+      <h3>
+        Giỏ hàng của bạn
+        @if ((totalItems$ | async); as count) {
+          @if (count > 0) {
+            <span class="cart-drawer__count">({{ count }})</span>
+          }
+        }
+      </h3>
+    </div>
+
+    <button
+      type="button"
+      class="cart-drawer__close"
+      aria-label="Đóng giỏ hàng"
+      (click)="close()"
+    >
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </header>
+
+  <div class="cart-drawer__body">
+    @if (cartItems$ | async; as items) {
+      @if (items.length > 0) {
+        @for (item of items; track item.id) {
+          <article class="drawer-item">
+            <div class="drawer-item__image">
+              @if (item.imageUrl) {
+                <img [src]="item.imageUrl" [alt]="item.productName" />
+              } @else {
+                <div class="drawer-item__placeholder">Sweet Cake</div>
+              }
+            </div>
+
+            <div class="drawer-item__info">
+              <div class="drawer-item__top">
+                <h4>{{ item.productName }}</h4>
+                <button
+                  type="button"
+                  class="drawer-item__remove"
+                  aria-label="Xóa sản phẩm"
+                  title="Xóa"
+                  (click)="removeItem(item.id)"
+                >
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+
+              @if (item.customization; as config) {
+                <p class="drawer-item__meta">
+                  {{ config.size }} · {{ config.filling }} · {{ config.sweetness }}
+                </p>
+              } @else {
+                <p class="drawer-item__meta">
+                  {{ item.productKind === 'cake' ? 'Bánh kem tiêu chuẩn' : 'Phụ kiện' }}
+                </p>
+              }
+
+              @if (item.accessories.length > 0) {
+                <p class="drawer-item__meta">
+                  + {{ item.accessories.length }} phụ kiện đi kèm
+                </p>
+              }
+
+              <div class="drawer-item__bottom">
+                <div class="drawer-item__qty">
+                  <button
+                    type="button"
+                    aria-label="Giảm số lượng"
+                    (click)="decreaseQty(item)"
+                  >
+                    −
+                  </button>
+                  <span>{{ item.quantity }}</span>
+                  <button
+                    type="button"
+                    aria-label="Tăng số lượng"
+                    [disabled]="item.quantity >= 10"
+                    (click)="increaseQty(item)"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <strong class="drawer-item__price">
+                  {{ item.unitPrice * item.quantity | vnd }}
+                </strong>
+              </div>
+            </div>
+          </article>
+        }
+      } @else {
+        <div class="cart-drawer__empty">
+          <div class="cart-drawer__empty-icon">♡</div>
+          <h4>Giỏ hàng đang trống</h4>
+          <p>Hãy chọn những chiếc bánh ngọt ngào cho bữa tiệc của bạn nhé!</p>
+          <button
+            type="button"
+            class="cart-drawer__btn cart-drawer__btn--primary"
+            (click)="goToShop()"
+          >
+            Khám phá sản phẩm
+          </button>
+        </div>
+      }
+    }
+  </div>
+
+  @if ((cartItems$ | async); as items) {
+    @if (items.length > 0) {
+      <footer class="cart-drawer__footer">
+        <div class="cart-drawer__subtotal">
+          <span>Tạm tính</span>
+          <strong>{{ (subtotal$ | async) ?? 0 | vnd }}</strong>
+        </div>
+
+        <p class="cart-drawer__note">
+          Phí vận chuyển và mã giảm giá sẽ được tính ở bước thanh toán.
+        </p>
+
+        <div class="cart-drawer__actions">
+          <button
+            type="button"
+            class="cart-drawer__btn cart-drawer__btn--primary"
+            (click)="goToCheckout()"
+          >
+            TIẾN HÀNH THANH TOÁN
+          </button>
+
+          <button
+            type="button"
+            class="cart-drawer__btn cart-drawer__btn--outline"
+            (click)="goToCart()"
+          >
+            XEM GIỎ HÀNG CHI TIẾT
+          </button>
+        </div>
+      </footer>
+    }
+  }
+</aside>

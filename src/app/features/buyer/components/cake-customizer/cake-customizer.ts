@@ -22,7 +22,7 @@ import { startWith } from 'rxjs';
 import {
   CustomizationOption,
   ProductCustomization,
-} from '../../../../../core/services/api.service';
+} from '@core/services/api.service';
 
 // ========================================
 // INTERFACES

@@ -14,15 +14,15 @@ import {
   ApiService,
   Product,
   ProductCustomization,
-} from '../../../../../core/services/api.service';
+} from '@core/services/api.service';
 
 import {
   CakeCustomizer,
   CakeCustomization,
   AccessoryOption,
-} from '../../components/cake-customizer/cake-customizer';
+} from '@features/buyer/components/cake-customizer/cake-customizer';
 
-import { CartService } from '../../../../../shared/services/cart.service';
+import { CartService } from '@shared/services/cart.service';
 
 @Component({
   selector: 'app-product-detail',

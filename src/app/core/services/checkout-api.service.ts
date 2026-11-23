@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CreateOrderRequest, CreatedOrderResponse, OrderQuote, PublicSettings, TimeSlot } from '../models/checkout.model';
+import { CreateOrderRequest, CreatedOrderResponse, OrderQuote, PublicSettings, TimeSlot } from '@shared/models/checkout.model';
 
 @Injectable({ providedIn: 'root' })
 export class CheckoutApiService {
