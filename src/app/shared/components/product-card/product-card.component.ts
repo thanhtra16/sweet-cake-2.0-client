@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { VndPipe } from '../../pipes/vnd.pipe';
 import { Product } from '../../models/product.model';
 
-export interface BuyerProduct extends Partial<Product>{
+export interface BuyerProduct extends Partial<Product> {
   _id?: string;
   id?: string;
   name: string;
@@ -27,6 +27,8 @@ export interface BuyerProduct extends Partial<Product>{
 export class ProductCardComponent {
   @Input({ required: true }) product!: BuyerProduct;
   @Input() showAddToCart = true;
+  @Input() showAction = true;
+  @Input() showMeta = false;
 
   @Output() viewDetail = new EventEmitter<BuyerProduct>();
   @Output() addToCart = new EventEmitter<BuyerProduct>();

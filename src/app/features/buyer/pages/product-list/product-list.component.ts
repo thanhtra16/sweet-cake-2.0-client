@@ -9,6 +9,7 @@ import {
 
 import { Product } from '../../../../shared/models/product.model';
 import { ProductService } from '../../../../core/services/product.service';
+import { CartService } from '../../../../shared/services/cart.service';
 import {
   BuyerProduct,
   ProductCardComponent
@@ -111,6 +112,7 @@ function normalizeCakeType(value: unknown): string {
 })
 export class ProductListComponent implements OnInit {
   private readonly productService = inject(ProductService);
+  private readonly cart = inject(CartService);
 
   // ---------- Filter options ----------
 
@@ -175,6 +177,9 @@ export class ProductListComponent implements OnInit {
   });
 
   readonly currentPage = signal(1);
+
+  readonly toastMessage = signal('');
+  private toastTimer?: ReturnType<typeof setTimeout>;
 
   // ---------- Filter products ----------
 
@@ -367,6 +372,33 @@ export class ProductListComponent implements OnInit {
       top: 0,
       behavior: 'smooth'
     });
+  }
+
+  // ---------- Cart ----------
+
+  async onAddToCart(product: BuyerProduct): Promise<void> {
+    const productId = String(product._id ?? product.id ?? '');
+    const added = await this.cart.addItem({
+      productId,
+      productName: product.name,
+      productKind: product.kind ?? 'cake',
+      imageUrl: product.image ?? product.thumbnail ?? null,
+      unitPrice: Number(product.price ?? 0),
+      customization: null,
+      accessories: [],
+    });
+
+    this.toastMessage.set(
+      added
+        ? `Đã thêm "${product.name}" vào giỏ hàng`
+        : `Sản phẩm "${product.name}" đã đạt số lượng tối đa trong giỏ`
+    );
+
+    clearTimeout(this.toastTimer);
+
+    this.toastTimer = setTimeout(() => {
+      this.toastMessage.set('');
+    }, 2500);
   }
 
   // ---------- Helpers ----------

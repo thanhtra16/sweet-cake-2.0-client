@@ -1,5 +1,7 @@
+
 import { Routes } from '@angular/router';
 
+import { authGuard } from '../../core/guards/auth.guard';
 import { BlogListComponent } from './pages/blog/blog-list/blog-list.component';
 import { BlogDetailComponent } from './pages/blog/blog-detail/blog-detail.component';
 import { OrderTrackComponent } from './pages/order-track/order-track.component';
@@ -17,7 +19,13 @@ export const BUYER_ROUTES: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'danh-sach-san-pham',
+        redirectTo: 'trang-chu',
+      },
+      {
+        path: 'trang-chu',
+        title: 'SweetCake - Tiệm Bánh Thủ Công Ngọt Ngào',
+        loadComponent: () =>
+          import('./pages/home/home.component').then((m) => m.HomeComponent),
       },
       {
         path: 'danh-sach-san-pham',
@@ -79,26 +87,26 @@ export const BUYER_ROUTES: Routes = [
       {
         path: 'product/:id',
         loadComponent: () =>
-          import('./product/pages/product-detail/product-detail').then(
+          import('./pages/product-detail/product-detail').then(
             (m) => m.ProductDetail
           ),
       },
       {
         path: 'cart',
         loadComponent: () =>
-          import('./cart/pages/cart/cart').then((m) => m.Cart),
+          import('./pages/cart/cart').then((m) => m.Cart),
       },
       {
         path: 'checkout',
         loadComponent: () =>
-          import('./checkout/pages/checkout/checkout').then(
+          import('./pages/checkout/checkout').then(
             (m) => m.CheckoutPage
           ),
       },
       {
         path: 'payment/:orderId',
         loadComponent: () =>
-          import('./payment/pages/payment/payment').then(
+          import('./pages/payment/payment').then(
             (m) => m.PaymentPage
           ),
       },
@@ -115,10 +123,33 @@ export const BUYER_ROUTES: Routes = [
         component: OrderDetailComponent,
       },
       {
+        path: 'account',
+        canActivate: [authGuard],
+        title: 'SweetCake - Tài khoản của tôi',
+        loadComponent: () =>
+          import('./pages/account/account.component').then(
+            (m) => m.AccountComponent
+          ),
+      },
+      {
         path: 'quan-ly-tai-khoan',
-        redirectTo: '/auth/login',
+        redirectTo: 'account',
         pathMatch: 'full',
       },
-    ],
+      {
+          path: 'thong-bao',
+          canActivate: [authGuard],
+          title: 'SweetCake - Thông báo',
+          loadComponent: () =>
+            import('./pages/notification/notification.component').then(
+              (m) => m.NotificationComponent
+            ),
+        },
+        {
+          path: 'quan-ly-tai-khoan',
+          redirectTo: 'account',
+          pathMatch: 'full',
+        },
+      ],
   },
 ];

@@ -1,4 +1,4 @@
-import { CakeCustomization } from '../../features/buyer/product/components/cake-customizer/cake-customizer';
+import { CakeCustomization } from '@features/buyer/components/cake-customizer/cake-customizer';
 
 export interface CartAccessory {
   id: string;

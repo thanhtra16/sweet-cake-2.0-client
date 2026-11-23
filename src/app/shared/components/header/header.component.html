@@ -22,17 +22,17 @@
       >
         Trang chủ
       </a>
-      <a routerLink="/products" routerLinkActive="is-active">
-        Sản phẩm
-      </a>
-      <a routerLink="/accessories" routerLinkActive="is-active">
-        Phụ kiện
+      <a routerLink="/danh-sach-san-pham" routerLinkActive="is-active">
+        Cửa hàng
       </a>
       <a routerLink="/orders" routerLinkActive="is-active">
         Đơn hàng
       </a>
       <a routerLink="/gioi-thieu" routerLinkActive="is-active">
         Giới thiệu
+      </a>
+      <a routerLink="/blog" routerLinkActive="is-active">
+        Blog
       </a>
       <a routerLink="/lien-he" routerLinkActive="is-active">
         Liên hệ
@@ -71,10 +71,10 @@
         }
       </button>
 
-      <!-- Tài khoản -->
+      <!-- Tài khoản / Đăng nhập -->
       <a
         class="sc-header__icon-btn"
-        routerLink="/quan-ly-tai-khoan"
+        routerLink="/account"
         aria-label="Tài khoản"
         title="Tài khoản"
       >
@@ -262,7 +262,7 @@
             </p>
 
             <a
-              routerLink="/products"
+              routerLink="/danh-sach-san-pham"
               class="cart-drawer__shop"
               (click)="closeCartDrawer()"
             >
