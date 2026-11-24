@@ -1,16 +1,18 @@
+
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, finalize, of } from 'rxjs';
+
 import { CheckoutApiService } from '@core/services/checkout-api.service';
+
 import {
   CreateOrderRequest,
   OrderQuote,
   PublicSettings,
   TimeSlot,
 } from '@shared/models/checkout.model';
-import { OrderQuote as ApiOrderQuote } from '@core/services/api.service';
 
 interface BuyNowData {
   items: Array<{
@@ -26,8 +28,7 @@ interface BuyNowData {
     };
     variant?: string;
   }>;
-  receiveMethod: 'pickup' | 'delivery';
-  quote: ApiOrderQuote;
+  receiveMethod?: 'pickup' | 'delivery';
 }
 
 @Component({
@@ -48,6 +49,9 @@ export class CheckoutPage implements OnInit {
   quote?: OrderQuote;
 
   loading = false;
+  loadingSlots = false;
+  loadingQuote = false;
+
   error = '';
   voucherError = '';
 
@@ -62,6 +66,7 @@ export class CheckoutPage implements OnInit {
   };
 
   note = '';
+
   receiveMethod: 'pickup' | 'delivery' = 'pickup';
 
   cartItems: BuyNowData['items'] = [];
@@ -69,32 +74,17 @@ export class CheckoutPage implements OnInit {
   ngOnInit(): void {
     this.restoreBuyNowData();
 
-    this.api.getSettings().subscribe({
-      next: (value) => {
-        this.settings = value;
-
-        if (!this.selectedBranch) {
-          this.selectedBranch =
-            value.branches?.[0]?._id ||
-            value.branches?.[0]?.name ||
-            '';
-        }
-      },
-      error: () => {
-        this.error = 'Không tải được cấu hình cửa hàng.';
-      },
-    });
-
-    // Chỉ gọi lại báo giá nếu không có báo giá đã được
-    // xác nhận từ bước Mua ngay.
-    if (!this.quote && this.cartItems.length > 0) {
-      this.loadQuote();
-    }
-
     if (this.cartItems.length === 0) {
       this.error =
         'Không tìm thấy sản phẩm cần đặt hàng. Vui lòng quay lại trang sản phẩm và chọn Mua ngay.';
+      return;
     }
+
+    this.loadSettings();
+
+    // Luôn lấy báo giá mới nhất từ Backend.
+    // Không sử dụng giá được lưu từ trang sản phẩm.
+    this.loadQuote();
   }
 
   // ========================================
@@ -116,9 +106,12 @@ export class CheckoutPage implements OnInit {
       if (
         !Array.isArray(data.items) ||
         data.items.length === 0 ||
-        !data.quote ||
-        !data.quote.valid ||
-        !data.quote.items?.every((item) => item.valid)
+        !data.items.every(
+          (item) =>
+            !!item.productId &&
+            Number.isInteger(item.qty) &&
+            item.qty > 0
+        )
       ) {
         this.error =
           'Thông tin sản phẩm không hợp lệ. Vui lòng thực hiện lại thao tác Mua ngay.';
@@ -126,14 +119,13 @@ export class CheckoutPage implements OnInit {
       }
 
       this.cartItems = data.items;
-      this.receiveMethod = data.receiveMethod || 'pickup';
-
-      // Dùng báo giá đã được ApiService xác nhận ở trang sản phẩm.
-      // Cấu trúc các trường tổng tiền tương thích với OrderQuote
-      // mà giao diện Checkout đang sử dụng.
-      this.quote = data.quote as unknown as OrderQuote;
-    } catch (error) {
-      console.error('[Checkout] Cannot restore Buy Now data:', error);
+      this.receiveMethod =
+        data.receiveMethod === 'delivery' ? 'delivery' : 'pickup';
+    } catch (err) {
+      console.error(
+        '[Checkout] Cannot restore Buy Now data:',
+        err
+      );
 
       this.error =
         'Không thể đọc thông tin sản phẩm. Vui lòng thực hiện lại thao tác Mua ngay.';
@@ -141,26 +133,72 @@ export class CheckoutPage implements OnInit {
   }
 
   // ========================================
+  // SETTINGS
+  // ========================================
+
+  private loadSettings(): void {
+    this.api.getSettings().subscribe({
+      next: (value) => {
+        this.settings = value;
+
+        // Chỉ sử dụng ID của chi nhánh, không dùng tên chi nhánh
+        // thay thế cho ID khi gửi request tạo đơn.
+        if (!this.selectedBranch) {
+          this.selectedBranch =
+            value.branches?.[0]?._id || '';
+        }
+      },
+      error: (err) => {
+        console.error(
+          '[Checkout] Cannot load settings:',
+          err
+        );
+
+        this.error =
+          err.error?.message ||
+          'Không tải được cấu hình cửa hàng. Vui lòng thử lại.';
+      },
+    });
+  }
+
+  // ========================================
   // TIME SLOTS
   // ========================================
 
   loadSlots(): void {
+    this.selectedSlotId = '';
+    this.slots = [];
+
     if (!this.selectedDate) {
       return;
     }
 
-    this.selectedSlotId = '';
+    this.loadingSlots = true;
 
-    this.api.getTimeSlots(this.selectedDate).subscribe({
-      next: (value) => {
-        this.slots = value.items;
-      },
-      error: (err) => {
-        this.error =
-          err.error?.message ||
-          'Không tải được khung giờ.';
-      },
-    });
+    this.api
+      .getTimeSlots(this.selectedDate)
+      .pipe(
+        finalize(() => {
+          this.loadingSlots = false;
+        })
+      )
+      .subscribe({
+        next: (value) => {
+          this.slots = value.items || [];
+        },
+        error: (err) => {
+          console.error(
+            '[Checkout] Cannot load time slots:',
+            err
+          );
+
+          this.slots = [];
+
+          this.error =
+            err.error?.message ||
+            'Không tải được khung giờ nhận bánh. Vui lòng thử lại.';
+        },
+      });
   }
 
   // ========================================
@@ -169,49 +207,141 @@ export class CheckoutPage implements OnInit {
 
   loadQuote(): void {
     if (!this.cartItems.length) {
+      this.quote = undefined;
       return;
     }
+
+    this.loadingQuote = true;
+    this.quote = undefined;
 
     this.api
       .quote({
         items: this.cartItems,
-        voucherCode: this.voucherCode || undefined,
+        voucherCode: this.voucherCode.trim() || undefined,
         receiveMethod: this.receiveMethod,
       })
+      .pipe(
+        finalize(() => {
+          this.loadingQuote = false;
+        })
+      )
       .subscribe({
         next: (value) => {
           this.quote = value;
+
+          if (!value.valid) {
+            this.voucherError =
+              'Một hoặc nhiều sản phẩm không còn hợp lệ. Vui lòng kiểm tra lại đơn hàng.';
+            return;
+          }
+
           this.voucherError = '';
         },
         error: (err) => {
+          console.error(
+            '[Checkout] Cannot calculate quote:',
+            err
+          );
+
           this.quote = undefined;
 
           this.voucherError =
             err.error?.message ||
-            'Không thể tính giá đơn hàng.';
+            'Không thể tính giá đơn hàng. Vui lòng thử lại.';
         },
       });
   }
 
+  // ========================================
+  // VOUCHER
+  // ========================================
+
   applyVoucher(): void {
-    if (!this.voucherCode.trim() || !this.quote) {
+    const code = this.voucherCode.trim();
+
+    if (!code) {
+      this.voucherError = 'Vui lòng nhập mã giảm giá.';
       return;
     }
 
-    this.api
-      .validateVoucher(this.voucherCode, this.quote.subtotal)
-      .subscribe({
-        next: () => this.loadQuote(),
-        error: (err) => {
-          this.voucherError =
-            err.error?.message ||
-            'Voucher không hợp lệ.';
-        },
-      });
+    if (!this.quote || !this.quote.valid) {
+      this.voucherError =
+        'Vui lòng chờ hệ thống tính giá đơn hàng trước.';
+      return;
+    }
+
+    this.voucherCode = code;
+    this.loadQuote();
   }
 
-  onReceiveMethodChange(): void {
+  removeVoucher(): void {
+    this.voucherCode = '';
+    this.voucherError = '';
     this.loadQuote();
+  }
+
+  // ========================================
+  // RECEIVE METHOD
+  // ========================================
+
+  onReceiveMethodChange(): void {
+    // Xóa lựa chọn khung giờ cũ để tránh gửi nhầm dữ liệu.
+    this.selectedSlotId = '';
+    this.slots = [];
+
+    // Khi chuyển phương thức nhận hàng, cần tính lại phí.
+    this.loadQuote();
+  }
+
+  // ========================================
+  // VALIDATION
+  // ========================================
+
+  private validateCheckout(): boolean {
+    if (!this.cartItems.length) {
+      this.error = 'Không có sản phẩm để đặt hàng.';
+      return false;
+    }
+
+    if (!this.quote || !this.quote.valid) {
+      this.error =
+        'Báo giá chưa hợp lệ. Vui lòng kiểm tra lại đơn hàng.';
+      return false;
+    }
+
+    if (!this.selectedDate) {
+      this.error = 'Vui lòng chọn ngày nhận bánh.';
+      return false;
+    }
+
+    if (!this.selectedSlotId) {
+      this.error = 'Vui lòng chọn khung giờ nhận bánh.';
+      return false;
+    }
+
+    if (!this.receiver.fullName.trim()) {
+      this.error = 'Vui lòng nhập họ và tên người nhận.';
+      return false;
+    }
+
+    const phone = this.receiver.phone.trim();
+    const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
+
+    if (!phoneRegex.test(phone)) {
+      this.error =
+        'Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.';
+      return false;
+    }
+
+    if (
+      this.receiveMethod === 'pickup' &&
+      !this.selectedBranch
+    ) {
+      this.error = 'Vui lòng chọn chi nhánh nhận bánh.';
+      return false;
+    }
+
+    return true;
   }
 
   // ========================================
@@ -219,30 +349,25 @@ export class CheckoutPage implements OnInit {
   // ========================================
 
   onSubmit(): void {
-    this.error = '';
-
-    if (!this.cartItems.length) {
-      this.error = 'Không có sản phẩm để đặt hàng.';
+    // Chặn gửi nhiều request khi người dùng bấm liên tục.
+    if (this.loading || this.loadingQuote || this.loadingSlots) {
       return;
     }
 
-    if (
-      !this.quote ||
-      !this.selectedSlotId ||
-      !this.receiver.fullName.trim() ||
-      !this.receiver.phone.trim()
-    ) {
-      this.error =
-        'Vui lòng nhập đủ thông tin và chọn khung giờ.';
+    this.error = '';
+
+    if (!this.validateCheckout()) {
       return;
     }
 
     const payload: CreateOrderRequest = {
-      // Backend nhận variant là mã biến thể dạng string,
-      // giống cấu trúc QuoteRequestItem của Cart.
       items: this.cartItems as unknown as CreateOrderRequest['items'],
 
-      receiver: this.receiver,
+      receiver: {
+        fullName: this.receiver.fullName.trim(),
+        phone: this.receiver.phone.trim(),
+      },
+
       receiveMethod: this.receiveMethod,
       slotId: this.selectedSlotId,
 
@@ -251,9 +376,11 @@ export class CheckoutPage implements OnInit {
           ? this.selectedBranch
           : undefined,
 
-      note: this.note,
-      voucherCode: this.voucherCode || undefined,
-      expectedTotal: this.quote.total,
+      note: this.note.trim(),
+      voucherCode: this.voucherCode.trim() || undefined,
+
+      // Backend sẽ đối chiếu với báo giá hiện tại.
+      expectedTotal: this.quote!.total,
     };
 
     this.loading = true;
@@ -262,46 +389,64 @@ export class CheckoutPage implements OnInit {
       .createOrder(payload)
       .pipe(
         catchError((err) => {
+          console.error(
+            '[Checkout] Cannot create order:',
+            err
+          );
+
           if (
             err.status === 409 &&
             err.error?.code === 'PRICE_CHANGED'
           ) {
-            this.quote = err.error.details?.currentQuote;
+            this.quote =
+              err.error.details?.currentQuote;
 
             this.error =
-              'Giá đơn hàng đã thay đổi. Vui lòng kiểm tra và bấm đặt hàng lại để xác nhận giá mới.';
+              'Giá đơn hàng đã thay đổi. Vui lòng kiểm tra tổng tiền mới trước khi đặt hàng lại.';
           } else {
             this.error =
               err.error?.message ||
-              'Không thể tạo đơn hàng.';
+              'Không thể tạo đơn hàng. Vui lòng thử lại.';
           }
 
           return of(null);
+        }),
+        finalize(() => {
+          this.loading = false;
         })
       )
       .subscribe((result) => {
-        this.loading = false;
-
         if (!result) {
           return;
         }
 
+        const orderId = result.order?._id;
+        const trackToken = result.trackToken;
+
+        if (!orderId || !trackToken) {
+          this.error =
+            'Đơn hàng đã được phản hồi nhưng thiếu thông tin theo dõi. Vui lòng liên hệ cửa hàng.';
+          return;
+        }
+
         sessionStorage.setItem(
-          `track:${result.order._id}`,
-          result.trackToken
+          `track:${orderId}`,
+          trackToken
         );
 
         sessionStorage.setItem(
-          `order:${result.order._id}`,
+          `order:${orderId}`,
           JSON.stringify(result.order)
         );
 
-        // Xóa dữ liệu Mua ngay tạm thời sau khi tạo đơn thành công.
-        sessionStorage.removeItem(this.BUY_NOW_STORAGE_KEY);
+        // Chỉ xóa dữ liệu Mua ngay sau khi tạo đơn thành công.
+        sessionStorage.removeItem(
+          this.BUY_NOW_STORAGE_KEY
+        );
 
         this.router.navigate([
           '/payment',
-          result.order._id,
+          orderId,
         ]);
       });
   }

@@ -4,25 +4,147 @@
   <div class="checkout__grid">
     <form class="sc-card checkout__form" (ngSubmit)="onSubmit()">
       <h2>Thông tin người nhận</h2>
-      <label>Họ và tên<input class="sc-input" name="fullName" [(ngModel)]="receiver.fullName" required /></label>
-      <label>Số điện thoại<input class="sc-input" name="phone" [(ngModel)]="receiver.phone" required /></label>
+      <label
+        >Họ và tên<input class="sc-input" name="fullName" [(ngModel)]="receiver.fullName" required
+      /></label>
+      <label
+        >Số điện thoại<input class="sc-input" name="phone" [(ngModel)]="receiver.phone" required
+      /></label>
       <h2>Hình thức nhận bánh</h2>
-      <label><input type="radio" name="receiveMethod" value="pickup" [(ngModel)]="receiveMethod" (change)="onReceiveMethodChange()" /> Nhận tại cửa hàng</label>
-      <label><input type="radio" name="receiveMethod" value="delivery" [(ngModel)]="receiveMethod" (change)="onReceiveMethodChange()" /> Giao tận nơi</label>
-      <label *ngIf="receiveMethod === 'pickup'">Chi nhánh
-        <select class="sc-input" name="branch" [(ngModel)]="selectedBranch"><option *ngFor="let branch of settings?.branches" [value]="branch._id || branch.name">{{ branch.name }} – {{ branch.address }}</option></select>
+
+      <div class="checkout__receive-method">
+        <label class="checkout__option">
+          <input
+            type="radio"
+            name="receiveMethod"
+            value="pickup"
+            [(ngModel)]="receiveMethod"
+            (change)="onReceiveMethodChange()"
+          />
+          <span>Nhận tại cửa hàng</span>
+        </label>
+
+        <label class="checkout__option">
+          <input
+            type="radio"
+            name="receiveMethod"
+            value="delivery"
+            [(ngModel)]="receiveMethod"
+            (change)="onReceiveMethodChange()"
+          />
+          <span>Giao tận nơi</span>
+        </label>
+      </div>
+      <label *ngIf="receiveMethod === 'pickup'"
+        >Chi nhánh
+        <select class="sc-input" name="branch" [(ngModel)]="selectedBranch">
+          <option *ngFor="let branch of settings?.branches" [value]="branch._id || branch.name">
+            {{ branch.name }} – {{ branch.address }}
+          </option>
+        </select>
       </label>
-      <label>Ngày nhận bánh<input class="sc-input" type="date" name="date" [(ngModel)]="selectedDate" (change)="loadSlots()" /></label>
-      <div class="checkout__slots"><button type="button" class="sc-btn sc-btn--secondary" *ngFor="let slot of slots" [disabled]="slot.status !== 'open'" [class.is-selected]="selectedSlotId === slot.id" (click)="selectedSlotId = slot.id">{{ slot.label }} <small>{{ slot.status === 'open' ? 'Còn chỗ' : slot.status === 'full' ? 'Đầy ca' : 'Đã đóng' }}</small></button></div>
-      <label>Mã voucher<div class="checkout__voucher"><input class="sc-input" name="voucher" [(ngModel)]="voucherCode" placeholder="Nhập mã giảm giá" /><button type="button" class="sc-btn" (click)="applyVoucher()">Áp dụng</button></div></label>
+      <label>
+        Ngày nhận bánh
+        <input
+          class="sc-input"
+          type="date"
+          name="date"
+          [(ngModel)]="selectedDate"
+          (change)="loadSlots()"
+          [disabled]="loading || loadingSlots"
+          required
+        />
+      </label>
+      <div class="checkout__slots-section">
+        <p class="checkout__field-title">Khung giờ nhận bánh</p>
+
+        <p *ngIf="!selectedDate" class="checkout__hint">Vui lòng chọn ngày nhận bánh trước.</p>
+
+        <p *ngIf="loadingSlots" class="checkout__hint">Đang tải khung giờ...</p>
+
+        <div class="checkout__slots" *ngIf="selectedDate && !loadingSlots && slots.length > 0">
+          <button
+            type="button"
+            class="sc-btn sc-btn--secondary"
+            *ngFor="let slot of slots"
+            [disabled]="slot.status !== 'open' || loading"
+            [class.is-selected]="selectedSlotId === slot.id"
+            (click)="selectedSlotId = slot.id"
+          >
+            {{ slot.label }}
+            <small>
+              {{
+                slot.status === 'open' ? 'Còn chỗ' : slot.status === 'full' ? 'Đầy ca' : 'Đã đóng'
+              }}
+            </small>
+          </button>
+        </div>
+
+        <p *ngIf="selectedDate && !loadingSlots && slots.length === 0" class="checkout__hint">
+          Hiện chưa có khung giờ nhận bánh cho ngày này. Vui lòng chọn ngày khác.
+        </p>
+      </div>
+      <label
+        >Mã voucher
+        <div class="checkout__voucher">
+          <input
+            class="sc-input"
+            name="voucher"
+            [(ngModel)]="voucherCode"
+            placeholder="Nhập mã giảm giá"
+          /><button type="button" class="sc-btn" (click)="applyVoucher()">Áp dụng</button>
+        </div></label
+      >
       <p class="checkout__error" *ngIf="voucherError">{{ voucherError }}</p>
-      <label>Ghi chú<textarea class="sc-textarea" name="note" [(ngModel)]="note" maxlength="200"></textarea><small>{{ note.length }}/200</small></label>
-      <button class="sc-btn sc-btn--primary" type="submit" [disabled]="loading || !quote">{{ loading ? 'Đang tạo đơn...' : 'Đặt hàng và thanh toán' }}</button>
+      <label
+        >Ghi chú<textarea
+          class="sc-textarea"
+          name="note"
+          [(ngModel)]="note"
+          maxlength="200"
+        ></textarea
+        ><small>{{ note.length }}/200</small></label
+      >
+      <button
+        class="sc-btn sc-btn--primary"
+        type="submit"
+        [disabled]="loading || loadingQuote || loadingSlots || !quote?.valid"
+      >
+        {{ loading ? 'Đang tạo đơn...' : 'Đặt hàng và thanh toán' }}
+      </button>
     </form>
-    <aside class="sc-card checkout__summary" *ngIf="quote">
+    <aside class="sc-card checkout__summary">
       <h2>Tóm tắt đơn hàng</h2>
-      <p>Tạm tính <strong>{{ formatVnd(quote.subtotal) }}</strong></p><p>Giảm giá <strong>-{{ formatVnd(quote.discount) }}</strong></p><p>Phí giao hàng <strong>{{ formatVnd(quote.deliveryFee) }}</strong></p>
-      <hr /><p class="checkout__total">Tổng thanh toán <strong>{{ formatVnd(quote.total) }}</strong></p>
+
+      <ng-container *ngIf="quote?.valid; else quoteUnavailable">
+        <p>
+          Tạm tính
+          <strong>{{ formatVnd(quote!.subtotal) }}</strong>
+        </p>
+
+        <p>
+          Giảm giá
+          <strong>-{{ formatVnd(quote!.discount) }}</strong>
+        </p>
+
+        <p>
+          Phí giao hàng
+          <strong>{{ formatVnd(quote!.deliveryFee) }}</strong>
+        </p>
+
+        <hr />
+
+        <p class="checkout__total">
+          Tổng thanh toán
+          <strong>{{ formatVnd(quote!.total) }}</strong>
+        </p>
+      </ng-container>
+
+      <ng-template #quoteUnavailable>
+        <p class="checkout__hint">
+          {{ loadingQuote ? 'Đang tính giá đơn hàng...' : 'Chưa có thông tin báo giá.' }}
+        </p>
+      </ng-template>
     </aside>
   </div>
 </section>
