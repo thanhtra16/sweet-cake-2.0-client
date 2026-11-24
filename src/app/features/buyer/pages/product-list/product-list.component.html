@@ -115,7 +115,8 @@
             @for (product of pagedProducts(); track product.id) {
               <app-product-card
                 [product]="product"
-                [showAddToCart]="false"
+                [showAddToCart]="true"
+                (addToCart)="onAddToCart($event)"
               />
             }
           </div>

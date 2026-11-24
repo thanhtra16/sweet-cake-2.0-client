@@ -8,7 +8,7 @@ import {
   signal
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Product } from '@shared/models/product.model';
 import { ProductService } from '@core/services/product.service';
@@ -37,6 +37,7 @@ const SLIDE_INTERVAL_MS = 5000;
 export class HomeComponent implements OnInit, OnDestroy {
   private readonly productService = inject(ProductService);
   private readonly cart = inject(CartService);
+  private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly bannerImages = [
@@ -68,10 +69,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly isLoading = signal(true);
   readonly hasError = signal(false);
 
+  /** Thông báo khi vừa thêm sản phẩm từ trang chi tiết quay về Trang chủ */
+  readonly toastMessage = signal('');
+  readonly showViewCartAction = signal(false);
+  private toastTimer?: ReturnType<typeof setTimeout>;
   private slideTimer?: ReturnType<typeof setInterval>;
 
   ngOnInit(): void {
     this.startAutoplay();
+    this.consumeAddedToastFromHistoryState();
 
     this.productService.getFeaturedProducts().subscribe({
       next: (products) => {
@@ -88,6 +94,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopAutoplay();
+    clearTimeout(this.toastTimer);
   }
 
   nextSlide(): void {
@@ -105,17 +112,54 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.startAutoplay();
   }
 
-  async onAddToCart(product: BuyerProduct): Promise<void> {
+  /**
+   * Theo quy trình: Bấm "Thêm vào giỏ hàng" trên thẻ sản phẩm ở Trang chủ
+   * sẽ mở trang chi tiết để khách tùy biến (bánh kem) hoặc chọn biến thể (phụ kiện).
+   */
+  onAddToCart(product: BuyerProduct): void {
     const productId = String(product._id ?? product.id ?? '');
-    await this.cart.addItem({
-      productId,
-      productName: product.name,
-      productKind: product.kind ?? 'cake',
-      imageUrl: product.image ?? product.thumbnail ?? null,
-      unitPrice: Number(product.price ?? 0),
-      customization: null,
-      accessories: [],
+    if (!productId) {
+      return;
+    }
+
+    this.router.navigate(['/product', productId], {
+      state: { returnUrl: this.router.url || '/' }
     });
+  }
+
+  openCart(): void {
+    if (typeof (this.cart as any).openDrawer === 'function') {
+      (this.cart as any).openDrawer();
+      return;
+    }
+    this.router.navigate(['/cart']);
+  }
+
+  private consumeAddedToastFromHistoryState(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    const state = window.history.state as {
+      cartAdded?: { quantity: number; productName: string };
+    } | null;
+
+    if (state?.cartAdded) {
+      const { quantity, productName } = state.cartAdded;
+      this.toastMessage.set(
+        `Đã thêm vào giỏ hàng: ${quantity} × ${productName}`
+      );
+      this.showViewCartAction.set(true);
+
+      clearTimeout(this.toastTimer);
+      this.toastTimer = setTimeout(() => {
+        this.toastMessage.set('');
+        this.showViewCartAction.set(false);
+      }, 5000);
+
+      const { cartAdded: _removed, ...restState } = state;
+      window.history.replaceState(restState, '');
+    }
   }
 
   private goTo(index: number): void {
@@ -129,7 +173,10 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.stopAutoplay();
-    this.slideTimer = setInterval(() => this.goTo(this.activeSlide() + 1), SLIDE_INTERVAL_MS);
+    this.slideTimer = setInterval(
+      () => this.goTo(this.activeSlide() + 1),
+      SLIDE_INTERVAL_MS
+    );
   }
 
   private stopAutoplay(): void {
