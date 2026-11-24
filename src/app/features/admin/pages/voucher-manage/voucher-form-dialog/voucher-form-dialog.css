@@ -1,0 +1,63 @@
+/* CSS riêng hộp thoại voucher */
+.vf-modal { width: min(640px, 100%); }
+
+.vf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sc-space-4);
+}
+
+.vf-code {
+  font-family: var(--ad-mono, ui-monospace, Menlo, monospace);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vf-desc { min-height: 70px; }
+
+.vf-alert,
+.vf-info {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sc-space-2);
+  margin: 0 0 var(--sc-space-4);
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--sc-radius-md);
+  font-size: var(--sc-text-sm);
+}
+
+.vf-alert { background: var(--sc-danger-bg); color: var(--sc-danger); }
+.vf-info { background: var(--sc-warning-bg); color: var(--sc-warning); }
+.vf-alert i, .vf-info i { margin-top: 3px; }
+
+@media (max-width: 560px) {
+  .vf-grid { grid-template-columns: 1fr; }
+}
+/* Hộp thoại thêm/sửa voucher (chỉ dùng trong trang Voucher) */
+.vf-modal { width: min(640px, 100%); }
+.vf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sc-space-4);
+}
+.vf-code { font-family: var(--ad-mono, ui-monospace, Menlo, monospace); text-transform: uppercase; letter-spacing: 0.05em; }
+.vf-desc { min-height: 70px; }
+
+.vf-alert,
+.vf-info {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sc-space-2);
+  margin: 0 0 var(--sc-space-4);
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--sc-radius-md);
+  font-size: var(--sc-text-sm);
+}
+.vf-alert { background: var(--sc-danger-bg); color: var(--sc-danger); }
+.vf-info { background: var(--sc-warning-bg); color: var(--sc-warning); }
+.vf-alert i,
+.vf-info i { margin-top: 3px; }
+
+@media (max-width: 560px) {
+  .vf-grid { grid-template-columns: 1fr; }
+}

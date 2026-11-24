@@ -1,0 +1,44 @@
+<h2 class="acc-main-title">Đơn hàng của tôi</h2>
+
+<div class="order-filters-scroll">
+  <div class="order-filters">
+    <button type="button" class="order-filter-btn" [class.active]="filter() === 'all'" (click)="filter.set('all')">Tất cả</button>
+    @for (status of statuses; track status) {
+      <button type="button" class="order-filter-btn" [class.active]="filter() === status" (click)="filter.set(status)">
+        {{ labels[status] }}
+      </button>
+    }
+  </div>
+</div>
+
+@if (visibleOrders().length === 0) {
+  <div class="order-empty-state">
+    <span>Chưa có đơn hàng nào được tạo.</span>
+    <a routerLink="/" class="order-empty-action">Mua sắm ngay</a>
+  </div>
+} @else {
+  <div class="order-table-wrap">
+    <table class="order-table">
+      <thead>
+        <tr>
+          <th>Mã đơn</th>
+          <th>Ngày đặt</th>
+          <th>Sản phẩm</th>
+          <th>Tổng tiền</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of visibleOrders(); track order.code) {
+          <tr>
+            <td><strong>{{ order.code }}</strong></td>
+            <td>{{ order.createdAt }}</td>
+            <td>{{ order.summary }}</td>
+            <td><strong>{{ order.total.toLocaleString('vi-VN') }}đ</strong></td>
+            <td><span class="order-status" [class]="'order-status ' + statusClass(order.status)">{{ labels[order.status] }}</span></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

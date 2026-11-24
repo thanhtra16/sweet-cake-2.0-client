@@ -1,0 +1,175 @@
+<header class="ad-head">
+  <div>
+    <h1 class="ad-title">{{ isEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm' }}</h1>
+    <p class="ad-sub">Giá bán cuối cùng do hệ thống tính và kiểm tra khi khách đặt hàng.</p>
+  </div>
+  <a class="sc-btn sc-btn--outline" routerLink="/admin/products">← Danh sách sản phẩm</a>
+</header>
+
+@if (loading) {
+  <div class="sc-loading" role="status"><span class="sc-spinner"></span><p>Đang tải sản phẩm...</p></div>
+} @else if (loadError) {
+  <div class="ad-error" role="alert">{{ loadError }}
+    <a class="sc-btn sc-btn--outline sc-btn--sm" routerLink="/admin/products">Quay lại danh sách</a>
+  </div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+    <section class="ad-card">
+      <div class="ad-card__head"><h2 class="ad-card__title">Thông tin sản phẩm</h2></div>
+      <div class="ad-grid">
+        <div class="sc-form-field ad-span-all">
+          <label class="sc-label" for="p-name">Tên sản phẩm <span class="sc-required">*</span></label>
+          <input id="p-name" class="sc-input" formControlName="name" [attr.aria-invalid]="hasError('name')" />
+          @if (hasError('name')) { <span class="sc-error-text">Vui lòng nhập tên sản phẩm.</span> }
+        </div>
+
+        <div class="sc-form-field">
+          <label class="sc-label" for="p-kind">Loại sản phẩm <span class="sc-required">*</span></label>
+          <select id="p-kind" class="sc-select" formControlName="kind">
+            <option value="cake">Bánh kem</option>
+            <option value="accessory">Phụ kiện</option>
+          </select>
+        </div>
+
+        <div class="sc-form-field">
+          <label class="sc-label" for="p-cat">Danh mục <span class="sc-required">*</span></label>
+          <input id="p-cat" class="sc-input" formControlName="category" placeholder="Ví dụ: birthday" [attr.aria-invalid]="hasError('category')" />
+          @if (hasError('category')) { <span class="sc-error-text">Vui lòng nhập danh mục.</span> }
+        </div>
+
+        <div class="sc-form-field">
+          <label class="sc-label" for="p-occ">Dịp sử dụng</label>
+          <input id="p-occ" class="sc-input" formControlName="occasionsText" placeholder="Cách nhau bằng dấu phẩy" />
+        </div>
+
+        <div class="sc-form-field ad-span-all">
+          <label class="sc-label" for="p-desc">Mô tả</label>
+          <textarea id="p-desc" class="sc-textarea" rows="3" formControlName="description"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="ad-card">
+      <div class="ad-card__head"><h2 class="ad-card__title">Giá và hiển thị</h2></div>
+      <div class="ad-grid">
+        <div class="sc-form-field">
+          <label class="sc-label" for="p-base">Giá gốc (đ) <span class="sc-required">*</span></label>
+          <input id="p-base" type="number" min="0" class="sc-input" formControlName="basePrice" [attr.aria-invalid]="hasError('basePrice')" />
+          @if (hasError('basePrice')) { <span class="sc-error-text">Giá gốc phải là số không âm.</span> }
+        </div>
+
+        <div class="sc-form-field">
+          <label class="sc-label" for="p-sale">Giá khuyến mãi (đ)</label>
+          <input id="p-sale" type="number" min="0" class="sc-input" formControlName="salePrice"
+            [attr.aria-invalid]="hasError('salePrice') || form.hasError('saleTooHigh')" />
+          @if (form.hasError('saleTooHigh')) { <span class="sc-error-text">Giá khuyến mãi không được cao hơn giá gốc.</span> }
+          @else { <span class="sc-help-text">Để trống nếu không khuyến mãi.</span> }
+        </div>
+
+        <div class="sc-form-field">
+          <label class="sc-label" for="p-status">Trạng thái</label>
+          <select id="p-status" class="sc-select" formControlName="status">
+            <option value="visible">Hiển thị</option>
+            <option value="hidden">Ẩn</option>
+          </select>
+        </div>
+
+        <div class="sc-form-field">
+          <span class="sc-label">Nổi bật</span>
+          <label class="ad-switch"><input type="checkbox" formControlName="featured" /> Sản phẩm nổi bật</label>
+        </div>
+      </div>
+    </section>
+
+    @if (form.value.kind === 'cake') {
+      <section class="ad-card">
+        <div class="ad-card__head"><h2 class="ad-card__title">Kích thước và nhân bánh khả dụng</h2></div>
+
+        @if (!config) {
+          <p class="sc-help-text">Chưa có cấu hình tùy biến nên chưa có lựa chọn. Hãy tạo cấu hình ở mục “Cấu hình tùy biến”.</p>
+        }
+
+        <div class="opt-group">
+          <span class="sc-label">Kích thước</span>
+          <div class="ad-chips">
+            @for (name of optionNames('sizes'); track name) {
+              <label class="ad-chip"><input type="checkbox" [checked]="selectedSizes.has(name)" (change)="toggleOption(selectedSizes, name)" /> {{ name }}</label>
+            } @empty { <span class="sc-help-text">Chưa có kích thước.</span> }
+          </div>
+        </div>
+
+        <div class="opt-group">
+          <span class="sc-label">Nhân bánh</span>
+          <div class="ad-chips">
+            @for (name of optionNames('fillings'); track name) {
+              <label class="ad-chip"><input type="checkbox" [checked]="selectedFillings.has(name)" (change)="toggleOption(selectedFillings, name)" /> {{ name }}</label>
+            } @empty { <span class="sc-help-text">Chưa có nhân bánh.</span> }
+          </div>
+        </div>
+      </section>
+    }
+
+    <section class="ad-card">
+      <div class="ad-card__head">
+        <h2 class="ad-card__title">Biến thể</h2>
+        <button type="button" class="sc-btn sc-btn--secondary sc-btn--sm" (click)="addVariant()">+ Thêm biến thể</button>
+      </div>
+
+      @for (v of variants; track $index; let vi = $index) {
+        <div class="variant">
+          <div class="variant__top">
+            <input class="sc-input" [(ngModel)]="v.label" [ngModelOptions]="{ standalone: true }"
+              placeholder="Tên biến thể, ví dụ: Nến số 1" [attr.aria-label]="'Tên biến thể ' + (vi + 1)" />
+            <label class="ad-switch"><input type="checkbox" [(ngModel)]="v.active" [ngModelOptions]="{ standalone: true }" /> Hoạt động</label>
+            <button type="button" class="sc-btn sc-btn--outline sc-btn--sm" (click)="variants.splice(vi, 1)">Xóa biến thể</button>
+          </div>
+
+          @for (a of v.attrs; track $index; let ai = $index) {
+            <div class="attr">
+              <input class="sc-input" [(ngModel)]="a.key" [ngModelOptions]="{ standalone: true }" placeholder="Thuộc tính (vd: size)" aria-label="Tên thuộc tính" />
+              <input class="sc-input" [(ngModel)]="a.value" [ngModelOptions]="{ standalone: true }" placeholder="Giá trị (vd: 14cm)" aria-label="Giá trị thuộc tính" />
+              <button type="button" class="sc-icon-btn" (click)="v.attrs.splice(ai, 1)" aria-label="Xóa thuộc tính">×</button>
+            </div>
+          }
+          <button type="button" class="sc-btn sc-btn--outline sc-btn--sm" (click)="addAttr(v)">+ Thêm thuộc tính</button>
+        </div>
+      } @empty {
+        <p class="sc-help-text">Chưa có biến thể. Phụ kiện như nến số, màu sắc hoặc kích thước có thể khai báo tại đây.</p>
+      }
+    </section>
+
+    <section class="ad-card">
+      <div class="ad-card__head">
+        <h2 class="ad-card__title">Hình ảnh <span class="ad-count">{{ totalImages }}/{{ maxImages }}</span></h2>
+      </div>
+
+      <div class="images">
+        @for (id of existingImageIds; track id) {
+          <img class="img-tile" [src]="imageUrl(id)" alt="Ảnh sản phẩm hiện có" />
+        }
+        @for (img of newImages; track img.url; let i = $index) {
+          <div class="img-new">
+            <img class="img-tile" [src]="img.url" alt="Ảnh mới chưa lưu" />
+            <button type="button" class="img-new__remove" (click)="removeNewImage(i)" aria-label="Bỏ ảnh này">×</button>
+          </div>
+        }
+        @if (totalImages < maxImages) {
+          <label class="img-add">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Thêm ảnh</span>
+            <input type="file" multiple accept="image/jpeg,image/png,image/webp" (change)="onFilesSelected($event)" hidden />
+          </label>
+        }
+      </div>
+      <p class="sc-help-text">JPG, PNG hoặc WebP, tối đa 5MB mỗi ảnh. Ảnh mới sẽ được tải lên sau khi lưu sản phẩm.</p>
+      @if (imageError) { <p class="sc-error-text" role="alert">{{ imageError }}</p> }
+    </section>
+
+    <div class="ad-actions">
+      <a class="sc-btn sc-btn--outline" routerLink="/admin/products">Hủy</a>
+      <button type="submit" class="sc-btn sc-btn--primary" [disabled]="saving">
+        {{ saving ? 'Đang lưu...' : (isEdit ? 'Lưu thay đổi' : 'Thêm sản phẩm') }}
+      </button>
+    </div>
+  </form>
+}

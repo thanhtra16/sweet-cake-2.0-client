@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
 
 export type ToastType = 'success' | 'warning' | 'error' | 'info';
@@ -12,9 +13,34 @@ export interface ToastMessage {
 
 @Injectable({ providedIn: 'root' })
 export class ToastService {
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private nextId = 0;
+
   private readonly toastSubject = new BehaviorSubject<ToastMessage[]>([]);
   readonly toasts$ = this.toastSubject.asObservable();
+  readonly toasts = signal<ToastMessage[]>([]);
+
+  show(
+    type: ToastType,
+    message: string,
+    title = 'Thông báo',
+    durationMs = 4000
+  ): void {
+    const toast: ToastMessage = {
+      id: ++this.nextId,
+      type,
+      title,
+      message,
+    };
+
+    const nextList = [...this.toastSubject.value, toast];
+    this.toastSubject.next(nextList);
+    this.toasts.set(nextList);
+
+    if (this.isBrowser) {
+      setTimeout(() => this.dismiss(toast.id), durationMs);
+    }
+  }
 
   success(message: string, title = 'Thành công'): void {
     this.show('success', message, title);
@@ -25,7 +51,7 @@ export class ToastService {
   }
 
   error(message: string, title = 'Có lỗi xảy ra'): void {
-    this.show('error', message, title);
+    this.show('error', message, title, 6000);
   }
 
   info(message: string, title = 'Thông báo'): void {
@@ -33,14 +59,8 @@ export class ToastService {
   }
 
   dismiss(id: number): void {
-    this.toastSubject.next(this.toastSubject.value.filter((toast) => toast.id !== id));
-  }
-
-  private show(type: ToastType, message: string, title: string): void {
-    const toast: ToastMessage = { id: ++this.nextId, type, title, message };
-    this.toastSubject.next([...this.toastSubject.value, toast]);
-
-    // Tự đóng sau 4 giây.
-    setTimeout(() => this.dismiss(toast.id), 4000);
+    const nextList = this.toastSubject.value.filter((toast) => toast.id !== id);
+    this.toastSubject.next(nextList);
+    this.toasts.set(nextList);
   }
 }

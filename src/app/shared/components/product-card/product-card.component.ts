@@ -1,10 +1,17 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { VndPipe } from '../../pipes/vnd.pipe';
 import { Product } from '../../models/product.model';
 
-export interface BuyerProduct extends Partial<Product>{
+export interface BuyerProduct extends Partial<Product> {
   _id?: string;
   id?: string;
   name: string;
@@ -25,14 +32,22 @@ export interface BuyerProduct extends Partial<Product>{
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductCardComponent {
+  private readonly router = inject(Router);
+
   @Input({ required: true }) product!: BuyerProduct;
   @Input() showAddToCart = true;
+  @Input() showAction = true;
+  @Input() showMeta = false;
 
   @Output() viewDetail = new EventEmitter<BuyerProduct>();
   @Output() addToCart = new EventEmitter<BuyerProduct>();
 
   get productId(): string {
-    return this.product._id || this.product.id || '';
+    return String(this.product?._id ?? this.product?.id ?? '').trim();
+  }
+
+  get currentUrl(): string {
+    return this.router.url || '/products';
   }
 
   get productImage(): string {
@@ -49,5 +64,13 @@ export class ProductCardComponent {
 
   onAddToCart(): void {
     this.addToCart.emit(this.product);
+
+    if (this.addToCart.observed || !this.productId) {
+      return;
+    }
+
+    this.router.navigate(['/product', this.productId], {
+      state: { returnUrl: this.currentUrl },
+    });
   }
 }

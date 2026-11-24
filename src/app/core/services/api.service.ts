@@ -1,5 +1,6 @@
+
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -63,6 +64,32 @@ export interface ProductCustomization {
   bannedWords: string[];
 }
 
+/** Body gửi lên POST/PUT /admin/products. Backend KHÔNG nhận imageIds, rating, reviewCount. */
+export type ProductPayload = Partial<
+  Pick<
+    Product,
+    | 'name' | 'kind' | 'category' | 'occasions' | 'description'
+    | 'basePrice' | 'salePrice' | 'status' | 'featured'
+    | 'availableSizes' | 'availableFillings' | 'variants'
+  >
+>;
+
+/** Phần tử trả về từ POST /images. */
+export interface UploadedImage {
+  id: string;
+  filename: string;
+  contentType: string;
+  size: number;
+  purpose: string;
+}
+
+/** Body PUT /admin/customizations (Backend cho phép cập nhật từng phần). */
+export type CustomizationPayload = Partial<Omit<ProductCustomization, 'required'>> & {
+  required?: Partial<ProductCustomization['required']>;
+};
+
+
+// Response danh sách sản phẩm
 export interface ProductListResponse {
   success: boolean;
   data: Product[];
@@ -72,6 +99,23 @@ export interface ProductListResponse {
     total: number;
     totalPages: number;
   };
+}
+
+// Tham số tìm kiếm, lọc và phân trang sản phẩm Admin
+export interface AdminProductQuery {
+  q?: string;
+  kind?: 'cake' | 'accessory' | '';
+  category?: string;
+  status?: 'visible' | 'hidden' | '';
+  page?: number;
+  limit?: number;
+  sort?:
+    | 'newest'
+    | 'oldest'
+    | 'name_asc'
+    | 'name_desc'
+    | 'price_asc'
+    | 'price_desc';
 }
 
 // Phương thức nhận hàng khi tính báo giá
@@ -138,21 +182,21 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  /** Gọi GET và trả về trực tiếp phần `data` của phản hồi. */
+  /** Gọi GET và trả về trực tiếp phần data của phản hồi. */
   get<T>(path: string): Observable<T> {
     return this.http
       .get<ApiResponse<T>>(`${this.apiUrl}${path}`)
       .pipe(map((res) => res.data));
   }
 
-  /** Gọi POST và trả về trực tiếp phần `data` của phản hồi. */
+  /** Gọi POST và trả về trực tiếp phần data của phản hồi. */
   post<T>(path: string, body: unknown): Observable<T> {
     return this.http
       .post<ApiResponse<T>>(`${this.apiUrl}${path}`, body)
       .pipe(map((res) => res.data));
   }
 
-  /** Gọi PATCH và trả về trực tiếp phần `data` của phản hồi. */
+  /** Gọi PATCH và trả về trực tiếp phần data của phản hồi. */
   patch<T>(path: string, body: unknown = {}): Observable<T> {
     return this.http
       .patch<ApiResponse<T>>(`${this.apiUrl}${path}`, body)
@@ -197,5 +241,104 @@ export class ApiService {
   // URL ảnh GridFS: GET /api/images/:fileId
   getProductImageUrl(fileId: string): string {
     return `${this.apiUrl}/images/${fileId}`;
+  }
+
+  /**
+   * GET /api/admin/products
+   * Lấy danh sách sản phẩm kèm thông tin phân trang.
+   */
+  getAdminProducts(
+    filters: AdminProductQuery = {}
+  ): Observable<ProductListResponse> {
+    let params = new HttpParams();
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, String(value));
+      }
+    });
+
+    return this.http.get<ProductListResponse>(
+      `${this.apiUrl}/admin/products`,
+      { params }
+    );
+  }
+
+  /**
+   * PATCH /api/admin/products/:id/status
+   * Cập nhật trạng thái hiển thị sản phẩm.
+   */
+  updateAdminProductStatus(
+    id: string,
+    status: 'visible' | 'hidden'
+  ): Observable<Product> {
+    return this.http
+      .patch<ApiResponse<Product>>(
+        `${this.apiUrl}/admin/products/${id}/status`,
+        { status }
+      )
+      .pipe(map((response) => response.data));
+  }
+
+   /** GET /api/admin/products/:id */
+  getAdminProductById(id: string): Observable<Product> {
+    return this.http
+      .get<ApiResponse<Product>>(`${this.apiUrl}/admin/products/${id}`)
+      .pipe(map((res) => res.data));
+  }
+/** Gọi PUT và trả về trực tiếp phần data của phản hồi. */
+  put<T>(path: string, body: unknown = {}): Observable<T> {
+    return this.http
+      .put<ApiResponse<T>>(`${this.apiUrl}${path}`, body)
+      .pipe(map((res) => res.data));
+  }
+
+  /** Gọi DELETE và trả về trực tiếp phần data của phản hồi. */
+  delete<T>(path: string): Observable<T> {
+    return this.http
+      .delete<ApiResponse<T>>(`${this.apiUrl}${path}`)
+      .pipe(map((res) => res.data));
+  }
+
+  /** POST /api/admin/products */
+  createAdminProduct(body: ProductPayload): Observable<Product> {
+    return this.http
+      .post<ApiResponse<Product>>(`${this.apiUrl}/admin/products`, body)
+      .pipe(map((res) => res.data));
+  }
+
+  /** PUT /api/admin/products/:id */
+  updateAdminProduct(id: string, body: ProductPayload): Observable<Product> {
+    return this.http
+      .put<ApiResponse<Product>>(`${this.apiUrl}/admin/products/${id}`, body)
+      .pipe(map((res) => res.data));
+  }
+
+  /**
+   * POST /api/images (multer: upload.array('images', 10))
+   * Backend tự thêm id ảnh vào Product.imageIds.
+   */
+  uploadProductImages(productId: string, files: File[]): Observable<UploadedImage[]> {
+    const form = new FormData();
+    form.append('purpose', 'product');
+    form.append('productId', productId);
+    files.forEach((file) => form.append('images', file, file.name));
+    return this.http
+      .post<ApiResponse<UploadedImage[]>>(`${this.apiUrl}/images`, form)
+      .pipe(map((res) => res.data));
+  }
+
+  /** GET /api/admin/customizations (404 nếu chưa có cấu hình) */
+  getAdminCustomization(): Observable<ProductCustomization> {
+    return this.http
+      .get<ApiResponse<ProductCustomization>>(`${this.apiUrl}/admin/customizations`)
+      .pipe(map((res) => res.data));
+  }
+
+  /** PUT /api/admin/customizations */
+  updateAdminCustomization(body: CustomizationPayload): Observable<ProductCustomization> {
+    return this.http
+      .put<ApiResponse<ProductCustomization>>(`${this.apiUrl}/admin/customizations`, body)
+      .pipe(map((res) => res.data));
   }
 }
