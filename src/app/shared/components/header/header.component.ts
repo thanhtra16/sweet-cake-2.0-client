@@ -1,8 +1,8 @@
-
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { CartService } from '../../services/cart.service';
+
+import { CartService } from '@shared/services/cart.service';
 
 @Component({
   selector: 'app-header',

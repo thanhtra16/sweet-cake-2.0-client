@@ -3,10 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { Product, ProductDto } from '../../shared/models/product.model';
+import { Product, ProductDto } from '@shared/models/product.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ProductService {
   private readonly http = inject(HttpClient);
@@ -15,22 +15,18 @@ export class ProductService {
   getProducts(): Observable<Product[]> {
     return this.http
       .get<unknown>(`${environment.apiUrl}/products`, {
-        params: { kind: 'cake', limit: '100' }
+        params: { kind: 'cake', limit: '100' },
       })
       .pipe(map((res) => this.extractList(res).map((dto) => this.toProduct(dto))));
   }
 
- /** Sản phẩm nổi bật cho trang chủ: những sản phẩm có featured = true. */
-getFeaturedProducts(limit = 8): Observable<Product[]> {
-  return this.getProducts().pipe(
-    map((products) => products.filter((p) => p.bestSeller).slice(0, limit))
-  );
-}
+  /** Sản phẩm nổi bật cho trang chủ: những sản phẩm có featured = true. */
+  getFeaturedProducts(limit = 8): Observable<Product[]> {
+    return this.getProducts().pipe(
+      map((products) => products.filter((p) => p.bestSeller).slice(0, limit)),
+    );
+  }
 
-  /**
-   * Backend có thể trả mảng thuần, hoặc bọc trong { data } / { data: { products } }
-   * (định dạng chung của utils/response.js). Hàm này chấp nhận cả ba.
-   */
   private extractList(res: unknown): ProductDto[] {
     if (Array.isArray(res)) {
       return res;
@@ -53,24 +49,49 @@ getFeaturedProducts(limit = 8): Observable<Product[]> {
     return [];
   }
 
+  /** Chuẩn hóa đường dẫn ảnh từ nhiều dạng dữ liệu API (string ID, object {_id}, hoặc {url}) */
+  private resolveImageUrl(raw: unknown): string {
+    if (!raw) return '';
+
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (!trimmed || trimmed === '[object Object]') return '';
+      if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
+        return trimmed;
+      }
+      return `${environment.apiUrl}/images/${trimmed}`;
+    }
+
+    if (typeof raw === 'object') {
+      const obj = raw as { url?: string; _id?: unknown; id?: unknown };
+      if (obj.url && typeof obj.url === 'string') {
+        return obj.url;
+      }
+      const id = String(obj._id ?? obj.id ?? '').trim();
+      if (id && id !== '[object Object]') {
+        return `${environment.apiUrl}/images/${id}`;
+      }
+    }
+
+    return '';
+  }
+
   private toProduct(dto: ProductDto): Product {
-    const createdAt = dto.createdAt
-      ? new Date(dto.createdAt).getTime()
-      : 0;
+    const createdAt = dto.createdAt ? new Date(dto.createdAt).getTime() : 0;
+    const rawAny = dto as any;
+    const firstImage = dto.imageIds?.[0] ?? rawAny.images?.[0] ?? rawAny.thumbnail ?? rawAny.image;
 
     return {
       id: String(dto.id ?? dto._id ?? ''),
       name: dto.name ?? '',
       price: Number(dto.salePrice ?? dto.basePrice ?? 0),
-      thumbnail: dto.imageIds?.[0]?.url ?? '',
+      thumbnail: this.resolveImageUrl(firstImage),
       category: dto.category ?? '',
-      // Giữ toàn bộ mảng (nối chuỗi hoặc lưu mảng) để không bị sót khi lọc
       occasion: Array.isArray(dto.occasions) ? dto.occasions.join(', ') : '',
       flavor: Array.isArray(dto.availableFillings) ? dto.availableFillings.join(', ') : '',
-      // Map category sang type (ví dụ "Bánh mousse" -> "Mousse", "Bánh Bento" -> "Bento")
       type: dto.type ?? dto.category?.replace(/^Bánh\s+/i, '') ?? '',
       bestSeller: !!dto.featured,
-      createdAt
+      createdAt,
     };
   }
 }

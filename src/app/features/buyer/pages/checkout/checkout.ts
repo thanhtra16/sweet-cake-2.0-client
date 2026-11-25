@@ -1,8 +1,14 @@
-
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
 
 import { CheckoutApiService } from '@core/services/checkout-api.service';
@@ -34,13 +40,15 @@ interface BuyNowData {
 @Component({
   selector: 'app-checkout-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './checkout.html',
   styleUrl: './checkout.scss',
 })
 export class CheckoutPage implements OnInit {
   private readonly api = inject(CheckoutApiService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly elRef = inject(ElementRef);
 
   private readonly BUY_NOW_STORAGE_KEY = 'sweetcake_buy_now';
 
@@ -51,6 +59,7 @@ export class CheckoutPage implements OnInit {
   loading = false;
   loadingSlots = false;
   loadingQuote = false;
+  branchDropdownOpen = false;
 
   error = '';
   voucherError = '';
@@ -59,6 +68,7 @@ export class CheckoutPage implements OnInit {
   selectedDate = '';
   selectedSlotId = '';
   selectedBranch = '';
+  minDate = '';
 
   receiver = {
     fullName: '',
@@ -72,6 +82,7 @@ export class CheckoutPage implements OnInit {
   cartItems: BuyNowData['items'] = [];
 
   ngOnInit(): void {
+    this.minDate = this.getTodayIso();
     this.restoreBuyNowData();
 
     if (this.cartItems.length === 0) {
@@ -81,10 +92,41 @@ export class CheckoutPage implements OnInit {
     }
 
     this.loadSettings();
-
-    // Luôn lấy báo giá mới nhất từ Backend.
-    // Không sử dụng giá được lưu từ trang sản phẩm.
     this.loadQuote();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.branchDropdownOpen) return;
+    const dropdownEl =
+      this.elRef.nativeElement.querySelector('.sc-branch-select');
+    if (dropdownEl && !dropdownEl.contains(event.target as Node)) {
+      this.branchDropdownOpen = false;
+    }
+  }
+
+  get selectedBranchObj() {
+    return this.settings?.branches?.find(
+      (b) => (b._id || b.name) === this.selectedBranch
+    );
+  }
+
+  toggleBranchDropdown(): void {
+    if (this.loading) return;
+    this.branchDropdownOpen = !this.branchDropdownOpen;
+  }
+
+  selectBranch(branch: any): void {
+    this.selectedBranch = branch._id || branch.name;
+    this.branchDropdownOpen = false;
+  }
+
+  private getTodayIso(): string {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   // ========================================
@@ -93,9 +135,7 @@ export class CheckoutPage implements OnInit {
 
   private restoreBuyNowData(): void {
     try {
-      const rawData = sessionStorage.getItem(
-        this.BUY_NOW_STORAGE_KEY
-      );
+      const rawData = sessionStorage.getItem(this.BUY_NOW_STORAGE_KEY);
 
       if (!rawData) {
         return;
@@ -108,9 +148,7 @@ export class CheckoutPage implements OnInit {
         data.items.length === 0 ||
         !data.items.every(
           (item) =>
-            !!item.productId &&
-            Number.isInteger(item.qty) &&
-            item.qty > 0
+            !!item.productId && Number.isInteger(item.qty) && item.qty > 0
         )
       ) {
         this.error =
@@ -122,10 +160,7 @@ export class CheckoutPage implements OnInit {
       this.receiveMethod =
         data.receiveMethod === 'delivery' ? 'delivery' : 'pickup';
     } catch (err) {
-      console.error(
-        '[Checkout] Cannot restore Buy Now data:',
-        err
-      );
+      console.error('[Checkout] Cannot restore Buy Now data:', err);
 
       this.error =
         'Không thể đọc thông tin sản phẩm. Vui lòng thực hiện lại thao tác Mua ngay.';
@@ -138,25 +173,22 @@ export class CheckoutPage implements OnInit {
 
   private loadSettings(): void {
     this.api.getSettings().subscribe({
-      next: (value) => {
-        this.settings = value;
+      next: (value: any) => {
+        const payload = value?.data ?? value;
+        this.settings = payload;
 
-        // Chỉ sử dụng ID của chi nhánh, không dùng tên chi nhánh
-        // thay thế cho ID khi gửi request tạo đơn.
         if (!this.selectedBranch) {
-          this.selectedBranch =
-            value.branches?.[0]?._id || '';
+          this.selectedBranch = payload?.branches?.[0]?._id || '';
         }
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error(
-          '[Checkout] Cannot load settings:',
-          err
-        );
+        console.error('[Checkout] Cannot load settings:', err);
 
         this.error =
           err.error?.message ||
           'Không tải được cấu hình cửa hàng. Vui lòng thử lại.';
+        this.cdr.detectChanges();
       },
     });
   }
@@ -174,29 +206,30 @@ export class CheckoutPage implements OnInit {
     }
 
     this.loadingSlots = true;
+    this.cdr.detectChanges();
 
     this.api
       .getTimeSlots(this.selectedDate)
       .pipe(
         finalize(() => {
           this.loadingSlots = false;
+          this.cdr.detectChanges();
         })
       )
       .subscribe({
-        next: (value) => {
-          this.slots = value.items || [];
+        next: (value: any) => {
+          const payload = value?.data ?? value;
+          this.slots = payload?.items || [];
+          this.cdr.detectChanges();
         },
         error: (err) => {
-          console.error(
-            '[Checkout] Cannot load time slots:',
-            err
-          );
+          console.error('[Checkout] Cannot load time slots:', err);
 
           this.slots = [];
-
           this.error =
             err.error?.message ||
             'Không tải được khung giờ nhận bánh. Vui lòng thử lại.';
+          this.cdr.detectChanges();
         },
       });
   }
@@ -213,6 +246,7 @@ export class CheckoutPage implements OnInit {
 
     this.loadingQuote = true;
     this.quote = undefined;
+    this.cdr.detectChanges();
 
     this.api
       .quote({
@@ -223,31 +257,32 @@ export class CheckoutPage implements OnInit {
       .pipe(
         finalize(() => {
           this.loadingQuote = false;
+          this.cdr.detectChanges();
         })
       )
       .subscribe({
-        next: (value) => {
-          this.quote = value;
+        next: (value: any) => {
+          const payload = value?.data ?? value;
+          this.quote = payload;
 
-          if (!value.valid) {
+          if (!payload?.valid) {
             this.voucherError =
               'Một hoặc nhiều sản phẩm không còn hợp lệ. Vui lòng kiểm tra lại đơn hàng.';
+            this.cdr.detectChanges();
             return;
           }
 
           this.voucherError = '';
+          this.cdr.detectChanges();
         },
         error: (err) => {
-          console.error(
-            '[Checkout] Cannot calculate quote:',
-            err
-          );
+          console.error('[Checkout] Cannot calculate quote:', err);
 
           this.quote = undefined;
-
           this.voucherError =
             err.error?.message ||
             'Không thể tính giá đơn hàng. Vui lòng thử lại.';
+          this.cdr.detectChanges();
         },
       });
   }
@@ -265,8 +300,7 @@ export class CheckoutPage implements OnInit {
     }
 
     if (!this.quote || !this.quote.valid) {
-      this.voucherError =
-        'Vui lòng chờ hệ thống tính giá đơn hàng trước.';
+      this.voucherError = 'Vui lòng chờ hệ thống tính giá đơn hàng trước.';
       return;
     }
 
@@ -285,12 +319,15 @@ export class CheckoutPage implements OnInit {
   // ========================================
 
   onReceiveMethodChange(): void {
-    // Xóa lựa chọn khung giờ cũ để tránh gửi nhầm dữ liệu.
     this.selectedSlotId = '';
-    this.slots = [];
-
-    // Khi chuyển phương thức nhận hàng, cần tính lại phí.
+    this.branchDropdownOpen = false;
     this.loadQuote();
+
+    if (this.selectedDate) {
+      this.loadSlots();
+    } else {
+      this.slots = [];
+    }
   }
 
   // ========================================
@@ -304,8 +341,7 @@ export class CheckoutPage implements OnInit {
     }
 
     if (!this.quote || !this.quote.valid) {
-      this.error =
-        'Báo giá chưa hợp lệ. Vui lòng kiểm tra lại đơn hàng.';
+      this.error = 'Báo giá chưa hợp lệ. Vui lòng kiểm tra lại đơn hàng.';
       return false;
     }
 
@@ -328,15 +364,11 @@ export class CheckoutPage implements OnInit {
     const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
 
     if (!phoneRegex.test(phone)) {
-      this.error =
-        'Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.';
+      this.error = 'Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.';
       return false;
     }
 
-    if (
-      this.receiveMethod === 'pickup' &&
-      !this.selectedBranch
-    ) {
+    if (this.receiveMethod === 'pickup' && !this.selectedBranch) {
       this.error = 'Vui lòng chọn chi nhánh nhận bánh.';
       return false;
     }
@@ -349,7 +381,6 @@ export class CheckoutPage implements OnInit {
   // ========================================
 
   onSubmit(): void {
-    // Chặn gửi nhiều request khi người dùng bấm liên tục.
     if (this.loading || this.loadingQuote || this.loadingSlots) {
       return;
     }
@@ -362,44 +393,30 @@ export class CheckoutPage implements OnInit {
 
     const payload: CreateOrderRequest = {
       items: this.cartItems as unknown as CreateOrderRequest['items'],
-
       receiver: {
         fullName: this.receiver.fullName.trim(),
         phone: this.receiver.phone.trim(),
       },
-
       receiveMethod: this.receiveMethod,
       slotId: this.selectedSlotId,
-
       pickupBranch:
-        this.receiveMethod === 'pickup'
-          ? this.selectedBranch
-          : undefined,
-
+        this.receiveMethod === 'pickup' ? this.selectedBranch : undefined,
       note: this.note.trim(),
       voucherCode: this.voucherCode.trim() || undefined,
-
-      // Backend sẽ đối chiếu với báo giá hiện tại.
       expectedTotal: this.quote!.total,
     };
 
     this.loading = true;
+    this.cdr.detectChanges();
 
     this.api
       .createOrder(payload)
       .pipe(
         catchError((err) => {
-          console.error(
-            '[Checkout] Cannot create order:',
-            err
-          );
+          console.error('[Checkout] Cannot create order:', err);
 
-          if (
-            err.status === 409 &&
-            err.error?.code === 'PRICE_CHANGED'
-          ) {
-            this.quote =
-              err.error.details?.currentQuote;
+          if (err.status === 409 && err.error?.code === 'PRICE_CHANGED') {
+            this.quote = err.error.details?.currentQuote;
 
             this.error =
               'Giá đơn hàng đã thay đổi. Vui lòng kiểm tra tổng tiền mới trước khi đặt hàng lại.';
@@ -413,41 +430,33 @@ export class CheckoutPage implements OnInit {
         }),
         finalize(() => {
           this.loading = false;
+          this.cdr.detectChanges();
         })
       )
-      .subscribe((result) => {
+      .subscribe((result: any) => {
         if (!result) {
           return;
         }
 
-        const orderId = result.order?._id;
-        const trackToken = result.trackToken;
+        const payload = result?.data ?? result;
+        const orderId = payload?.order?._id;
+        const trackToken = payload?.trackToken;
 
         if (!orderId || !trackToken) {
           this.error =
             'Đơn hàng đã được phản hồi nhưng thiếu thông tin theo dõi. Vui lòng liên hệ cửa hàng.';
+          this.cdr.detectChanges();
           return;
         }
 
-        sessionStorage.setItem(
-          `track:${orderId}`,
-          trackToken
-        );
-
+        sessionStorage.setItem(`track:${orderId}`, trackToken);
         sessionStorage.setItem(
           `order:${orderId}`,
-          JSON.stringify(result.order)
+          JSON.stringify(payload.order)
         );
+        sessionStorage.removeItem(this.BUY_NOW_STORAGE_KEY);
 
-        // Chỉ xóa dữ liệu Mua ngay sau khi tạo đơn thành công.
-        sessionStorage.removeItem(
-          this.BUY_NOW_STORAGE_KEY
-        );
-
-        this.router.navigate([
-          '/payment',
-          orderId,
-        ]);
+        this.router.navigate(['/payment', orderId]);
       });
   }
 
@@ -456,9 +465,6 @@ export class CheckoutPage implements OnInit {
   // ========================================
 
   formatVnd(value: number): string {
-    return (
-      new Intl.NumberFormat('vi-VN').format(value) +
-      ' ₫'
-    );
+    return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
   }
 }
