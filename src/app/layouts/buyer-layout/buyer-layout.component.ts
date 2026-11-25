@@ -10,7 +10,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
     <div class="buyer-shell">
       <!-- ==================== HEADER (MEGA MENU) ==================== -->
       <header (mouseleave)="showMegaMenu = false">
-        <a routerLink="/danh-sach-san-pham" class="brand-link">
+        <a routerLink="/trang-chu" class="brand-link">
           <h1 class="tieu-de-lon logo-text">SweetCake</h1>
         </a>
 
@@ -23,6 +23,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/blog" routerLinkActive="active-nav">Blog</a>
           <a routerLink="/gioi-thieu" routerLinkActive="active-nav">Giới thiệu</a>
           <a routerLink="/lien-he" routerLinkActive="active-nav">Liên hệ</a>
+          <a routerLink="/faq" routerLinkActive="active-nav">FAQ</a>
         </nav>
 
         <div class="header-icons">
