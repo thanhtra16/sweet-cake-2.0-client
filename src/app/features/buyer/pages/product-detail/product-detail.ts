@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectorRef,
@@ -24,12 +25,16 @@ import {
   AccessoryOption,
 } from '@features/buyer/components/cake-customizer/cake-customizer';
 
-import { CartService } from '@shared/services/cart.service';
+import { ReviewList } from '@features/buyer/components/review-list/review-list';
+import {
+  CartService,
+  AddCartItemInput,
+} from '@shared/services/cart.service';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, CakeCustomizer],
+  imports: [CommonModule, CakeCustomizer, ReviewList],
   templateUrl: './product-detail.html',
   styleUrl: './product-detail.css',
 })
@@ -44,14 +49,26 @@ export class ProductDetail implements OnInit {
 
   accessoryOptions: AccessoryOption[] = [];
 
-  selectedVariantId = '';
+  selectedVariantIds: string[] = [];
+
+  isVariantDropdownOpen = false;
+
+  get selectedVariantId(): string {
+    return this.selectedVariantIds[0] ?? '';
+  }
+
+  set selectedVariantId(value: string) {
+    this.selectedVariantIds = value ? [value] : [];
+  }
 
   loading = true;
+  addToCartLoading = false;
   buyNowLoading = false;
   errorMessage = '';
 
   toastMessage = '';
   showToast = false;
+  private toastTimer?: ReturnType<typeof setTimeout>;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -77,7 +94,8 @@ export class ProductDetail implements OnInit {
           this.customizationConfig = null;
           this.customization = null;
           this.accessoryOptions = [];
-          this.selectedVariantId = '';
+          this.selectedVariantIds = [];
+          this.isVariantDropdownOpen = false;
         }),
 
         switchMap((params) => {
@@ -105,10 +123,6 @@ export class ProductDetail implements OnInit {
               })
             ),
           }).pipe(
-            tap((result) => {
-              console.log('[ProductDetail] API result:', result);
-            }),
-
             catchError((error) => {
               console.error('[ProductDetail] API error:', error);
 
@@ -163,8 +177,7 @@ export class ProductDetail implements OnInit {
             variants: (accessory.variants ?? [])
               .filter(
                 (variant) =>
-                  variant.active !== false &&
-                  !!variant._id
+                  variant.active !== false && !!variant._id
               )
               .map((variant) => ({
                 id: variant._id as string,
@@ -176,10 +189,10 @@ export class ProductDetail implements OnInit {
         if (this.product.kind === 'accessory') {
           const activeVariants = this.activeProductVariants;
 
-          this.selectedVariantId =
+          this.selectedVariantIds =
             activeVariants.length === 1
-              ? activeVariants[0]._id!
-              : '';
+              ? [activeVariants[0]._id!]
+              : [];
         }
 
         this.loading = false;
@@ -237,9 +250,7 @@ export class ProductDetail implements OnInit {
 
   get activeProductVariants(): Product['variants'] {
     return (this.product?.variants ?? []).filter(
-      (variant) =>
-        variant.active !== false &&
-        !!variant._id
+      (variant) => variant.active !== false && !!variant._id
     );
   }
 
@@ -259,28 +270,74 @@ export class ProductDetail implements OnInit {
       return true;
     }
 
-    return this.activeProductVariants.some(
-      (variant) => variant._id === this.selectedVariantId
+    if (this.activeProductVariants.length === 0) {
+      return false;
+    }
+
+    if (this.selectedVariantIds.length === 0) {
+      return false;
+    }
+
+    const activeIds = this.activeProductVariants.map(
+      (variant) => variant._id
+    );
+
+    return (
+      this.selectedVariantIds.every((id) => activeIds.includes(id)) &&
+      new Set(this.selectedVariantIds).size ===
+        this.selectedVariantIds.length
+    );
+  }
+
+  isProductVariantSelected(variantId: string): boolean {
+    return this.selectedVariantIds.includes(variantId);
+  }
+
+  onProductVariantToggle(
+    variantId: string,
+    checked: boolean
+  ): void {
+    const exists = this.selectedVariantIds.includes(variantId);
+
+    if (checked && !exists) {
+      this.selectedVariantIds = [
+        ...this.selectedVariantIds,
+        variantId,
+      ];
+    } else if (!checked && exists) {
+      this.selectedVariantIds = this.selectedVariantIds.filter(
+        (id) => id !== variantId
+      );
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  toggleVariantDropdown(): void {
+    this.isVariantDropdownOpen = !this.isVariantDropdownOpen;
+  }
+
+  get selectedProductVariants(): Product['variants'] {
+    return this.activeProductVariants.filter(
+      (variant) =>
+        !!variant._id &&
+        this.selectedVariantIds.includes(variant._id)
+    );
+  }
+
+  get selectedProductVariantLabels(): string[] {
+    return this.selectedProductVariants.map(
+      (variant) => variant.label
     );
   }
 
   onProductVariantChange(variantId: string): void {
-    this.selectedVariantId = variantId;
+    this.selectedVariantIds = variantId ? [variantId] : [];
     this.cdr.markForCheck();
   }
 
-  get selectedProductVariant():
-    | Product['variants'][number]
-    | null {
-    if (!this.selectedVariantId) {
-      return null;
-    }
-
-    return (
-      this.activeProductVariants.find(
-        (variant) => variant._id === this.selectedVariantId
-      ) ?? null
-    );
+  get selectedProductVariant(): Product['variants'][number] | null {
+    return this.selectedProductVariants[0] ?? null;
   }
 
   private validateProductVariant(): boolean {
@@ -301,7 +358,7 @@ export class ProductDetail implements OnInit {
 
     if (!this.isProductVariantSelectionValid) {
       this.showNotification(
-        'Vui lòng chọn biến thể sản phẩm.'
+        'Vui lòng chọn ít nhất một biến thể sản phẩm.'
       );
       return false;
     }
@@ -341,16 +398,27 @@ export class ProductDetail implements OnInit {
         continue;
       }
 
-      const selectedVariantId =
-        customization.accessoryVariants?.[accessoryId];
+      const rawVariantIds =
+        customization.accessoryVariants?.[accessoryId] ?? [];
 
-      const isValidVariant = accessory.variants.some(
-        (variant) => variant.id === selectedVariantId
+      const selectedIds = Array.isArray(rawVariantIds)
+        ? rawVariantIds
+        : rawVariantIds
+          ? [rawVariantIds]
+          : [];
+
+      const validIds = accessory.variants.map(
+        (variant) => variant.id
       );
 
-      if (!isValidVariant) {
+      const isValid =
+        selectedIds.length > 0 &&
+        selectedIds.every((id) => validIds.includes(id)) &&
+        new Set(selectedIds).size === selectedIds.length;
+
+      if (!isValid) {
         this.showNotification(
-          `Vui lòng chọn biến thể cho phụ kiện "${accessory.name}".`
+          `Vui lòng chọn ít nhất một biến thể cho phụ kiện "${accessory.name}".`
         );
         return false;
       }
@@ -360,16 +428,97 @@ export class ProductDetail implements OnInit {
   }
 
   // ========================================
+  // CART - TẠO DÒNG PHỤ KIỆN RIÊNG
+  // ========================================
+
+  private buildAccessoryCartItems(
+    customization: CakeCustomization
+  ): AddCartItemInput[] {
+    const items: AddCartItemInput[] = [];
+
+    for (const accessoryId of customization.accessories) {
+      const accessory = this.accessoryOptions.find(
+        (option) => option.id === accessoryId
+      );
+
+      if (!accessory) {
+        continue;
+      }
+
+      const rawVariantIds =
+        customization.accessoryVariants?.[accessoryId] ?? [];
+
+      const variantIds = Array.isArray(rawVariantIds)
+        ? [...new Set(rawVariantIds)]
+        : rawVariantIds
+          ? [rawVariantIds]
+          : [];
+
+      // Phụ kiện có biến thể:
+      // Mỗi biến thể được tạo thành một dòng riêng.
+      if (variantIds.length > 0) {
+        for (const variantId of variantIds) {
+          const selectedVariant = accessory.variants.find(
+            (variant) => variant.id === variantId
+          );
+
+          if (!selectedVariant) {
+            continue;
+          }
+
+          items.push({
+            productId: accessory.id,
+            productName: accessory.name,
+            productKind: 'accessory',
+            imageUrl: null,
+            unitPrice: accessory.price,
+            customization: null,
+            accessories: [],
+            variantId: selectedVariant.id,
+            variantLabel: selectedVariant.label,
+            variantIds: [selectedVariant.id],
+            variantLabels: [selectedVariant.label],
+            quantity: 1,
+          });
+        }
+
+        continue;
+      }
+
+      // Phụ kiện không có biến thể:
+      // Tạo một dòng riêng cho phụ kiện đó.
+      items.push({
+        productId: accessory.id,
+        productName: accessory.name,
+        productKind: 'accessory',
+        imageUrl: null,
+        unitPrice: accessory.price,
+        customization: null,
+        accessories: [],
+        variantId: null,
+        variantLabel: null,
+        variantIds: [],
+        variantLabels: [],
+        quantity: 1,
+      });
+    }
+
+    return items;
+  }
+
+  // ========================================
   // CART
   // ========================================
 
   async addToCart(): Promise<void> {
-    if (!this.product) {
+    const currentProduct = this.product;
+
+    if (!currentProduct || this.addToCartLoading) {
       return;
     }
 
     if (
-      this.product.kind === 'cake' &&
+      currentProduct.kind === 'cake' &&
       !this.customization
     ) {
       this.showNotification(
@@ -385,76 +534,185 @@ export class ProductDetail implements OnInit {
     const selectedCustomization = this.customization;
 
     if (
-      this.product.kind === 'cake' &&
+      currentProduct.kind === 'cake' &&
       selectedCustomization &&
       !this.validateAccessoryVariants(selectedCustomization)
     ) {
       return;
     }
 
-    const selectedAccessories = selectedCustomization
-      ? this.accessoryOptions
-          .filter((option) =>
-            selectedCustomization.accessories.includes(option.id)
-          )
-          .map((option) => {
-            const variantId =
-              selectedCustomization.accessoryVariants?.[option.id] ?? null;
+    this.addToCartLoading = true;
+    this.cdr.markForCheck();
 
-            const selectedVariant = option.variants.find(
-              (variant) => variant.id === variantId
+    let hasAddedItem = false;
+
+    try {
+      // ========================================
+      // TRƯỜNG HỢP 1: SẢN PHẨM LÀ BÁNH
+      // ========================================
+
+      if (
+        currentProduct.kind === 'cake' &&
+        selectedCustomization
+      ) {
+        // Tạo danh sách phụ kiện thành các dòng riêng.
+        const accessoryCartItems =
+          this.buildAccessoryCartItems(selectedCustomization);
+
+        // Giá bánh không bao gồm tiền phụ kiện.
+        const accessoryTotal = Number(
+          selectedCustomization.accessoryTotal || 0
+        );
+
+        const cakeUnitPrice = Math.max(
+          0,
+          Math.round(
+            selectedCustomization.estimatedPrice - accessoryTotal
+          )
+        );
+
+        // Không lưu phụ kiện lồng bên trong dòng bánh.
+        const cakeCustomization: CakeCustomization = {
+          ...selectedCustomization,
+          accessories: [],
+          accessoryVariants: {},
+          accessoryTotal: 0,
+          estimatedPrice: cakeUnitPrice,
+        };
+
+        // Thêm dòng bánh trước.
+        const cakeAdded = await this.cartService.addItem({
+          productId: currentProduct._id,
+          productName: currentProduct.name,
+          productKind: 'cake',
+          imageUrl: this.mainImageUrl,
+          unitPrice: cakeUnitPrice,
+          customization: cakeCustomization,
+          accessories: [],
+          variantIds: [],
+          variantLabels: [],
+          quantity: 1,
+        });
+
+        if (!cakeAdded) {
+          this.showNotification(
+            'Không thể thêm bánh vào giỏ hàng. Vui lòng thử lại.'
+          );
+          return;
+        }
+
+        hasAddedItem = true;
+
+        // Thêm lần lượt từng phụ kiện thành dòng riêng.
+        for (const accessoryItem of accessoryCartItems) {
+          const accessoryAdded =
+            await this.cartService.addItem(accessoryItem);
+
+          if (!accessoryAdded) {
+            this.showNotification(
+              'Bánh đã được thêm nhưng một số phụ kiện chưa thể thêm vào giỏ hàng. Vui lòng kiểm tra lại giỏ hàng.'
             );
 
-            return {
-              id: option.id,
-              name: option.name,
-              price: option.price,
-              variantId,
-              variantLabel: selectedVariant?.label ?? null,
-            };
-          })
-      : [];
-
-    const unitPrice = selectedCustomization
-      ? selectedCustomization.estimatedPrice
-      : this.displayPrice;
-
-    const selectedVariant = this.selectedProductVariant;
-
-    const added = await this.cartService.addItem({
-      productId: this.product._id,
-      productName: this.product.name,
-      productKind: this.product.kind,
-      imageUrl: this.mainImageUrl,
-      unitPrice,
-
-      customization: selectedCustomization
-        ? {
-            ...selectedCustomization,
-            accessories: [...selectedCustomization.accessories],
-            accessoryVariants: {
-              ...selectedCustomization.accessoryVariants,
-            },
+            this.cartService.openDrawer();
+            return;
           }
-        : null,
 
-      accessories: selectedAccessories,
-      variantId: selectedVariant?._id ?? null,
-      variantLabel: selectedVariant?.label ?? null,
-    });
+          hasAddedItem = true;
+        }
+      } else {
+        // ========================================
+        // TRƯỜNG HỢP 2: SẢN PHẨM LÀ PHỤ KIỆN
+        // ========================================
 
-    if (!added) {
-      this.showNotification(
-        'Số lượng sản phẩm trong dòng giỏ hàng đã đạt giới hạn 10.'
+        const selectedVariants = this.selectedProductVariants;
+
+        if (
+          currentProduct.kind === 'accessory' &&
+          selectedVariants.length > 0
+        ) {
+          // Mỗi biến thể được thêm thành một dòng riêng.
+          for (const variant of selectedVariants) {
+            const added = await this.cartService.addItem({
+              productId: currentProduct._id,
+              productName: currentProduct.name,
+              productKind: 'accessory',
+              imageUrl: this.mainImageUrl,
+              unitPrice: this.displayPrice,
+              customization: null,
+              accessories: [],
+              variantId: variant._id ?? null,
+              variantLabel: variant.label,
+              variantIds: variant._id ? [variant._id] : [],
+              variantLabels: [variant.label],
+              quantity: 1,
+            });
+
+            if (!added) {
+              this.showNotification(
+                'Một số biến thể chưa thể thêm vào giỏ hàng. Vui lòng kiểm tra lại.'
+              );
+
+              if (hasAddedItem) {
+                this.cartService.openDrawer();
+              }
+
+              return;
+            }
+
+            hasAddedItem = true;
+          }
+        } else {
+          // Phụ kiện không có biến thể.
+          const added = await this.cartService.addItem({
+            productId: currentProduct._id,
+            productName: currentProduct.name,
+            productKind: currentProduct.kind,
+            imageUrl: this.mainImageUrl,
+            unitPrice: this.displayPrice,
+            customization: null,
+            accessories: [],
+            variantIds: [],
+            variantLabels: [],
+            quantity: 1,
+          });
+
+          if (!added) {
+            this.showNotification(
+              'Không thể thêm vào giỏ hàng. Vui lòng thử lại.'
+            );
+            return;
+          }
+
+          hasAddedItem = true;
+        }
+      }
+
+      if (hasAddedItem) {
+        this.cartService.openDrawer();
+      }
+    } catch (error) {
+      console.error(
+        '[ProductDetail] Lỗi khi thêm vào giỏ:',
+        error
       );
-      return;
-    }
 
-    this.showNotification('Đã thêm sản phẩm vào giỏ hàng.');
+      this.showNotification(
+        hasAddedItem
+          ? 'Một số sản phẩm đã được thêm. Vui lòng kiểm tra lại giỏ hàng.'
+          : 'Đã xảy ra lỗi khi thêm vào giỏ hàng. Vui lòng thử lại.'
+      );
+
+      if (hasAddedItem) {
+        this.cartService.openDrawer();
+      }
+    } finally {
+      this.addToCartLoading = false;
+      this.cdr.markForCheck();
+    }
   }
 
   // ========================================
-  // BUY NOW - INDEPENDENT FROM CART
+  // BUY NOW
   // ========================================
 
   private buildBuyNowRequest(): QuoteRequest {
@@ -468,7 +726,9 @@ export class ProductDetail implements OnInit {
       const config = this.customization;
 
       if (!config) {
-        throw new Error('Vui lòng hoàn tất tùy chỉnh bánh.');
+        throw new Error(
+          'Vui lòng hoàn tất tùy chỉnh bánh.'
+        );
       }
 
       items.push({
@@ -484,8 +744,6 @@ export class ProductDetail implements OnInit {
         },
       });
 
-      // Phụ kiện đi kèm bánh được gửi thành các dòng riêng,
-      // giống hoàn toàn cách Cart đang tạo báo giá.
       for (const accessoryId of config.accessories) {
         const accessory = this.accessoryOptions.find(
           (option) => option.id === accessoryId
@@ -497,24 +755,60 @@ export class ProductDetail implements OnInit {
           );
         }
 
-        const variantId =
-          config.accessoryVariants?.[accessoryId];
+        const rawVariantIds =
+          config.accessoryVariants?.[accessoryId] ?? [];
 
-        items.push({
-          productId: accessory.id,
-          qty: 1,
-          ...(variantId ? { variant: variantId } : {}),
-        });
+        const variantIds = Array.isArray(rawVariantIds)
+          ? rawVariantIds
+          : rawVariantIds
+            ? [rawVariantIds]
+            : [];
+
+        if (
+          accessory.variants.length > 0 &&
+          variantIds.length === 0
+        ) {
+          throw new Error(
+            `Vui lòng chọn biến thể cho phụ kiện "${accessory.name}".`
+          );
+        }
+
+        if (variantIds.length > 0) {
+          for (const variantId of variantIds) {
+            items.push({
+              productId: accessory.id,
+              qty: 1,
+              variant: variantId,
+            });
+          }
+        } else {
+          items.push({
+            productId: accessory.id,
+            qty: 1,
+          });
+        }
       }
     } else {
-      // Phụ kiện mua riêng.
-      items.push({
-        productId: this.product._id,
-        qty: 1,
-        ...(this.selectedVariantId
-          ? { variant: this.selectedVariantId }
-          : {}),
-      });
+      if (this.requiresProductVariant) {
+        if (this.selectedVariantIds.length === 0) {
+          throw new Error(
+            'Vui lòng chọn ít nhất một biến thể sản phẩm.'
+          );
+        }
+
+        for (const variantId of this.selectedVariantIds) {
+          items.push({
+            productId: this.product._id,
+            qty: 1,
+            variant: variantId,
+          });
+        }
+      } else {
+        items.push({
+          productId: this.product._id,
+          qty: 1,
+        });
+      }
     }
 
     return {
@@ -584,7 +878,7 @@ export class ProductDetail implements OnInit {
 
             this.showNotification(
               invalidItem?.reason ||
-              'Sản phẩm không hợp lệ hoặc không thể báo giá. Vui lòng kiểm tra lại.'
+                'Sản phẩm không hợp lệ hoặc không thể báo giá. Vui lòng kiểm tra lại.'
             );
 
             this.cdr.markForCheck();
@@ -604,12 +898,12 @@ export class ProductDetail implements OnInit {
             this.showNotification(
               'Không thể lưu thông tin đơn hàng tạm thời. Vui lòng thử lại.'
             );
+
             this.cdr.markForCheck();
             return;
           }
 
           this.cdr.markForCheck();
-
           this.router.navigate(['/checkout']);
         },
 
@@ -618,7 +912,7 @@ export class ProductDetail implements OnInit {
 
           this.showNotification(
             error?.error?.message ||
-            'Không thể tính báo giá. Vui lòng thử lại.'
+              'Không thể tính báo giá. Vui lòng thử lại.'
           );
 
           this.cdr.markForCheck();
@@ -635,7 +929,9 @@ export class ProductDetail implements OnInit {
     this.showToast = true;
     this.cdr.markForCheck();
 
-    setTimeout(() => {
+    clearTimeout(this.toastTimer);
+
+    this.toastTimer = setTimeout(() => {
       this.showToast = false;
       this.cdr.markForCheck();
     }, 2500);

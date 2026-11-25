@@ -9,159 +9,221 @@
   </div>
 } @else if (product) {
   <div class="product-detail">
-
     <div class="product-detail__breadcrumb">
       Trang chủ / {{ product.category }} / {{ product.name }}
     </div>
 
     <div class="product-detail__layout">
 
-      <!-- PRODUCT IMAGE -->
-      <section class="product-detail__gallery">
-        <div class="product-detail__main-image">
+      <!-- CỘT TRÁI: ẢNH + ĐÁNH GIÁ -->
+      <div class="product-detail__col product-detail__col--left">
 
-          @if (mainImageUrl) {
-            <img
-              [src]="mainImageUrl"
-              [alt]="product.name"
+        <section class="product-detail__gallery">
+          <div class="product-detail__main-image">
+            @if (mainImageUrl) {
+              <img [src]="mainImageUrl" [alt]="product.name" />
+            } @else {
+              <div class="product-detail__image-placeholder">
+                Chưa có hình ảnh sản phẩm
+              </div>
+            }
+
+            @if (isPromotionValid) {
+              <span class="product-detail__sale-badge">
+                -{{ salePercentage }}%
+              </span>
+            }
+          </div>
+        </section>
+
+        <app-review-list
+          class="product-detail__reviews"
+          [productId]="product._id"
+        />
+
+      </div>
+
+      <!-- CỘT PHẢI: THÔNG TIN + TÙY BIẾN -->
+      <div class="product-detail__col product-detail__col--right">
+
+        <section class="product-detail__summary">
+          <span class="product-detail__category">
+            {{ product.category }}
+          </span>
+
+          <h1>{{ product.name }}</h1>
+
+          <div class="product-detail__rating">
+            <span>★ {{ product.rating | number:'1.1-1' }}/5</span>
+            <a href="#reviews">
+              ({{ product.reviewCount }} đánh giá)
+            </a>
+          </div>
+
+          <p class="product-detail__description">
+            {{ product.description }}
+          </p>
+
+          <div class="product-detail__price">
+            <span class="product-detail__current-price">
+              {{ displayPrice | number }}đ
+            </span>
+
+            @if (isPromotionValid) {
+              <span class="product-detail__old-price">
+                {{ product.basePrice | number }}đ
+              </span>
+            }
+          </div>
+
+          <div class="product-detail__divider"></div>
+        </section>
+
+        <!-- CUSTOMIZER + VARIANT + ACTIONS -->
+        <section class="product-detail__options">
+
+          <!-- CAKE CUSTOMIZER -->
+          @if (product.kind === 'cake' && customizationConfig) {
+            <app-cake-customizer
+              [basePrice]="product.basePrice"
+              [promotionPrice]="product.salePrice"
+              [isPromotionValid]="isPromotionValid"
+              [customizationConfig]="customizationConfig"
+              [productAvailableSizes]="product.availableSizes"
+              [productAvailableFillings]="product.availableFillings"
+              [accessoryOptions]="accessoryOptions"
+              (customizationChange)="onCustomizationChange($event)"
             />
-          } @else {
-            <div class="product-detail__image-placeholder">
-              Chưa có hình ảnh sản phẩm
+          }
+
+          <!-- STANDALONE ACCESSORY: MULTI-SELECT VARIANTS -->
+          @if (product.kind === 'accessory' && requiresProductVariant) {
+            <div class="product-detail__variant">
+
+              <label class="product-detail__variant-label">
+                Chọn biến thể
+                <span>*</span>
+              </label>
+
+              @if (activeProductVariants.length > 0) {
+
+                <!-- Nút mở/đóng dropdown -->
+                <button
+                  type="button"
+                  class="product-detail__variant-trigger"
+                  [class.product-detail__variant-trigger--open]="isVariantDropdownOpen"
+                  [attr.aria-expanded]="isVariantDropdownOpen"
+                  (click)="toggleVariantDropdown()"
+                >
+                  <span class="product-detail__variant-trigger-text">
+                    @if (selectedProductVariantLabels.length > 0) {
+                      Đã chọn {{ selectedProductVariantLabels.length }} biến thể
+                    } @else {
+                      -- Chọn biến thể --
+                    }
+                  </span>
+
+                  <svg
+                    class="product-detail__variant-arrow"
+                    [class.product-detail__variant-arrow--open]="isVariantDropdownOpen"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m5 7.5 5 5 5-5"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                <!-- Danh sách biến thể đã chọn -->
+                @if (selectedProductVariantLabels.length > 0) {
+                  <div class="product-detail__selected-variants">
+                    @for (
+                      label of selectedProductVariantLabels;
+                      track label
+                    ) {
+                      <span class="product-detail__selected-variant">
+                        {{ label }}
+                      </span>
+                    }
+                  </div>
+                }
+
+                <!-- Dropdown checkbox -->
+                @if (isVariantDropdownOpen) {
+                  <div class="product-detail__variant-dropdown">
+                    @for (
+                      variant of activeProductVariants;
+                      track variant._id
+                    ) {
+                      <label class="product-detail__variant-option">
+                        <input
+                          type="checkbox"
+                          [checked]="isProductVariantSelected(variant._id!)"
+                          (change)="onProductVariantToggle(
+                            variant._id!,
+                            $any($event.target).checked
+                          )"
+                        />
+
+                        <span class="product-detail__variant-checkbox"></span>
+
+                        <span class="product-detail__variant-option-label">
+                          {{ variant.label }}
+                        </span>
+                      </label>
+                    }
+                  </div>
+                }
+
+                @if (!isProductVariantSelectionValid) {
+                  <p class="product-detail__variant-hint">
+                    Vui lòng chọn ít nhất một biến thể.
+                  </p>
+                }
+
+              } @else {
+                <p class="product-detail__variant-error">
+                  Sản phẩm hiện không có biến thể khả dụng.
+                </p>
+              }
             </div>
           }
 
-          @if (isPromotionValid) {
-            <span class="product-detail__sale-badge">
-              -{{ salePercentage }}%
-            </span>
-          }
-
-        </div>
-      </section>
-
-      <!-- PRODUCT INFORMATION -->
-      <section class="product-detail__info">
-
-        <span class="product-detail__category">
-          {{ product.category }}
-        </span>
-
-        <h1>{{ product.name }}</h1>
-
-        <div class="product-detail__rating">
-          <span>★ {{ product.rating | number:'1.1-1' }}/5</span>
-          <span>({{ product.reviewCount }} đánh giá)</span>
-        </div>
-
-        <p class="product-detail__description">
-          {{ product.description }}
-        </p>
-
-        <div class="product-detail__price">
-
-          <span class="product-detail__current-price">
-            {{ displayPrice | number }}đ
-          </span>
-
-          @if (isPromotionValid) {
-            <span class="product-detail__old-price">
-              {{ product.basePrice | number }}đ
-            </span>
-          }
-
-        </div>
-
-        <div class="product-detail__divider"></div>
-
-        <!-- CAKE CUSTOMIZER -->
-        @if (product.kind === 'cake' && customizationConfig) {
-          <app-cake-customizer
-            [basePrice]="product.basePrice"
-            [promotionPrice]="product.salePrice"
-            [isPromotionValid]="isPromotionValid"
-            [customizationConfig]="customizationConfig"
-            [productAvailableSizes]="product.availableSizes"
-            [productAvailableFillings]="product.availableFillings"
-            [accessoryOptions]="accessoryOptions"
-            (customizationChange)="onCustomizationChange($event)"
-          />
-        }
-
-        <!-- STANDALONE ACCESSORY VARIANT -->
-        @if (product.kind === 'accessory' && requiresProductVariant) {
-          <div class="product-detail__variant">
-
-            <label
-              class="product-detail__variant-label"
-              for="productVariant"
+          <!-- ACTIONS -->
+          <div class="product-detail__actions">
+            <button
+              type="button"
+              class="sc-btn sc-btn--outline"
+              [disabled]="!isProductVariantSelectionValid || addToCartLoading"
+              (click)="addToCart()"
             >
-              Chọn biến thể
-              <span>*</span>
-            </label>
+              {{ addToCartLoading ? 'Đang thêm...' : 'Thêm vào giỏ hàng' }}
+            </button>
 
-            @if (activeProductVariants.length > 0) {
-              <select
-                id="productVariant"
-                class="product-detail__variant-select"
-                [value]="selectedVariantId"
-                [disabled]="activeProductVariants.length === 1"
-                (change)="onProductVariantChange($any($event.target).value)"
-              >
-                @if (activeProductVariants.length > 1) {
-                  <option value="">
-                    -- Chọn biến thể --
-                  </option>
-                }
-
-                @for (
-                  variant of activeProductVariants;
-                  track variant._id
-                ) {
-                  <option [value]="variant._id">
-                    {{ variant.label }}
-                  </option>
-                }
-              </select>
-            } @else {
-              <p class="product-detail__variant-error">
-                Sản phẩm hiện không có biến thể khả dụng.
-              </p>
-            }
-
+            <button
+              type="button"
+              class="sc-btn sc-btn--primary"
+              [disabled]="!isProductVariantSelectionValid || buyNowLoading"
+              (click)="buyNow()"
+            >
+              {{ buyNowLoading ? 'Đang xử lý...' : 'Mua ngay' }}
+            </button>
           </div>
-        }
+        </section>
 
-        <!-- ACTIONS -->
-        <div class="product-detail__actions">
-
-          <button
-            type="button"
-            class="sc-btn sc-btn--outline"
-            [disabled]="!isProductVariantSelectionValid"
-            (click)="addToCart()"
-          >
-            Thêm vào giỏ hàng
-          </button>
-
-          <button
-            type="button"
-            class="sc-btn sc-btn--primary"
-            [disabled]="!isProductVariantSelectionValid"
-            (click)="buyNow()"
-          >
-            Mua ngay
-          </button>
-
-        </div>
-
-      </section>
-
+      </div>
     </div>
 
-    <!-- TOAST -->
+
+    <!-- TOAST: LỖI / CẢNH BÁO -->
     @if (showToast) {
-      <div class="product-detail__toast">
+      <div class="product-detail__toast" role="alert">
         {{ toastMessage }}
       </div>
     }
