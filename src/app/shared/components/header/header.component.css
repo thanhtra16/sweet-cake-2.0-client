@@ -113,7 +113,15 @@
   background-color: var(--sc-pink, #fdf5f7);
   transform: scale(1.08);
 }
+/* fix */
+.sc-header__notification {
+  position: relative;
+}
 
+.sc-header__notification.is-active {
+  background-color: #fdf5f7;
+  color: #7d562d;
+}
 .sc-header__cart-badge {
   position: absolute;
   top: 0;

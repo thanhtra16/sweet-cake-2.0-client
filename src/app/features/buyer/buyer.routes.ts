@@ -137,19 +137,13 @@ export const BUYER_ROUTES: Routes = [
         pathMatch: 'full',
       },
       {
-          path: 'thong-bao',
-          canActivate: [authGuard],
-          title: 'SweetCake - Thông báo',
-          loadComponent: () =>
-            import('./pages/notification/notification.component').then(
-              (m) => m.NotificationComponent
-            ),
-        },
-        {
-          path: 'quan-ly-tai-khoan',
-          redirectTo: 'account',
-          pathMatch: 'full',
-        },
-      ],
+        path: 'thong-bao',
+        title: 'SweetCake - Thông báo',
+        loadComponent: () =>
+          import('./pages/notification/notification.component').then(
+            (m) => m.NotificationComponent
+          ),
+      },
+    ],
   },
 ];

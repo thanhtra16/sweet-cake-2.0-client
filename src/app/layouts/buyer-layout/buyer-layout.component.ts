@@ -19,7 +19,7 @@ import { CartService } from '@shared/services/cart.service';
     <div class="buyer-shell">
       <!-- ==================== HEADER (MEGA MENU) ==================== -->
       <header (mouseleave)="showMegaMenu = false">
-        <a routerLink="/danh-sach-san-pham" class="brand-link">
+        <a routerLink="/trang-chu" class="brand-link">
           <h1 class="tieu-de-lon logo-text">SweetCake</h1>
         </a>
 
@@ -38,6 +38,15 @@ import { CartService } from '@shared/services/cart.service';
           <a routerLink="/orders" title="Đơn hàng của tôi" class="icon-btn">
             <i class="bi bi-receipt"></i>
           </a>
+
+          <!-- THÔNG BÁO -->
+        <a
+          routerLink="/thong-bao"
+          title="Thông báo"
+          class="icon-btn notification-btn"
+        >
+          <i class="fa-regular fa-bell"></i>
+        </a>
 
           <!-- Giỏ hàng: mở ngăn kéo -->
           <button
