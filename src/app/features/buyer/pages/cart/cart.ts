@@ -1,7 +1,13 @@
 import { CommonModule, Location } from '@angular/common';
-import { Component, inject, OnDestroy } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
+import {
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { finalize, Subscription } from 'rxjs';
 
 import {
   ApiService,
@@ -22,10 +28,14 @@ import { VndPipe } from '@shared/pipes/vnd.pipe';
   templateUrl: './cart.html',
   styleUrl: './cart.scss',
 })
-export class Cart implements OnDestroy {
+export class Cart implements OnInit, OnDestroy {
   private readonly cartService = inject(CartService);
   private readonly apiService = inject(ApiService);
   private readonly location = inject(Location);
+  private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  private readonly BUY_NOW_STORAGE_KEY = 'sweetcake_buy_now';
 
   private quoteSubscription?: Subscription;
   private cartSubscription?: Subscription;
@@ -47,7 +57,7 @@ export class Cart implements OnDestroy {
     productName: string;
   }[] = [];
 
-  constructor() {
+  ngOnInit(): void {
     this.cartSubscription = this.cartItems$.subscribe((items) => {
       const currentIds = new Set(items.map((item) => item.id));
       const nextSelected = new Set<string>();
@@ -110,10 +120,22 @@ export class Cart implements OnDestroy {
   }
 
   get isQuoteValid(): boolean {
+    if (!this.quoteResult) {
+      return false;
+    }
     return (
-      !!this.quoteResult &&
       this.quoteResult.valid &&
       this.quoteResult.items.every((item) => item.valid)
+    );
+  }
+
+  get hasInvalidSelectedItems(): boolean {
+    if (!this.quoteResult) {
+      return false;
+    }
+    return (
+      !this.quoteResult.valid ||
+      this.quoteResult.items.some((item) => !item.valid)
     );
   }
 
@@ -164,10 +186,6 @@ export class Cart implements OnDestroy {
     this.selectedItemIds = next;
   }
 
-  /**
-   * Tạo các dòng báo giá từ sản phẩm được chọn.
-   * Bánh và phụ kiện đi kèm được gửi thành các dòng riêng.
-   */
   private buildQuoteRequest(): QuoteRequest {
     const items: QuoteRequestItem[] = [];
     this.quoteLines = [];
@@ -198,7 +216,6 @@ export class Cart implements OnDestroy {
           productName: cartItem.productName,
         });
 
-        // Phụ kiện đi kèm bánh được báo giá riêng.
         for (const accessory of cartItem.accessories || []) {
           items.push({
             productId: accessory.id,
@@ -212,7 +229,6 @@ export class Cart implements OnDestroy {
           });
         }
       } else {
-        // Phụ kiện mua riêng: gửi cả mã biến thể nếu có.
         const resolvedVariant =
           cartItem.variantId ?? (cartItem as any).variant ?? null;
 
@@ -235,42 +251,67 @@ export class Cart implements OnDestroy {
     };
   }
 
-  /**
-   * Gọi Backend tính lại báo giá.
-   * Hủy request cũ nếu người dùng thay đổi giỏ hàng.
-   */
   refreshQuote(): void {
     this.quoteSubscription?.unsubscribe();
 
     this.quoteResult = null;
     this.quoteError = '';
-    this.quoteLoading = false;
 
     if (this.selectedItems.length === 0) {
       this.quoteLines = [];
+      this.quoteLoading = false;
+      this.cdr.detectChanges();
       return;
     }
 
     const request = this.buildQuoteRequest();
     this.quoteLoading = true;
+    this.cdr.detectChanges();
 
-    this.quoteSubscription = this.apiService.quoteOrder(request).subscribe({
-      next: (result) => {
-        this.quoteResult = result;
-        this.quoteLoading = false;
-      },
-      error: (error) => {
-        this.quoteResult = null;
-        this.quoteLoading = false;
-        this.quoteError =
-          error?.error?.message || 'Không thể tính báo giá. Vui lòng thử lại.';
-      },
-    });
+    this.quoteSubscription = this.apiService
+      .quoteOrder(request)
+      .pipe(
+        finalize(() => {
+          this.quoteLoading = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: (rawResult: any) => {
+          this.quoteResult = rawResult?.data ?? rawResult;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          this.quoteResult = null;
+          this.quoteError =
+            error?.error?.message || 'Không thể tính báo giá. Vui lòng thử lại.';
+          this.cdr.detectChanges();
+        },
+      });
   }
 
-  /**
-   * Cộng giá các dòng Backend thuộc cùng một dòng giỏ hàng.
-   */
+  proceedToCheckout(): void {
+    if (
+      this.selectedItems.length === 0 ||
+      this.quoteLoading ||
+      this.hasInvalidSelectedItems
+    ) {
+      return;
+    }
+
+    const quotePayload = this.buildQuoteRequest();
+
+    sessionStorage.setItem(
+      this.BUY_NOW_STORAGE_KEY,
+      JSON.stringify({
+        items: quotePayload.items,
+        receiveMethod: this.receiveMethod,
+      })
+    );
+
+    this.router.navigate(['/checkout']);
+  }
+
   getLineTotal(item: CartItem): number {
     if (this.quoteResult) {
       const indexes = this.quoteLines

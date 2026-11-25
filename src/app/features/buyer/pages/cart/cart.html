@@ -301,15 +301,13 @@
               [disabled]="
                 selectedItems.length === 0 ||
                 quoteLoading ||
-                !isQuoteValid
+                hasInvalidSelectedItems
               "
+              (click)="proceedToCheckout()"
             >
               Tiến hành đặt hàng ({{ selectedQuantity }})
             </button>
 
-            <p class="cart-summary__coming-soon">
-              Chức năng đặt hàng sẽ được tích hợp ở bước Checkout.
-            </p>
 
           </aside>
 
