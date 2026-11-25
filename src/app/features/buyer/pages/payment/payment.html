@@ -1,38 +1,334 @@
-<section class="payment sc-container">
-  <h1>Thanh toán đơn hàng</h1>
-  <p *ngIf="message" class="payment__message" role="status">{{ message }}</p>
 
-  <article class="sc-card payment__card" *ngIf="order; else loading">
-    <p>Mã đơn hàng: <strong>{{ order.code }}</strong></p>
-    <p>Số tiền: <strong>{{ formatVnd(order.total) }}</strong></p>
-    <p>Trạng thái đơn: <strong>{{ order.status === 'pending_payment' ? 'Chờ thanh toán' : order.status === 'pending_approval' ? 'Chờ duyệt' : order.status === 'cancelled' ? 'Đã hủy' : order.status }}</strong></p>
+<main class="payment-page">
 
-    <div class="payment__qr" *ngIf="currentAttempt?.qrDataUrl && order.status === 'pending_payment'">
-      <img [src]="currentAttempt.qrDataUrl" alt="VietQR mô phỏng thanh toán" />
-      <p>Quét mã QR mô phỏng để thanh toán</p>
-      <small>Giao dịch thử nghiệm - không chuyển tiền thật</small>
+  <!-- HEADER -->
+  <header class="payment-heading">
+    <div class="payment-heading__icon">
+      <i class="bi bi-shield-check"></i>
     </div>
 
-    <p class="payment__timer" [class.is-expired]="secondsLeft === 0" *ngIf="order.status === 'pending_payment'">
-      {{ secondsLeft > 0 ? 'Mã QR hết hạn sau ' + timeLabel : 'Mã QR đã hết hạn' }}
-    </p>
-    <p *ngIf="order.status === 'pending_payment'">Lần tạo lại: {{ recreateCount }}/3</p>
+    <div>
+      <p class="payment-eyebrow">
+        SWEETCAKE · THANH TOÁN AN TOÀN
+      </p>
 
-    <div class="payment__actions" *ngIf="order.status === 'pending_payment' && order.payment?.status !== 'paid'">
-      <button class="sc-btn sc-btn--primary" type="button" (click)="recreateQr()" [disabled]="loadingQr || !canRecreate">
-        {{ loadingQr ? 'Đang tạo...' : 'Tạo lại mã QR' }}
-      </button>
-      <button class="sc-btn" type="button" (click)="simulatePayment('success')" [disabled]="simulating || secondsLeft === 0">
-        {{ simulating ? 'Đang xử lý...' : 'Mô phỏng thanh toán thành công' }}
-      </button>
-      <button class="sc-btn" type="button" (click)="simulatePayment('failed')" [disabled]="simulating || secondsLeft === 0">
-        Mô phỏng giao dịch thất bại
-      </button>
+      <h1>Hoàn tất thanh toán</h1>
+
+      <p class="payment-subtitle">
+        Quét mã QR mô phỏng hoặc chọn phương thức thanh toán thử nghiệm bên dưới.
+      </p>
     </div>
+  </header>
 
-    <p *ngIf="order.payment?.status === 'paid' && order.status === 'pending_approval'">Đã thanh toán thành công. Đơn hàng đang chờ cửa hàng duyệt.</p>
-    <p *ngIf="order.payment?.latePaymentStatus === 'refund_required'">Thanh toán muộn, cần hoàn tiền 100%. Đơn hàng không được khôi phục.</p>
-    <p *ngIf="order.status === 'cancelled'">Đơn đã hủy; khung giờ đã được giải phóng và voucher được hoàn lượt theo quy tắc hệ thống.</p>
-  </article>
-  <ng-template #loading><p>Đang tải thông tin đơn hàng...</p></ng-template>
-</section>
+  <!-- THÔNG BÁO -->
+  <p
+    *ngIf="message"
+    class="payment-alert"
+    role="status"
+  >
+    <i class="bi bi-info-circle"></i>
+    <span>{{ message }}</span>
+  </p>
+
+  <!-- LOADING -->
+  <div *ngIf="loading" class="payment-loading">
+    <i class="bi bi-arrow-repeat"></i>
+    <span>Đang tải thông tin thanh toán...</span>
+  </div>
+
+  <!-- KHÔNG CÓ DỮ LIỆU -->
+  <div
+    *ngIf="!loading && !order"
+    class="payment-loading"
+  >
+    <i class="bi bi-exclamation-circle"></i>
+    <span>Không thể hiển thị thông tin đơn hàng.</span>
+  </div>
+
+  <ng-container *ngIf="!loading && order">
+
+    <section class="payment-layout">
+
+      <!-- KHU VỰC THANH TOÁN -->
+      <article class="payment-panel payment-panel--qr">
+
+        <div class="panel-topline">
+          <div>
+            <span class="section-kicker">
+              PHƯƠNG THỨC THANH TOÁN
+            </span>
+
+            <h2>Quét mã VietQR</h2>
+          </div>
+
+          <span class="demo-tag">
+            <span></span>
+            Mô phỏng
+          </span>
+        </div>
+
+        <!-- QR CODE -->
+        <ng-container
+          *ngIf="
+            order.status === 'pending_payment' &&
+            order.payment?.status !== 'paid' &&
+            currentAttempt?.result === 'pending' &&
+            secondsLeft > 0 &&
+            currentAttempt?.qrDataUrl;
+            else qrState
+          "
+        >
+          <div class="qr-stage">
+
+            <div class="qr-frame">
+              <img
+                [src]="currentAttempt.qrDataUrl"
+                alt="Mã QR VietQR mô phỏng của đơn hàng"
+              />
+            </div>
+
+            <div class="qr-caption">
+              <strong>Quét mã để thanh toán</strong>
+
+              <span>
+                Mã QR chỉ dùng trong môi trường mô phỏng,
+                không chuyển tiền thật.
+              </span>
+            </div>
+
+          </div>
+        </ng-container>
+
+        <!-- TRẠNG THÁI QR -->
+        <ng-template #qrState>
+
+          <div class="payment-state">
+
+            <i
+              class="bi"
+              [ngClass]="
+                order.payment?.status === 'paid'
+                  ? 'bi-check-circle-fill'
+                  : order.status === 'cancelled'
+                    ? 'bi-x-circle-fill'
+                    : secondsLeft === 0 && currentAttempt?.result === 'pending'
+                      ? 'bi-clock-history'
+                      : currentAttempt?.result === 'failed'
+                        ? 'bi-exclamation-circle-fill'
+                        : 'bi-hourglass-split'
+              "
+            ></i>
+
+            <strong>
+              {{
+                order.payment?.status === 'paid'
+                  ? 'Thanh toán thành công'
+                  : order.status === 'cancelled'
+                    ? 'Đơn hàng đã hủy'
+                    : currentAttempt?.result === 'failed'
+                      ? 'Giao dịch thất bại'
+                      : secondsLeft === 0 && currentAttempt?.result === 'pending'
+                        ? 'Mã QR đã hết hạn'
+                        : 'Không còn mã QR khả dụng'
+              }}
+            </strong>
+
+            <span>
+              {{
+                order.payment?.status === 'paid'
+                  ? 'Đơn hàng đang được hệ thống cập nhật trạng thái.'
+                  : order.status === 'cancelled'
+                    ? 'Vui lòng tạo đơn mới và chọn khung giờ khác.'
+                    : currentAttempt?.result === 'failed'
+                      ? 'Bạn có thể tạo lại mã QR nếu còn lượt.'
+                      : secondsLeft === 0
+                        ? 'Vui lòng tạo mã QR mới để tiếp tục thanh toán.'
+                        : 'Trạng thái thanh toán đang được cập nhật.'
+              }}
+            </span>
+
+          </div>
+
+        </ng-template>
+
+        <!-- COUNTDOWN -->
+        <div
+          class="payment-countdown"
+          *ngIf="
+            order.status === 'pending_payment' &&
+            order.payment?.status !== 'paid'
+          "
+        >
+
+          <div class="countdown-copy">
+            <span>Thời gian hiệu lực mã QR</span>
+
+            <small>
+              {{
+                secondsLeft > 0
+                  ? 'Vui lòng hoàn tất trước khi hết giờ'
+                  : 'Mã QR đã hết hạn'
+              }}
+            </small>
+          </div>
+
+          <strong [class.is-expired]="secondsLeft === 0">
+            <i class="bi bi-clock"></i>
+            {{ timeLabel }}
+          </strong>
+
+        </div>
+
+        <!-- SỐ LẦN TẠO LẠI QR -->
+        <div
+          class="attempt-progress"
+          *ngIf="
+            order.status === 'pending_payment' &&
+            order.payment?.status !== 'paid'
+          "
+        >
+
+          <div class="attempt-progress__label">
+            <span>Lượt tạo lại mã QR</span>
+            <b>{{ recreateCount }}/3</b>
+          </div>
+
+          <div class="attempt-dots">
+            <span class="is-used"></span>
+
+            <span [class.is-used]="recreateCount >= 1"></span>
+
+            <span [class.is-used]="recreateCount >= 2"></span>
+
+            <span [class.is-used]="recreateCount >= 3"></span>
+          </div>
+
+          <small>
+            Bạn có tối đa 3 lần tạo lại sau mã QR ban đầu.
+          </small>
+
+        </div>
+
+        <!-- CÁC NÚT THAO TÁC -->
+        <div
+          class="payment-actions"
+          *ngIf="
+            order.status === 'pending_payment' &&
+            order.payment?.status !== 'paid'
+          "
+        >
+
+          <button
+            class="btn-primary"
+            type="button"
+            (click)="simulatePayment('success')"
+            [disabled]="!canSimulate"
+          >
+            <i class="bi bi-check2-circle"></i>
+
+            {{
+              simulating
+                ? 'Đang xử lý...'
+                : 'Mô phỏng thanh toán thành công'
+            }}
+          </button>
+
+          <button
+            class="btn-secondary"
+            type="button"
+            (click)="simulatePayment('failed')"
+            [disabled]="!canSimulate"
+          >
+            <i class="bi bi-exclamation-circle"></i>
+            Mô phỏng giao dịch thất bại
+          </button>
+
+          <button
+            class="btn-link"
+            type="button"
+            (click)="recreateQr()"
+            [disabled]="!canRecreate || loadingQr"
+          >
+            <i class="bi bi-arrow-clockwise"></i>
+
+            {{
+              loadingQr
+                ? 'Đang tạo mã mới...'
+                : 'Tạo lại mã QR'
+            }}
+          </button>
+
+        </div>
+
+        <!-- GHI CHÚ -->
+        <p class="payment-footnote">
+          <i class="bi bi-lock"></i>
+          Thông tin đơn hàng được đối chiếu ở phía máy chủ.
+        </p>
+
+      </article>
+
+      <!-- THÔNG TIN ĐƠN HÀNG -->
+      <aside class="payment-panel payment-panel--summary">
+
+        <span class="section-kicker">
+          THÔNG TIN ĐƠN HÀNG
+        </span>
+
+        <h2>Chi tiết thanh toán</h2>
+
+        <div class="order-code">
+          <span>Mã đơn hàng</span>
+          <strong>{{ order.code || order._id }}</strong>
+        </div>
+
+        <div class="summary-line">
+          <span>Trạng thái</span>
+
+          <b
+            class="status-pill"
+            [class.status-pill--paid]="order.payment?.status === 'paid'"
+            [class.status-pill--cancelled]="order.status === 'cancelled'"
+          >
+            {{ statusLabel }}
+          </b>
+        </div>
+
+        <div class="summary-line">
+          <span>Tạm tính</span>
+          <strong>{{ formatVnd(order.subtotal) }}</strong>
+        </div>
+
+        <div class="summary-line">
+          <span>Giảm giá</span>
+          <strong class="discount-value">
+            -{{ formatVnd(order.discount) }}
+          </strong>
+        </div>
+
+        <div class="summary-line">
+          <span>Phí giao hàng</span>
+          <strong>{{ formatVnd(order.deliveryFee) }}</strong>
+        </div>
+
+        <div class="summary-total">
+          <span>Tổng thanh toán</span>
+          <strong>{{ formatVnd(order.total) }}</strong>
+        </div>
+
+        <div class="summary-note">
+          <i class="bi bi-info-circle"></i>
+
+          <span>
+            Đơn chỉ chuyển sang <b>Chờ duyệt</b> sau khi
+            hệ thống hoặc Admin xác nhận đã nhận được thanh toán.
+          </span>
+        </div>
+
+      </aside>
+
+    </section>
+
+  </ng-container>
+
+</main>

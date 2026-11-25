@@ -165,11 +165,11 @@ import { OrderService } from '../../../../core/services/order.service';
                   <td class="actions-cell">
                     <!-- 1. Xác nhận thanh toán -->
                     <button
-                      *ngIf="o.status === 'pending_payment' || o.payment?.status !== 'paid'"
+                      *ngIf="o.status === 'pending_payment' && o.payment?.status !== 'paid'"
                       class="btn-act blue"
-                      (click)="onConfirmPayment(o)"
+                      (click)="onConfirmPaymentAndAccept(o)"
                     >
-                      Xác nhận TT
+                      Xác nhận thanh toán & tiếp nhận
                     </button>
 
                     <!-- 2. Tiếp nhận đơn -->
@@ -683,20 +683,53 @@ export class AdminOrdersComponent implements OnInit {
     });
   }
 
-  onConfirmPayment(order: any) {
+  /**
+   * Admin xác minh giao dịch thực nhận, sau đó tự động tiếp nhận đơn.
+   * Backend vẫn đi đúng state machine: pending_payment -> pending_approval -> accepted.
+   */
+  onConfirmPaymentAndAccept(order: any) {
     const verified = window.confirm(
-      `Chỉ xác nhận khi đã đối chiếu mã giao dịch và bằng chứng thanh toán với ngân hàng/cổng thanh toán.\\n\\nĐơn #${order.code} đã được xác minh tiền đã vào tài khoản?`
+      `Chỉ tiếp tục khi đã kiểm tra tiền thực nhận trong tài khoản/cổng thanh toán.\n\nBạn xác nhận đã nhận đủ tiền của đơn #${order.code} và muốn tiếp nhận đơn này?`
     );
     if (!verified) return;
-    this.orderService.confirmPaymentManual(order._id).subscribe({
-      next: (result: any) => {
-        const updated = result?.data ?? result;
-        this.showToast(
-          updated?.payment?.latePayment
-            ? `Đã ghi nhận thanh toán muộn của đơn #${order.code}. Đơn không được khôi phục, cần hoàn 100%.`
-            : `Đã xác nhận thanh toán cho đơn #${order.code}`
-        );
-        this.loadAdminOrders();
+
+    const txnId = window.prompt('Nhập mã giao dịch đã đối soát:')?.trim() || '';
+    if (!txnId) {
+      alert('Cần nhập mã giao dịch trước khi xác nhận.');
+      return;
+    }
+
+    const evidence = window.prompt('Nhập đường dẫn hoặc mã tham chiếu bằng chứng thanh toán (biên nhận/ảnh chụp...):')?.trim() || '';
+    if (!evidence) {
+      alert('Cần cung cấp bằng chứng thanh toán trước khi xác nhận.');
+      return;
+    }
+
+    const note = window.prompt('Ghi chú đối soát (không bắt buộc):')?.trim() || '';
+
+    this.orderService.confirmPaymentManual(order._id, { txnId, evidence, note }).subscribe({
+      next: (paymentResult: any) => {
+        const paidOrder = paymentResult?.data ?? paymentResult;
+
+        // Nếu đơn bị hủy hoặc được ghi nhận là thanh toán muộn thì tuyệt đối không tiếp nhận.
+        if (paidOrder?.payment?.latePayment || paidOrder?.status !== 'pending_approval') {
+          this.showToast(
+            `Đã ghi nhận thanh toán nhưng đơn #${order.code} chưa thể tiếp nhận. Vui lòng kiểm tra trạng thái/hoàn tiền.`
+          );
+          this.loadAdminOrders();
+          return;
+        }
+
+        this.orderService.acceptOrder(order._id).subscribe({
+          next: () => {
+            this.showToast(`Đã xác nhận thanh toán và tiếp nhận đơn #${order.code}.`);
+            this.loadAdminOrders();
+          },
+          error: (err: any) => {
+            alert(err.error?.message || 'Đã xác nhận thanh toán nhưng chưa thể tiếp nhận đơn. Vui lòng tải lại danh sách và tiếp nhận lại.');
+            this.loadAdminOrders();
+          }
+        });
       },
       error: (err: any) => alert(err.error?.message || 'Lỗi xác nhận thanh toán')
     });
