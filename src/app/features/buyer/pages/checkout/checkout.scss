@@ -4,7 +4,7 @@
   color: #2d1b10;
 
   &__header {
-    margin-bottom: 28px;
+    margin-bottom: 24px;
 
     h1 {
       margin: 0 0 8px;
@@ -36,6 +36,37 @@
     }
   }
 
+  &__login-prompt {
+    margin: 12px 0 0;
+    font-size: 14px;
+    font-style: italic;
+    color: #5c493e;
+
+    a {
+      margin-left: 4px;
+      font-style: normal;
+      font-weight: 700;
+      color: #2d1b10;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.18s ease;
+
+      &:hover {
+        color: #a45f6b;
+      }
+    }
+
+    &--signed {
+      font-size: 13px;
+      color: #6b574c;
+
+      strong {
+        font-style: normal;
+        color: #a45f6b;
+      }
+    }
+  }
+
   &__notice {
     margin-bottom: 20px;
     padding: 13px 16px;
@@ -45,6 +76,24 @@
     color: #b42318;
     font-size: 13px;
     line-height: 1.5;
+  }
+
+  &__retry-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #f3c6c4;
+    border-radius: 8px;
+    background: #fff4f3;
+    color: #b42318;
+    font-size: 12.5px;
+    line-height: 1.45;
+
+    button {
+      flex-shrink: 0;
+    }
   }
 
   &__grid {
@@ -104,7 +153,8 @@
     }
   }
 
-  &__badge {
+  &__badge,
+  &__prefill-tag {
     padding: 4px 10px;
     border-radius: 999px;
     background: #fdf2f4;
@@ -137,7 +187,23 @@
 
     .sc-input {
       min-height: 46px;
+
+      &.is-invalid {
+        border-color: #d92d20;
+        background: #fffbfa;
+      }
     }
+  }
+
+  &__field-err {
+    font-size: 12px;
+    color: #b42318;
+    line-height: 1.4;
+  }
+
+  &__field-note {
+    font-size: 11.5px;
+    color: #85776f;
   }
 
   &__field-title {
@@ -188,6 +254,244 @@
       background: #fdf2f4;
       color: #a45f6b;
       font-weight: 600;
+    }
+  }
+
+  // ==========================================
+  // CHỌN TRỰC TIẾP 2 CHI NHÁNH + BẢN ĐỒ SO SÁNH
+  // ==========================================
+  &__pickup-box {
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid #f0e4dd;
+    border-radius: 12px;
+    background: #fcf9f7;
+  }
+
+  &__pickup-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+
+    .checkout__field-title {
+      margin: 0;
+    }
+  }
+
+  &__locate-btn {
+    padding: 6px 12px;
+    border: 1px solid #d9b6bd;
+    border-radius: 999px;
+    background: #fff;
+    color: #a45f6b;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+
+    &:hover:not(:disabled) {
+      background: #fdf2f4;
+      border-color: #a45f6b;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+  }
+
+  &__branch-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  &__branch-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+    border: 1.5px solid #e3d6ce;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.18s ease;
+
+    input[type='radio'] {
+      margin-top: 3px;
+      accent-color: #a45f6b;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      border-color: #c58a94;
+      background: #fffdfd;
+    }
+
+    &.is-selected {
+      border-color: #a45f6b;
+      background: #fdf2f4;
+      box-shadow: 0 3px 10px rgba(164, 95, 107, 0.1);
+    }
+  }
+
+  &__branch-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__branch-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    strong {
+      font-size: 14px;
+      color: #2d1b10;
+    }
+  }
+
+  &__nearest-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e6f6ec;
+    color: #16794c;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  &__branch-addr {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #6b574c;
+  }
+
+  &__branch-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  &__distance-tag {
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f5ebe6;
+    color: #4a352b;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  &__dir-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: #a45f6b;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__map-wrap {
+    margin-top: 14px;
+    border: 1px solid #e6dad2;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  &__map-caption {
+    padding: 8px 12px;
+    border-bottom: 1px solid #efe5df;
+    background: #faf6f3;
+    font-size: 12px;
+    color: #5c493e;
+
+    strong {
+      color: #a45f6b;
+    }
+  }
+
+  &__map-frame {
+    display: block;
+    width: 100%;
+    height: 220px;
+    border: 0;
+  }
+
+  // ==========================================
+  // GIAO TẬN NƠI
+  // ==========================================
+  &__delivery-box {
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid #f0e4dd;
+    border-radius: 10px;
+    background: #fcf9f7;
+    overflow: visible;
+  }
+
+  &__delivery-top {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  &__area-note {
+    margin: 0;
+    padding: 9px 12px;
+    border-left: 3px solid #a45f6b;
+    border-radius: 6px;
+    background: #fdf2f4;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #5c493e;
+
+    strong {
+      color: #a45f6b;
+    }
+  }
+
+  &__saved-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 7px;
+    background: #fff;
+    border: 1px solid #eadcd4;
+    font-size: 12px;
+    color: #5c493e;
+  }
+
+  &__address-preview {
+    margin: 12px 0 0;
+    padding: 9px 12px;
+    border-radius: 7px;
+    background: #fff;
+    border: 1px dashed #dfcfc6;
+    font-size: 12.5px;
+    color: #6b574c;
+
+    strong {
+      color: #2d1b10;
     }
   }
 
@@ -308,11 +612,15 @@
   &__link-btn {
     border: 0;
     background: transparent;
-    color: #b42318;
+    color: #a45f6b;
     font-size: 12px;
     font-weight: 600;
     text-decoration: underline;
     cursor: pointer;
+
+    &:hover {
+      color: #7c3f4a;
+    }
   }
 
   &__error {
@@ -388,12 +696,16 @@
 }
 
 // ==========================================
-// CUSTOM BRANCH DROPDOWN
+// CUSTOM DROPDOWN (PHƯỜNG/XÃ)
 // ==========================================
-.sc-branch-select {
+.sc-custom-select {
   position: relative;
   width: 100%;
-  z-index: 40;
+  z-index: 35;
+
+  &.is-open {
+    z-index: 90;
+  }
 
   &__trigger {
     display: flex;
@@ -412,9 +724,20 @@
     cursor: pointer;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
-    &:hover {
+    &:hover:not(:disabled) {
       border-color: #b76e79;
     }
+
+    &:disabled {
+      background: #f6f2ef;
+      cursor: not-allowed;
+    }
+  }
+
+  &.is-locked &__trigger {
+    background: #faf6f3;
+    border-color: #e6dad2;
+    cursor: default;
   }
 
   &.is-open &__trigger {
@@ -433,6 +756,14 @@
       font-weight: 600;
       color: #2d1b10;
       line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &.is-placeholder {
+        font-weight: 400;
+        color: #9a8b82;
+      }
     }
 
     small {
@@ -443,6 +774,16 @@
       text-overflow: ellipsis;
       line-height: 1.3;
     }
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #fdf2f4;
+    color: #a45f6b;
+    font-size: 11px;
+    font-weight: 600;
   }
 
   &__arrow {
@@ -461,14 +802,62 @@
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    z-index: 100;
+    z-index: 120;
+    max-height: 240px;
+    overflow-y: auto;
     margin: 0;
     padding: 6px;
     list-style: none;
     border: 1px solid #e9dfd8;
     border-radius: 10px;
     background: #fff;
-    box-shadow: 0 12px 28px rgba(45, 27, 16, 0.14);
+    box-shadow: 0 12px 28px rgba(45, 27, 16, 0.15);
+
+    &--searchable {
+      max-height: none;
+      overflow: visible;
+      padding: 0;
+    }
+  }
+
+  &__search {
+    padding: 8px;
+    border-bottom: 1px solid #f0e6e0;
+    background: #fcf9f7;
+    border-radius: 10px 10px 0 0;
+
+    input {
+      width: 100%;
+      padding: 8px 11px;
+      border: 1px solid #e0d2ca;
+      border-radius: 7px;
+      background: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      color: #2d1b10;
+      outline: none;
+
+      &:focus {
+        border-color: #a45f6b;
+      }
+    }
+  }
+
+  &__list {
+    max-height: 210px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: #dfd2ca;
+    }
   }
 
   &__item {
@@ -476,7 +865,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 12px;
+    padding: 9px 12px;
     border-radius: 7px;
     cursor: pointer;
     transition: background-color 0.15s ease;
@@ -518,6 +907,13 @@
     font-weight: 700;
     color: #a45f6b;
   }
+
+  &__empty {
+    padding: 14px 12px;
+    text-align: center;
+    font-size: 12.5px;
+    color: #85776f;
+  }
 }
 
 @media (max-width: 900px) {
@@ -538,7 +934,8 @@
     padding-bottom: 48px;
 
     &__row-2,
-    &__receive-method {
+    &__receive-method,
+    &__branch-cards {
       grid-template-columns: 1fr;
     }
   }
