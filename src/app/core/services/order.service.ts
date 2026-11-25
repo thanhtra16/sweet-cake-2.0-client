@@ -85,9 +85,21 @@ export class OrderService {
   }
 
   // Xác nhận thanh toán thủ công
-  confirmPaymentManual(orderId: string): Observable<any> {
-    return this.http.post(`${this.adminApiUrl}/${orderId}/confirm-payment`, {});
+
+confirmPaymentManual(
+  orderId: string,
+  payload: {
+    txnId: string;
+    evidence: string;
+    note?: string;
   }
+): Observable<any> {
+  return this.http.post(
+    `${this.adminApiUrl}/${orderId}/confirm-payment`,
+    payload
+  );
+}
+
 
   // Tiếp nhận đơn hàng
   acceptOrder(orderId: string): Observable<any> {
