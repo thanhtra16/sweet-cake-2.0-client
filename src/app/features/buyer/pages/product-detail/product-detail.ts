@@ -1,10 +1,13 @@
-
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  ElementRef,
+  OnDestroy,
   OnInit,
+  ViewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -38,10 +41,16 @@ import {
   templateUrl: './product-detail.html',
   styleUrl: './product-detail.css',
 })
-export class ProductDetail implements OnInit {
+export class ProductDetail
+  implements OnInit, AfterViewInit, OnDestroy {
+
   private readonly BUY_NOW_STORAGE_KEY = 'sweetcake_buy_now';
 
+  readonly MIN_QUANTITY = 1;
+  readonly MAX_QUANTITY = 10;
+
   productId = '';
+  quantity = 1;
 
   product: Product | null = null;
   customizationConfig: ProductCustomization | null = null;
@@ -53,14 +62,6 @@ export class ProductDetail implements OnInit {
 
   isVariantDropdownOpen = false;
 
-  get selectedVariantId(): string {
-    return this.selectedVariantIds[0] ?? '';
-  }
-
-  set selectedVariantId(value: string) {
-    this.selectedVariantIds = value ? [value] : [];
-  }
-
   loading = true;
   addToCartLoading = false;
   buyNowLoading = false;
@@ -69,6 +70,40 @@ export class ProductDetail implements OnInit {
   toastMessage = '';
   showToast = false;
   private toastTimer?: ReturnType<typeof setTimeout>;
+
+  // ========================================
+  // STICKY ORDER
+  // ========================================
+
+  private primaryActionsPassed = false;
+  private footerVisible = false;
+
+  private primaryActionsObserver?: IntersectionObserver;
+  private footerObserver?: IntersectionObserver;
+
+  @ViewChild('primaryActions')
+  set primaryActionsElement(
+    element: ElementRef<HTMLElement> | undefined
+  ) {
+    this.observePrimaryActions(element);
+  }
+
+  get showStickyOrder(): boolean {
+    return (
+      !this.loading &&
+      !!this.product &&
+      this.primaryActionsPassed &&
+      !this.footerVisible
+    );
+  }
+
+  get selectedVariantId(): string {
+    return this.selectedVariantIds[0] ?? '';
+  }
+
+  set selectedVariantId(value: string) {
+    this.selectedVariantIds = value ? [value] : [];
+  }
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -96,6 +131,10 @@ export class ProductDetail implements OnInit {
           this.accessoryOptions = [];
           this.selectedVariantIds = [];
           this.isVariantDropdownOpen = false;
+          this.quantity = 1;
+
+          this.primaryActionsPassed = false;
+          this.footerVisible = false;
         }),
 
         switchMap((params) => {
@@ -200,6 +239,121 @@ export class ProductDetail implements OnInit {
       });
   }
 
+  ngAfterViewInit(): void {
+    this.observeFooter();
+  }
+
+  ngOnDestroy(): void {
+    this.primaryActionsObserver?.disconnect();
+    this.footerObserver?.disconnect();
+
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+    }
+  }
+
+  // ========================================
+  // STICKY ORDER - INTERSECTION OBSERVER
+  // ========================================
+
+  private observePrimaryActions(
+    element: ElementRef<HTMLElement> | undefined
+  ): void {
+    this.primaryActionsObserver?.disconnect();
+
+    if (
+      !element ||
+      typeof IntersectionObserver === 'undefined'
+    ) {
+      return;
+    }
+
+    this.primaryActionsObserver = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+
+        if (!entry) {
+          return;
+        }
+
+        if (entry.isIntersecting) {
+          // Nút đặt hàng chính xuất hiện lại trong màn hình.
+          this.primaryActionsPassed = false;
+        } else if (entry.boundingClientRect.bottom < 0) {
+          // Nút đặt hàng chính đã cuộn lên phía trên màn hình.
+          this.primaryActionsPassed = true;
+        }
+
+        this.cdr.markForCheck();
+      },
+      {
+        threshold: 0,
+      }
+    );
+
+    this.primaryActionsObserver.observe(element.nativeElement);
+  }
+
+  private observeFooter(): void {
+    if (
+      typeof document === 'undefined' ||
+      typeof IntersectionObserver === 'undefined'
+    ) {
+      return;
+    }
+
+    // Tìm footer của layout dùng chung.
+    const footer = document.querySelector(
+      'app-footer, footer, .site-footer'
+    );
+
+    if (!footer) {
+      return;
+    }
+
+    this.footerObserver?.disconnect();
+
+    this.footerObserver = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+
+        if (!entry) {
+          return;
+        }
+
+        this.footerVisible = entry.isIntersecting;
+        this.cdr.markForCheck();
+      },
+      {
+        threshold: 0,
+      }
+    );
+
+    this.footerObserver.observe(footer);
+  }
+
+  // ========================================
+  // QUANTITY
+  // ========================================
+
+  increaseQuantity(): void {
+    if (this.quantity >= this.MAX_QUANTITY) {
+      return;
+    }
+
+    this.quantity++;
+    this.cdr.markForCheck();
+  }
+
+  decreaseQuantity(): void {
+    if (this.quantity <= this.MIN_QUANTITY) {
+      return;
+    }
+
+    this.quantity--;
+    this.cdr.markForCheck();
+  }
+
   // ========================================
   // PRODUCT DISPLAY
   // ========================================
@@ -225,6 +379,14 @@ export class ProductDetail implements OnInit {
       ? this.product.salePrice!
       : this.product.basePrice;
   }
+  get estimatedTotalPrice(): number {
+  const unitPrice =
+    this.product?.kind === 'cake'
+      ? (this.customization?.estimatedPrice ?? this.displayPrice)
+      : this.displayPrice;
+
+  return unitPrice * this.quantity;
+}
 
   get salePercentage(): number {
     if (!this.product || !this.isPromotionValid) {
@@ -478,7 +640,7 @@ export class ProductDetail implements OnInit {
             variantLabel: selectedVariant.label,
             variantIds: [selectedVariant.id],
             variantLabels: [selectedVariant.label],
-            quantity: 1,
+            quantity: this.quantity,
           });
         }
 
@@ -499,7 +661,7 @@ export class ProductDetail implements OnInit {
         variantLabel: null,
         variantIds: [],
         variantLabels: [],
-        quantity: 1,
+        quantity: this.quantity,
       });
     }
 
@@ -514,6 +676,16 @@ export class ProductDetail implements OnInit {
     const currentProduct = this.product;
 
     if (!currentProduct || this.addToCartLoading) {
+      return;
+    }
+
+    if (
+      this.quantity < this.MIN_QUANTITY ||
+      this.quantity > this.MAX_QUANTITY
+    ) {
+      this.showNotification(
+        'Số lượng mỗi dòng sản phẩm chỉ được từ 1 đến 10.'
+      );
       return;
     }
 
@@ -556,6 +728,7 @@ export class ProductDetail implements OnInit {
         selectedCustomization
       ) {
         // Tạo danh sách phụ kiện thành các dòng riêng.
+        // Số lượng mỗi phụ kiện bằng số lượng bánh.
         const accessoryCartItems =
           this.buildAccessoryCartItems(selectedCustomization);
 
@@ -591,12 +764,12 @@ export class ProductDetail implements OnInit {
           accessories: [],
           variantIds: [],
           variantLabels: [],
-          quantity: 1,
+          quantity: this.quantity,
         });
 
         if (!cakeAdded) {
           this.showNotification(
-            'Không thể thêm bánh vào giỏ hàng. Vui lòng thử lại.'
+            'Không thể thêm bánh vào giỏ hàng. Có thể số lượng sau khi gộp vượt quá giới hạn 10 sản phẩm mỗi dòng.'
           );
           return;
         }
@@ -610,7 +783,7 @@ export class ProductDetail implements OnInit {
 
           if (!accessoryAdded) {
             this.showNotification(
-              'Bánh đã được thêm nhưng một số phụ kiện chưa thể thêm vào giỏ hàng. Vui lòng kiểm tra lại giỏ hàng.'
+              'Bánh đã được thêm nhưng một số phụ kiện chưa thể thêm. Có thể số lượng sau khi gộp vượt quá giới hạn 10 sản phẩm mỗi dòng. Vui lòng kiểm tra lại giỏ hàng.'
             );
 
             this.cartService.openDrawer();
@@ -644,12 +817,12 @@ export class ProductDetail implements OnInit {
               variantLabel: variant.label,
               variantIds: variant._id ? [variant._id] : [],
               variantLabels: [variant.label],
-              quantity: 1,
+              quantity: this.quantity,
             });
 
             if (!added) {
               this.showNotification(
-                'Một số biến thể chưa thể thêm vào giỏ hàng. Vui lòng kiểm tra lại.'
+                'Một số biến thể chưa thể thêm vào giỏ hàng. Có thể số lượng sau khi gộp vượt quá giới hạn 10 sản phẩm mỗi dòng. Vui lòng kiểm tra lại.'
               );
 
               if (hasAddedItem) {
@@ -673,12 +846,12 @@ export class ProductDetail implements OnInit {
             accessories: [],
             variantIds: [],
             variantLabels: [],
-            quantity: 1,
+            quantity: this.quantity,
           });
 
           if (!added) {
             this.showNotification(
-              'Không thể thêm vào giỏ hàng. Vui lòng thử lại.'
+              'Không thể thêm vào giỏ hàng. Có thể số lượng sau khi gộp vượt quá giới hạn 10 sản phẩm mỗi dòng.'
             );
             return;
           }
@@ -733,7 +906,7 @@ export class ProductDetail implements OnInit {
 
       items.push({
         productId: this.product._id,
-        qty: 1,
+        qty: this.quantity,
         config: {
           size: config.size,
           base: config.base,
@@ -777,14 +950,14 @@ export class ProductDetail implements OnInit {
           for (const variantId of variantIds) {
             items.push({
               productId: accessory.id,
-              qty: 1,
+              qty: this.quantity,
               variant: variantId,
             });
           }
         } else {
           items.push({
             productId: accessory.id,
-            qty: 1,
+            qty: this.quantity,
           });
         }
       }
@@ -799,14 +972,14 @@ export class ProductDetail implements OnInit {
         for (const variantId of this.selectedVariantIds) {
           items.push({
             productId: this.product._id,
-            qty: 1,
+            qty: this.quantity,
             variant: variantId,
           });
         }
       } else {
         items.push({
           productId: this.product._id,
-          qty: 1,
+          qty: this.quantity,
         });
       }
     }
@@ -819,6 +992,16 @@ export class ProductDetail implements OnInit {
 
   buyNow(): void {
     if (!this.product || this.buyNowLoading) {
+      return;
+    }
+
+    if (
+      this.quantity < this.MIN_QUANTITY ||
+      this.quantity > this.MAX_QUANTITY
+    ) {
+      this.showNotification(
+        'Số lượng mỗi dòng sản phẩm chỉ được từ 1 đến 10.'
+      );
       return;
     }
 
