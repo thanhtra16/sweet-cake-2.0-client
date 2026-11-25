@@ -1,0 +1,163 @@
+<div class="product-list">
+  <section class="product-list__header">
+    <h1>Danh mục sản phẩm</h1>
+    <p class="sc-muted">
+      Khám phá các sản phẩm bánh ngọt được tạo nên từ đôi bàn tay khéo léo và tình yêu trọn vẹn.
+    </p>
+  </section>
+
+  <div class="product-list__layout">
+    <aside class="product-list__filter" aria-label="Bộ lọc sản phẩm">
+      @for (group of filterGroups; track group.key) {
+        <fieldset class="product-list__filter-group">
+          <legend class="product-list__filter-title">
+            {{ group.title }}
+          </legend>
+
+          @for (option of group.options; track option.value) {
+            <label class="product-list__filter-option">
+              <input
+                type="checkbox"
+                [checked]="isChecked(group.key, option.value)"
+                (change)="toggleFilter(group.key, option.value)"
+              />
+              {{ option.label }}
+            </label>
+          }
+        </fieldset>
+      }
+
+      @if (hasActiveFilters()) {
+        <button
+          type="button"
+          class="sc-btn sc-btn--outline sc-btn--sm"
+          (click)="clearFilters()"
+        >
+          Xóa bộ lọc
+        </button>
+      }
+    </aside>
+
+    <main class="product-list__content">
+      <div class="product-list__toolbar">
+        <input
+          type="search"
+          class="sc-input product-list__search"
+          placeholder="Tìm kiếm sản phẩm"
+          aria-label="Tìm kiếm sản phẩm"
+          [value]="searchKeyword()"
+          (input)="onSearch($event)"
+        />
+
+        <div class="product-list__sort">
+          <span class="product-list__sort-label">Sắp xếp:</span>
+
+          <div class="product-list__sort-options">
+            <button
+              type="button"
+              class="product-list__sort-option"
+              [class.is-active]="sortMode() === 'newest'"
+              [attr.aria-pressed]="sortMode() === 'newest'"
+              (click)="selectSort('newest')"
+            >
+              Mới nhất
+            </button>
+
+            <button
+              type="button"
+              class="product-list__sort-option"
+              [class.is-active]="sortMode() === 'price-asc'"
+              [attr.aria-pressed]="sortMode() === 'price-asc'"
+              (click)="selectSort('price-asc')"
+            >
+              Giá tăng dần
+            </button>
+
+            <button
+              type="button"
+              class="product-list__sort-option"
+              [class.is-active]="sortMode() === 'price-desc'"
+              [attr.aria-pressed]="sortMode() === 'price-desc'"
+              (click)="selectSort('price-desc')"
+            >
+              Giá giảm dần
+            </button>
+          </div>
+        </div>
+      </div>
+
+      @if (isLoading()) {
+        <div class="sc-loading" role="status">
+          <div class="sc-spinner"></div>
+          <span>Đang tải sản phẩm...</span>
+        </div>
+      } @else if (hasError()) {
+        <div class="sc-empty-state">
+          <h2 class="sc-empty-state__title">
+            Không thể tải sản phẩm
+          </h2>
+          <p>Vui lòng kiểm tra kết nối và thử lại sau.</p>
+        </div>
+      } @else {
+        <h2 class="product-list__result-title">
+          {{ resultTitle() }}
+        </h2>
+
+        @if (filteredProducts().length === 0) {
+          <div class="sc-empty-state">
+            <h3 class="sc-empty-state__title">
+              Không tìm thấy sản phẩm phù hợp.
+            </h3>
+            <p>Hãy thử bỏ bớt bộ lọc hoặc đổi từ khóa tìm kiếm.</p>
+          </div>
+        } @else {
+          <div class="product-list__grid">
+            @for (product of pagedProducts(); track product.id) {
+              <app-product-card
+                [product]="product"
+                [showAddToCart]="true"
+                (addToCart)="onAddToCart($event)"
+              />
+            }
+          </div>
+
+          @if (totalPages() > 1) {
+            <nav class="sc-pagination" aria-label="Phân trang">
+              <button
+                type="button"
+                class="sc-pagination__item"
+                aria-label="Trang trước"
+                [disabled]="currentPage() === 1"
+                (click)="goToPage(currentPage() - 1)"
+              >
+                <i class="bi bi-chevron-left"></i>
+              </button>
+
+              @for (page of pageNumbers(); track page) {
+                <button
+                  type="button"
+                  class="sc-pagination__item"
+                  [class.is-active]="page === currentPage()"
+                  [attr.aria-current]="page === currentPage() ? 'page' : null"
+                  (click)="goToPage(page)"
+                >
+                  {{ page }}
+                </button>
+              }
+
+              <button
+                type="button"
+                class="sc-pagination__item"
+                aria-label="Trang sau"
+                [disabled]="currentPage() === totalPages()"
+                (click)="goToPage(currentPage() + 1)"
+              >
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </nav>
+          }
+        }
+      }
+    </main>
+  </div>
+</div>

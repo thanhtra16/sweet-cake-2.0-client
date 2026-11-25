@@ -1,0 +1,412 @@
+@if (loading) {
+  <div class="product-detail__state">
+    <p>Đang tải thông tin sản phẩm...</p>
+  </div>
+} @else if (errorMessage) {
+  <div class="product-detail__state product-detail__state--error">
+    <p>{{ errorMessage }}</p>
+  </div>
+} @else if (product) {
+  <div class="product-detail">
+
+    <!-- BREADCRUMB -->
+    <div class="product-detail__breadcrumb">
+      Trang chủ / {{ product.category }} / {{ product.name }}
+    </div>
+
+    <div class="product-detail__layout">
+
+      <!-- CỘT TRÁI: ẢNH + ĐÁNH GIÁ -->
+      <div class="product-detail__col product-detail__col--left">
+
+        <section class="product-detail__gallery">
+          <div class="product-detail__main-image">
+
+            @if (mainImageUrl) {
+              <img [src]="mainImageUrl" [alt]="product.name" />
+            } @else {
+              <div class="product-detail__image-placeholder">
+                Chưa có hình ảnh sản phẩm
+              </div>
+            }
+
+            @if (isPromotionValid) {
+              <span class="product-detail__sale-badge">
+                -{{ salePercentage }}%
+              </span>
+            }
+
+          </div>
+        </section>
+
+        <!-- ĐÁNH GIÁ SẢN PHẨM -->
+        <app-review-list
+          class="product-detail__reviews"
+          [productId]="product._id"
+        />
+
+      </div>
+
+      <!-- CỘT PHẢI: THÔNG TIN + TÙY BIẾN -->
+      <div class="product-detail__col product-detail__col--right">
+
+        <!-- THÔNG TIN SẢN PHẨM -->
+        <section class="product-detail__summary">
+
+          <span class="product-detail__category">
+            {{ product.category }}
+          </span>
+
+          <h1>{{ product.name }}</h1>
+
+          <div class="product-detail__rating">
+            <span>
+              ★ {{ product.rating | number:'1.1-1' }}/5
+            </span>
+
+            <a href="#reviews">
+              ({{ product.reviewCount }} đánh giá)
+            </a>
+          </div>
+
+          <p class="product-detail__description">
+            {{ product.description }}
+          </p>
+
+          <!-- GIÁ SẢN PHẨM -->
+          <div class="product-detail__price">
+
+            <span class="product-detail__current-price">
+              {{ displayPrice | number }}đ
+            </span>
+
+            @if (isPromotionValid) {
+              <span class="product-detail__old-price">
+                {{ product.basePrice | number }}đ
+              </span>
+            }
+
+          </div>
+
+          <!-- ĐIỀU CHỈNH SỐ LƯỢNG -->
+          <div class="product-detail__quantity">
+
+            <div class="product-detail__quantity-info">
+              <span class="product-detail__quantity-label">
+                Số lượng
+              </span>
+
+              <span class="product-detail__quantity-hint">
+                Tối đa 10 sản phẩm mỗi dòng
+              </span>
+            </div>
+
+            <div class="product-detail__quantity-control">
+
+              <button
+                type="button"
+                class="product-detail__quantity-btn"
+                aria-label="Giảm số lượng"
+                [disabled]="
+                  quantity <= MIN_QUANTITY ||
+                  addToCartLoading ||
+                  buyNowLoading
+                "
+                (click)="decreaseQuantity()"
+              >
+                −
+              </button>
+
+              <span
+                class="product-detail__quantity-value"
+                aria-live="polite"
+              >
+                {{ quantity }}
+              </span>
+
+              <button
+                type="button"
+                class="product-detail__quantity-btn"
+                aria-label="Tăng số lượng"
+                [disabled]="
+                  quantity >= MAX_QUANTITY ||
+                  addToCartLoading ||
+                  buyNowLoading
+                "
+                (click)="increaseQuantity()"
+              >
+                +
+              </button>
+
+            </div>
+          </div>
+
+          <!-- NÚT ĐẶT HÀNG CHÍNH -->
+          <div
+            #primaryActions
+            class="product-detail__primary-actions"
+          >
+            <button
+              type="button"
+              class="sc-btn sc-btn--outline"
+              [disabled]="
+                !isProductVariantSelectionValid ||
+                addToCartLoading ||
+                buyNowLoading
+              "
+              (click)="addToCart()"
+            >
+              {{
+                addToCartLoading
+                  ? 'Đang thêm...'
+                  : 'Thêm vào giỏ hàng'
+              }}
+            </button>
+
+            <button
+              type="button"
+              class="sc-btn sc-btn--primary"
+              [disabled]="
+                !isProductVariantSelectionValid ||
+                buyNowLoading ||
+                addToCartLoading
+              "
+              (click)="buyNow()"
+            >
+              {{
+                buyNowLoading
+                  ? 'Đang xử lý...'
+                  : 'Mua ngay'
+              }}
+            </button>
+          </div>
+
+          <div class="product-detail__divider"></div>
+
+        </section>
+
+        <!-- FORM TÙY CHỈNH + BIẾN THỂ -->
+        <section class="product-detail__options">
+
+          <!-- TÙY CHỈNH BÁNH -->
+          @if (product.kind === 'cake' && customizationConfig) {
+            <app-cake-customizer
+              [basePrice]="product.basePrice"
+              [promotionPrice]="product.salePrice"
+              [isPromotionValid]="isPromotionValid"
+              [customizationConfig]="customizationConfig"
+              [productAvailableSizes]="product.availableSizes"
+              [productAvailableFillings]="product.availableFillings"
+              [accessoryOptions]="accessoryOptions"
+              (customizationChange)="onCustomizationChange($event)"
+            />
+          }
+
+          <!-- PHỤ KIỆN RIÊNG: CHỌN NHIỀU BIẾN THỂ -->
+          @if (product.kind === 'accessory' && requiresProductVariant) {
+            <div class="product-detail__variant">
+
+              <label class="product-detail__variant-label">
+                Chọn biến thể
+                <span>*</span>
+              </label>
+
+              @if (activeProductVariants.length > 0) {
+
+                <!-- NÚT MỞ / ĐÓNG DROPDOWN -->
+                <button
+                  type="button"
+                  class="product-detail__variant-trigger"
+                  [class.product-detail__variant-trigger--open]="isVariantDropdownOpen"
+                  [attr.aria-expanded]="isVariantDropdownOpen"
+                  (click)="toggleVariantDropdown()"
+                >
+                  <span class="product-detail__variant-trigger-text">
+                    @if (selectedProductVariantLabels.length > 0) {
+                      Đã chọn {{ selectedProductVariantLabels.length }} biến thể
+                    } @else {
+                      -- Chọn biến thể --
+                    }
+                  </span>
+
+                  <svg
+                    class="product-detail__variant-arrow"
+                    [class.product-detail__variant-arrow--open]="isVariantDropdownOpen"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m5 7.5 5 5 5-5"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                <!-- DANH SÁCH BIẾN THỂ ĐÃ CHỌN -->
+                @if (selectedProductVariantLabels.length > 0) {
+                  <div class="product-detail__selected-variants">
+
+                    @for (
+                      label of selectedProductVariantLabels;
+                      track label
+                    ) {
+                      <span class="product-detail__selected-variant">
+                        {{ label }}
+                      </span>
+                    }
+
+                  </div>
+                }
+
+                <!-- DROPDOWN CHECKBOX -->
+                @if (isVariantDropdownOpen) {
+                  <div class="product-detail__variant-dropdown">
+
+                    @for (
+                      variant of activeProductVariants;
+                      track variant._id
+                    ) {
+                      <label class="product-detail__variant-option">
+
+                        <input
+                          type="checkbox"
+                          [checked]="isProductVariantSelected(variant._id!)"
+                          (change)="onProductVariantToggle(
+                            variant._id!,
+                            $any($event.target).checked
+                          )"
+                        />
+
+                        <span class="product-detail__variant-checkbox"></span>
+
+                        <span class="product-detail__variant-option-label">
+                          {{ variant.label }}
+                        </span>
+
+                      </label>
+                    }
+
+                  </div>
+                }
+
+                @if (!isProductVariantSelectionValid) {
+                  <p class="product-detail__variant-hint">
+                    Vui lòng chọn ít nhất một biến thể.
+                  </p>
+                }
+
+              } @else {
+                <p class="product-detail__variant-error">
+                  Sản phẩm hiện không có biến thể khả dụng.
+                </p>
+              }
+
+            </div>
+          }
+
+        </section>
+
+      </div>
+    </div>
+
+    <!-- THANH ĐẶT HÀNG CỐ ĐỊNH -->
+    <div
+      class="product-detail__sticky-order"
+      [class.product-detail__sticky-order--visible]="showStickyOrder"
+      [attr.aria-hidden]="!showStickyOrder"
+    >
+
+      <!-- THÔNG TIN SẢN PHẨM -->
+      <div class="product-detail__sticky-info">
+
+        @if (mainImageUrl) {
+          <img
+            class="product-detail__sticky-image"
+            [src]="mainImageUrl"
+            [alt]="product.name"
+          />
+        } @else {
+          <div class="product-detail__sticky-image-placeholder">
+            <span>SC</span>
+          </div>
+        }
+
+        <div class="product-detail__sticky-product">
+          <span class="product-detail__sticky-name">
+            {{ product.name }}
+          </span>
+
+          <span class="product-detail__sticky-quantity">
+            Số lượng: {{ quantity }}
+          </span>
+        </div>
+
+      </div>
+
+      <!-- GIÁ HIỆN TẠI -->
+     <div class="product-detail__sticky-price">
+          <span class="product-detail__sticky-price-label">
+            Giá tạm tính
+          </span>
+
+          <strong>
+            {{ estimatedTotalPrice | number }}đ
+          </strong>
+        </div>
+        
+      <!-- NÚT THAO TÁC -->
+      <div class="product-detail__sticky-actions">
+
+        <button
+          type="button"
+          class="sc-btn sc-btn--outline"
+          [disabled]="
+            !isProductVariantSelectionValid ||
+            addToCartLoading ||
+            buyNowLoading
+          "
+          (click)="addToCart()"
+          tabindex="{{ showStickyOrder ? 0 : -1 }}"
+        >
+          {{
+            addToCartLoading
+              ? 'Đang thêm...'
+              : 'Thêm vào giỏ hàng'
+          }}
+        </button>
+
+        <button
+          type="button"
+          class="sc-btn sc-btn--primary"
+          [disabled]="
+            !isProductVariantSelectionValid ||
+            buyNowLoading ||
+            addToCartLoading
+          "
+          (click)="buyNow()"
+          tabindex="{{ showStickyOrder ? 0 : -1 }}"
+        >
+          {{
+            buyNowLoading
+              ? 'Đang xử lý...'
+              : 'Mua ngay'
+          }}
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- TOAST: LỖI / CẢNH BÁO -->
+    @if (showToast) {
+      <div class="product-detail__toast" role="alert">
+        {{ toastMessage }}
+      </div>
+    }
+
+  </div>
+}

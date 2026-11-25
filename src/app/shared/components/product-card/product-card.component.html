@@ -1,0 +1,45 @@
+<article class="product-card">
+  <div class="product-card__media">
+    <a
+      class="product-card__image-link"
+      [routerLink]="['/product', productId]"
+      (click)="onViewDetail()"
+      [attr.aria-label]="'Xem chi tiết ' + product.name"
+    >
+      @if (product.bestSeller) {
+        <span class="sc-badge sc-badge--pink product-card__badge">Bán chạy</span>
+      }
+
+      <img
+        class="product-card__image"
+        [src]="productImage"
+        [alt]="product.name"
+        loading="lazy"
+      />
+    </a>
+
+    @if (showAddToCart) {
+      <div class="product-card__overlay">
+        <button
+          type="button"
+          class="sc-btn sc-btn--primary product-card__action"
+          (click)="onAddToCart()"
+        >
+          <i class="fa-solid fa-cart-plus" aria-hidden="true"></i>
+          Thêm vào giỏ
+        </button>
+      </div>
+    }
+  </div>
+
+  <div class="product-card__info">
+    <h3 class="product-card__name">
+      <a [routerLink]="['/product', productId]" (click)="onViewDetail()">
+        {{ product.name }}
+      </a>
+    </h3>
+    <p class="product-card__price">
+      {{ product.price | vnd }}
+    </p>
+  </div>
+</article>

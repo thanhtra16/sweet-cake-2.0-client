@@ -1,0 +1,28 @@
+/* Riêng tab Đơn hàng. Bảng (.sc-table) và nhãn trạng thái (.sc-badge) dùng chung từ styles.css. */
+:host { display: block; }
+
+.acc-title { margin-bottom: var(--sc-space-6); }
+
+/* Thanh lọc trạng thái */
+.order-filters-scroll { width: 100%; margin-bottom: var(--sc-space-5); overflow-x: auto; }
+.order-filters-scroll::-webkit-scrollbar { height: 4px; }
+.order-filters { display: flex; gap: var(--sc-space-5); min-width: max-content; border-bottom: var(--sc-border); }
+.order-filter-btn {
+  padding: 0 0 var(--sc-space-3); background: none; border: 0; border-bottom: 2px solid transparent;
+  color: var(--sc-muted); font-size: var(--sc-text-sm); font-weight: 500; transition: color var(--sc-transition);
+}
+.order-filter-btn:hover { color: var(--sc-deep); }
+.order-filter-btn.active { border-bottom-color: var(--sc-deep); color: var(--sc-deep); font-weight: 700; }
+
+/* Chưa có đơn */
+.order-empty-state {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sc-space-4);
+  padding: var(--sc-space-4) var(--sc-space-5); background: var(--sc-pink); border-radius: var(--sc-radius-md);
+  color: var(--sc-ink); font-size: var(--sc-text-sm);
+}
+.order-empty-action { color: var(--sc-deep); font-weight: 700; white-space: nowrap; }
+.order-empty-action:hover { text-decoration: underline; }
+
+@media (max-width: 576px) {
+  .order-empty-state { flex-direction: column; align-items: flex-start; }
+}

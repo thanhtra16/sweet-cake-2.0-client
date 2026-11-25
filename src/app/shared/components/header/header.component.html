@@ -1,0 +1,276 @@
+<header class="sc-header">
+  <div class="sc-header__inner">
+    <!-- LOGO -->
+    <a
+      class="sc-header__brand"
+      routerLink="/"
+      aria-label="Sweet Cake - Trang chủ"
+    >
+      <span class="sc-header__brand-mark" aria-hidden="true">S</span>
+      <span class="sc-header__brand-text">
+        <strong>Sweet Cake</strong>
+        <small>Freshly baked with love</small>
+      </span>
+    </a>
+
+    <!-- NAVIGATION -->
+    <nav class="sc-header__nav" aria-label="Điều hướng chính">
+      <a
+        routerLink="/"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Trang chủ
+      </a>
+      <a routerLink="/danh-sach-san-pham" routerLinkActive="is-active">
+        Cửa hàng
+      </a>
+      <a routerLink="/orders" routerLinkActive="is-active">
+        Đơn hàng
+      </a>
+      <a routerLink="/gioi-thieu" routerLinkActive="is-active">
+        Giới thiệu
+      </a>
+      <a routerLink="/blog" routerLinkActive="is-active">
+        Blog
+      </a>
+      <a routerLink="/lien-he" routerLinkActive="is-active">
+        Liên hệ
+      </a>
+    </nav>
+
+    <!-- ACTIONS -->
+    <div class="sc-header__actions">
+      <!-- Thông báo -->
+      <a
+        class="sc-header__icon-btn"
+        routerLink="/thong-bao"
+        aria-label="Thông báo"
+        title="Thông báo"
+      >
+        <i class="bi bi-bell"></i>
+      </a>
+
+      <!-- Giỏ hàng: mở Drawer -->
+      <button
+        type="button"
+        class="sc-header__icon-btn sc-header__cart"
+        aria-label="Mở giỏ hàng"
+        title="Giỏ hàng"
+        [attr.aria-expanded]="isCartDrawerOpen"
+        (click)="toggleCartDrawer()"
+      >
+        <i class="bi bi-cart"></i>
+
+        @if ((cartCount$ | async); as count) {
+          @if (count > 0) {
+            <span class="sc-header__cart-badge">
+              {{ count > 99 ? '99+' : count }}
+            </span>
+          }
+        }
+      </button>
+
+      <!-- Tài khoản / Đăng nhập -->
+      <a
+        class="sc-header__icon-btn"
+        routerLink="/account"
+        aria-label="Tài khoản"
+        title="Tài khoản"
+      >
+        <i class="bi bi-person-circle"></i>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- CART DRAWER (nằm NGOÀI header để position: fixed phủ toàn màn hình) -->
+@if (isCartDrawerOpen) {
+  <div class="cart-drawer">
+    <!-- Lớp nền -->
+    <button
+      type="button"
+      class="cart-drawer__backdrop"
+      aria-label="Đóng giỏ hàng"
+      (click)="closeCartDrawer()"
+    ></button>
+
+    <!-- Nội dung Drawer -->
+    <aside
+      class="cart-drawer__panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cartDrawerTitle"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="cart-drawer__header">
+        <div>
+          <span class="cart-drawer__eyebrow">YOUR SHOPPING BAG</span>
+          <h2 id="cartDrawerTitle">Giỏ hàng của bạn</h2>
+        </div>
+
+        <button
+          type="button"
+          class="cart-drawer__close"
+          aria-label="Đóng giỏ hàng"
+          (click)="closeCartDrawer()"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      @if (cartItems$ | async; as items) {
+        @if (items.length > 0) {
+          <!-- Danh sách sản phẩm -->
+          <div class="cart-drawer__body">
+            @for (item of items; track item.id) {
+              <article class="cart-drawer__item">
+                <div class="cart-drawer__image">
+                  @if (item.imageUrl) {
+                    <img
+                      [src]="item.imageUrl"
+                      [alt]="item.productName"
+                    />
+                  } @else {
+                    <div class="cart-drawer__image-placeholder">
+                      <span>Sweet Cake</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="cart-drawer__content">
+                  <div class="cart-drawer__item-heading">
+                    <div>
+                      <h3>{{ item.productName }}</h3>
+                      <span class="cart-drawer__type">
+                        {{ item.productKind === 'cake' ? 'Bánh kem' : 'Phụ kiện' }}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="cart-drawer__remove"
+                      aria-label="Xóa sản phẩm"
+                      (click)="removeItem(item.id)"
+                    >
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  </div>
+
+                  <!-- Cấu hình bánh -->
+                  @if (item.customization; as config) {
+                    <div class="cart-drawer__details">
+                      <p>{{ config.size }} · {{ config.base }}</p>
+                      <p>Nhân {{ config.filling }}</p>
+                      <p>Màu kem: {{ config.frostingColor }}</p>
+                      <p>Độ ngọt: {{ config.sweetness }}</p>
+
+                      @if (config.message) {
+                        <p>Lời nhắn: {{ config.message }}</p>
+                      }
+                    </div>
+
+                    <!-- Phụ kiện đi kèm bánh -->
+                    @if (item.accessories.length > 0) {
+                      <div class="cart-drawer__accessories">
+                        <span>Phụ kiện đi kèm:</span>
+
+                        @for (accessory of item.accessories; track $index) {
+                          <p>
+                            {{ accessory.name }}
+                            @if (accessory.variantLabel) {
+                              <small>({{ accessory.variantLabel }})</small>
+                            }
+                          </p>
+                        }
+                      </div>
+                    }
+                  }
+
+                  <!-- Biến thể phụ kiện mua riêng -->
+                  @if (item.productKind === 'accessory' && item.variantLabel) {
+                    <p class="cart-drawer__variant">
+                      Phân loại: {{ item.variantLabel }}
+                    </p>
+                  }
+
+                  <div class="cart-drawer__item-bottom">
+                    <div class="cart-drawer__quantity">
+                      <button
+                        type="button"
+                        aria-label="Giảm số lượng"
+                        [disabled]="item.quantity <= 1"
+                        (click)="decreaseQuantity(item.id, item.quantity)"
+                      >
+                        −
+                      </button>
+
+                      <span>{{ item.quantity }}</span>
+
+                      <button
+                        type="button"
+                        aria-label="Tăng số lượng"
+                        [disabled]="item.quantity >= 10"
+                        (click)="increaseQuantity(item.id, item.quantity)"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <strong class="cart-drawer__price">
+                      {{ item.unitPrice * item.quantity | number:'1.0-0' }}đ
+                    </strong>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+
+          <!-- Tổng tiền và điều hướng -->
+          <div class="cart-drawer__footer">
+            <div class="cart-drawer__subtotal">
+              <span>Tạm tính</span>
+              <strong>
+                {{ getSubtotal(items) | number:'1.0-0' }}đ
+              </strong>
+            </div>
+
+            <p class="cart-drawer__note">
+              Giá chính thức sẽ được xác nhận khi tính báo giá tại giỏ hàng.
+            </p>
+
+            <a
+              class="cart-drawer__view-cart"
+              routerLink="/cart"
+              (click)="closeCartDrawer()"
+            >
+              Xem giỏ hàng
+              <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        } @else {
+          <!-- Giỏ hàng trống -->
+          <div class="cart-drawer__empty">
+            <div class="cart-drawer__empty-icon">
+              <i class="bi bi-bag"></i>
+            </div>
+
+            <h3>Giỏ hàng đang trống</h3>
+            <p>
+              Bạn chưa có sản phẩm nào trong giỏ hàng.
+              Hãy khám phá những chiếc bánh ngọt ngào nhé!
+            </p>
+
+            <a
+              routerLink="/danh-sach-san-pham"
+              class="cart-drawer__shop"
+              (click)="closeCartDrawer()"
+            >
+              Khám phá sản phẩm
+            </a>
+          </div>
+        }
+      }
+    </aside>
+  </div>
+}

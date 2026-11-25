@@ -1,0 +1,19 @@
+<div class="sc-toast-container" aria-live="polite" role="status">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div class="sc-toast" [class.sc-toast--success]="toast.type === 'success'"
+         [class.sc-toast--warning]="toast.type === 'warning'"
+         [class.sc-toast--error]="toast.type === 'error'">
+      <i class="fa-solid" [class]="icon(toast.type)" aria-hidden="true"></i>
+      <div class="sc-toast__text">
+        <strong class="sc-toast__title">{{ toast.title }}</strong>
+        @if (toast.message) {
+          <span class="sc-toast__message">{{ toast.message }}</span>
+        }
+      </div>
+      <button type="button" class="sc-toast__dismiss" aria-label="Đóng thông báo"
+              (click)="toastService.dismiss(toast.id)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  }
+</div>

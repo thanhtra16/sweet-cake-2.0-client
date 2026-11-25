@@ -1,0 +1,235 @@
+/* =========================================================
+   NOTIFICATION PAGE - CSS riêng của trang thông báo
+   Không gộp vào styles.css. Màu chủ đạo: --sc-deep.
+   ========================================================= */
+
+:host {
+  display: block;
+}
+
+.notification {
+  display: block;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--sc-space-6) 20px var(--sc-space-8);
+}
+
+/* ---------- Header ---------- */
+.notification__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sc-space-5);
+  margin-bottom: var(--sc-space-6);
+}
+
+.notification__title {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-3);
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.2rem);
+  font-weight: 700;
+}
+
+.notification__badge {
+  display: inline-grid;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: var(--sc-radius-pill);
+  background: var(--sc-deep);
+  color: #fff;
+  font-family: var(--sc-font-body);
+  font-size: var(--sc-text-xs);
+  font-weight: 600;
+}
+
+.notification__subtitle {
+  margin: var(--sc-space-2) 0 0;
+}
+
+/* ---------- Layout ---------- */
+.notification__layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sc-space-5);
+}
+
+.notification__sidebar {
+  flex-shrink: 0;
+  width: 280px;
+}
+
+/* ---------- Filter ---------- */
+.notification__filter {
+  padding: var(--sc-space-5);
+  border-radius: var(--sc-radius-xl);
+}
+
+.notification__filter-title {
+  margin: 0 0 var(--sc-space-4);
+  color: var(--sc-muted);
+  font-family: var(--sc-font-body);
+  font-size: var(--sc-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.notification__filter-item {
+  display: flex;
+  width: 100%;
+  margin-bottom: var(--sc-space-4);
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.notification__filter-item:last-child {
+  margin-bottom: 0;
+}
+
+.notification__filter-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid transparent;
+  color: var(--sc-muted);
+  font-size: var(--sc-text-base);
+  transition: color var(--sc-transition), border-color var(--sc-transition);
+}
+
+.notification__filter-count {
+  color: var(--sc-rose);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.notification__filter-item:hover .notification__filter-label {
+  color: var(--sc-deep);
+}
+
+.notification__filter-item.is-active .notification__filter-label {
+  border-bottom-color: var(--sc-deep);
+  color: var(--sc-deep);
+  font-weight: 600;
+}
+
+.notification__photo {
+  margin-top: var(--sc-space-5);
+  overflow: hidden;
+  border-radius: var(--sc-radius-xl);
+  box-shadow: var(--sc-shadow-sm);
+}
+
+.notification__photo img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+}
+
+/* ---------- List ---------- */
+.notification__list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--sc-space-4);
+  min-width: 0;
+}
+
+.notification__item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sc-space-4);
+  padding: 22px 26px;
+  border: var(--sc-border);
+  border-radius: var(--sc-radius-xl);
+  background: #fff;
+  box-shadow: var(--sc-shadow-sm);
+  cursor: pointer;
+  transition: background var(--sc-transition), box-shadow var(--sc-transition);
+}
+
+.notification__item:hover {
+  box-shadow: var(--sc-shadow-md);
+}
+
+.notification__item.is-unread {
+  background: var(--sc-pink);
+}
+
+.notification__icon {
+  display: grid;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sc-pink);
+  color: var(--sc-deep);
+  font-size: 1.25rem;
+}
+
+.notification__item.is-unread .notification__icon {
+  background: var(--sc-deep);
+  color: #fff;
+}
+
+.notification__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification__content h3 {
+  margin: 0 0 6px;
+  font-family: var(--sc-font-body);
+  font-size: var(--sc-text-base);
+  font-weight: 600;
+}
+
+.notification__content p {
+  margin: 0;
+  color: var(--sc-muted);
+  font-size: var(--sc-text-sm);
+  line-height: 1.6;
+}
+
+.notification__time {
+  display: block;
+  margin-top: var(--sc-space-3);
+  color: var(--sc-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.notification__dot {
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sc-deep);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 860px) {
+  .notification__layout {
+    flex-direction: column;
+  }
+
+  .notification__sidebar {
+    width: 100%;
+  }
+
+  .notification__photo {
+    display: none;
+  }
+}
