@@ -1,10 +1,29 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  PLATFORM_ID,
+  inject,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormsModule,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
-import { ApiService, ProductCustomization, ProductPayload, ProductVariant } from '../../../../../core/services/api.service';
-
+import {
+  ApiService,
+  ProductCustomization,
+  ProductPayload,
+  ProductVariant,
+} from '../../../../../core/services/api.service';
 import { ToastService } from '../../../../../core/services/toast.service';
 
 const MAX_IMAGES = 10;
@@ -44,25 +63,18 @@ function salePriceRule(group: AbstractControl): ValidationErrors | null {
     return null;
   }
 
-  return Number(sale) > Number(base)
-    ? { saleTooHigh: true }
-    : null;
+  return Number(sale) > Number(base) ? { saleTooHigh: true } : null;
 }
 
 const notBlank = (c: AbstractControl): ValidationErrors | null =>
-  typeof c.value === 'string' && !c.value.trim()
-    ? { blank: true }
-    : null;
+  typeof c.value === 'string' && !c.value.trim() ? { blank: true } : null;
 
 @Component({
   selector: 'app-admin-product-form',
   standalone: true,
   imports: [ReactiveFormsModule, FormsModule, RouterLink],
   templateUrl: './admin-product-form.html',
-  styleUrls: [
-    '../../../styles/admin-page.css',
-    './admin-product-form.css',
-  ],
+  styleUrls: ['../../../styles/admin-page.css', './admin-product-form.css'],
 })
 export class AdminProductFormComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
@@ -76,6 +88,11 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
   readonly productId = this.route.snapshot.paramMap.get('id');
   readonly isEdit = !!this.productId;
   readonly maxImages = MAX_IMAGES;
+
+  private configSub?: Subscription;
+  private productSub?: Subscription;
+  private saveSub?: Subscription;
+  private uploadSub?: Subscription;
 
   loading = false;
   loadError = '';
@@ -99,14 +116,8 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
       category: ['', [Validators.required, notBlank]],
       occasionsText: [''],
       description: [''],
-      basePrice: [
-        null as number | null,
-        [Validators.required, Validators.min(0)],
-      ],
-      salePrice: [
-        null as number | null,
-        [Validators.min(0)],
-      ],
+      basePrice: [null as number | null, [Validators.required, Validators.min(0)]],
+      salePrice: [null as number | null, [Validators.min(0)]],
       status: ['visible', Validators.required],
       featured: [false],
     },
@@ -124,43 +135,44 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.configSub?.unsubscribe();
+    this.productSub?.unsubscribe();
+    this.saveSub?.unsubscribe();
+    this.uploadSub?.unsubscribe();
+    this.revokeAllNewImages();
+  }
+
+  private revokeAllNewImages(): void {
     this.newImages.forEach((image) => {
       URL.revokeObjectURL(image.url);
     });
   }
 
   private loadCustomization(): void {
-    this.api.getProductCustomization().subscribe({
+    this.configSub?.unsubscribe();
+    this.configSub = this.api.getProductCustomization().subscribe({
       next: (c) => {
         this.config = c;
         this.cdr.markForCheck();
       },
-
       error: (err) => {
         this.config = null;
-
-        console.error(
-          'Không tải được cấu hình tùy biến:',
-          err
-        );
-
+        console.error('Không tải được cấu hình tùy biến:', err);
         this.toast.error(
-          err?.error?.message ||
-            'Không tải được cấu hình tùy biến.'
+          err?.error?.message || 'Không tải được cấu hình tùy biến.'
         );
-
         this.cdr.markForCheck();
       },
     });
   }
 
   private loadProduct(id: string): void {
+    this.productSub?.unsubscribe();
     this.loading = true;
     this.loadError = '';
-
     this.cdr.markForCheck();
 
-    this.api.getAdminProductById(id).subscribe({
+    this.productSub = this.api.getAdminProductById(id).subscribe({
       next: (p) => {
         this.form.patchValue({
           name: p.name,
@@ -174,33 +186,21 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
           featured: !!p.featured,
         });
 
-        this.selectedSizes = new Set(
-          p.availableSizes ?? []
-        );
-
-        this.selectedFillings = new Set(
-          p.availableFillings ?? []
-        );
-
-        this.variants = (p.variants ?? []).map(
-          (v) => this.toRow(v)
-        );
-
+        this.selectedSizes = new Set(p.availableSizes ?? []);
+        this.selectedFillings = new Set(p.availableFillings ?? []);
+        this.variants = (p.variants ?? []).map((v) => this.toRow(v));
         this.existingImageIds = p.imageIds ?? [];
 
         this.loading = false;
         this.cdr.markForCheck();
       },
-
       error: (err) => {
         this.loading = false;
-
         this.loadError =
           err?.status === 404
             ? 'Không tìm thấy sản phẩm.'
             : err?.error?.message ||
               'Không tải được sản phẩm. Vui lòng thử lại.';
-
         this.cdr.markForCheck();
       },
     });
@@ -210,39 +210,23 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
    * Tên option từ cấu hình và các giá trị cũ
    * của sản phẩm chưa còn trong cấu hình.
    */
-  optionNames(
-    group: 'sizes' | 'fillings'
-  ): string[] {
+  optionNames(group: 'sizes' | 'fillings'): string[] {
     const fromConfig = (this.config?.[group] ?? [])
       .filter((option) => option.active)
       .map((option) => option.name);
 
     const selected =
-      group === 'sizes'
-        ? this.selectedSizes
-        : this.selectedFillings;
+      group === 'sizes' ? this.selectedSizes : this.selectedFillings;
 
-    return [
-      ...new Set([
-        ...fromConfig,
-        ...selected,
-      ]),
-    ];
+    return [...new Set([...fromConfig, ...selected])];
   }
 
-  toggleOption(
-    set: Set<string>,
-    name: string
-  ): void {
-    set.has(name)
-      ? set.delete(name)
-      : set.add(name);
+  toggleOption(set: Set<string>, name: string): void {
+    set.has(name) ? set.delete(name) : set.add(name);
   }
 
   private display(value: unknown): string {
-    return typeof value === 'string'
-      ? value
-      : JSON.stringify(value);
+    return typeof value === 'string' ? value : JSON.stringify(value);
   }
 
   private toRow(v: ProductVariant): VariantRow {
@@ -250,13 +234,11 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
       _id: v._id,
       label: v.label,
       active: v.active !== false,
-      attrs: Object.entries(v.attributes ?? {}).map(
-        ([key, orig]) => ({
-          key,
-          value: this.display(orig),
-          orig,
-        })
-      ),
+      attrs: Object.entries(v.attributes ?? {}).map(([key, orig]) => ({
+        key,
+        value: this.display(orig),
+        orig,
+      })),
     };
   }
 
@@ -275,14 +257,11 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  private rowToVariant(
-    row: VariantRow
-  ): ProductVariant {
+  private rowToVariant(row: VariantRow): ProductVariant {
     const attributes: Record<string, unknown> = {};
 
     for (const attr of row.attrs) {
       const key = attr.key.trim();
-
       if (!key) continue;
 
       attributes[key] =
@@ -307,14 +286,17 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
   }
 
   get totalImages(): number {
-    return (
-      this.existingImageIds.length +
-      this.newImages.length
-    );
+    return this.existingImageIds.length + this.newImages.length;
   }
 
-  imageUrl(id: string): string {
-    return this.api.getProductImageUrl(id);
+  imageUrl(id: unknown): string {
+    const cleanId =
+      typeof id === 'string'
+        ? id
+        : (id as { _id?: string; id?: string } | null)?.['_id'] ??
+          (id as { _id?: string; id?: string } | null)?.['id'] ??
+          '';
+    return cleanId ? this.api.getProductImageUrl(cleanId) : '';
   }
 
   onFilesSelected(event: Event): void {
@@ -332,14 +314,12 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
       }
 
       if (file.size > MAX_BYTES) {
-        this.imageError =
-          `“${file.name}” vượt quá 5MB.`;
+        this.imageError = `“${file.name}” vượt quá 5MB.`;
         continue;
       }
 
       if (this.totalImages >= MAX_IMAGES) {
-        this.imageError =
-          `Mỗi sản phẩm tối đa ${MAX_IMAGES} ảnh.`;
+        this.imageError = `Mỗi sản phẩm tối đa ${MAX_IMAGES} ảnh.`;
         break;
       }
 
@@ -354,7 +334,6 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
 
   removeNewImage(index: number): void {
     const image = this.newImages[index];
-
     if (!image) return;
 
     URL.revokeObjectURL(image.url);
@@ -364,54 +343,30 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
 
   hasError(name: string): boolean {
     const control = this.form.get(name);
-
-    return !!control &&
-      control.invalid &&
-      (control.touched || control.dirty);
+    return !!control && control.invalid && (control.touched || control.dirty);
   }
 
   private buildPayload(): ProductPayload {
     const v = this.form.getRawValue();
     const isCake = v.kind === 'cake';
-
-    const sale = v.salePrice as
-      | number
-      | null
-      | '';
+    const sale = v.salePrice as number | null | '';
 
     return {
       name: (v.name ?? '').trim(),
       kind: v.kind as 'cake' | 'accessory',
       category: (v.category ?? '').trim(),
-
       occasions: (v.occasionsText ?? '')
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean),
-
       description: v.description ?? '',
-
       basePrice: Number(v.basePrice),
-
-      salePrice:
-        sale === null || sale === ''
-          ? null
-          : Number(sale),
-
+      salePrice: sale === null || sale === '' ? null : Number(sale),
       status: v.status as 'visible' | 'hidden',
       featured: !!v.featured,
-
-      availableSizes: isCake
-        ? [...this.selectedSizes]
-        : [],
-
-      availableFillings: isCake
-        ? [...this.selectedFillings]
-        : [],
-
-      variants: this.variants.map(
-        (row) => this.rowToVariant(row)
-      ),
+      availableSizes: isCake ? [...this.selectedSizes] : [],
+      availableFillings: isCake ? [...this.selectedFillings] : [],
+      variants: this.variants.map((row) => this.rowToVariant(row)),
     };
   }
 
@@ -421,20 +376,12 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
     this.form.markAllAsTouched();
 
     if (this.form.invalid) {
-      this.toast.error(
-        'Vui lòng kiểm tra lại các trường được đánh dấu.'
-      );
+      this.toast.error('Vui lòng kiểm tra lại các trường được đánh dấu.');
       return;
     }
 
-    if (
-      this.variants.some(
-        (row) => !row.label.trim()
-      )
-    ) {
-      this.toast.error(
-        'Mỗi biến thể cần có tên.'
-      );
+    if (this.variants.some((row) => !row.label.trim())) {
+      this.toast.error('Mỗi biến thể cần có tên.');
       return;
     }
 
@@ -443,27 +390,23 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
 
     const payload = this.buildPayload();
 
+    this.saveSub?.unsubscribe();
     const request$ = this.productId
-      ? this.api.updateAdminProduct(
-          this.productId,
-          payload
-        )
+      ? this.api.updateAdminProduct(this.productId, payload)
       : this.api.createAdminProduct(payload);
 
-    request$.subscribe({
+    this.saveSub = request$.subscribe({
       next: (product) => {
+        const savedId = product?._id || this.productId || '';
         this.cdr.markForCheck();
-        this.afterSave(product._id);
+        this.afterSave(savedId);
       },
-
       error: (err) => {
         this.saving = false;
-
         this.toast.error(
           err?.error?.message ||
             'Không lưu được sản phẩm. Vui lòng thử lại.'
         );
-
         this.cdr.markForCheck();
       },
     });
@@ -474,12 +417,13 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
    * lưu sản phẩm trước, sau đó mới tải ảnh.
    */
   private afterSave(id: string): void {
-    if (this.newImages.length === 0) {
+    if (!id || this.newImages.length === 0) {
       this.finish();
       return;
     }
 
-    this.api
+    this.uploadSub?.unsubscribe();
+    this.uploadSub = this.api
       .uploadProductImages(
         id,
         this.newImages.map((image) => image.file)
@@ -488,25 +432,17 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
         next: () => {
           this.finish();
         },
-
         error: (err) => {
           this.saving = false;
-
           this.toast.warning(
             `Sản phẩm đã được lưu nhưng tải ảnh thất bại: ${
-              err?.error?.message ||
-              'lỗi không xác định'
+              err?.error?.message || 'lỗi không xác định'
             }. Bạn có thể thêm ảnh lại ở trang chỉnh sửa.`
           );
-
           this.cdr.markForCheck();
 
           if (!this.isEdit) {
-            this.router.navigate([
-              '/admin/products',
-              id,
-              'edit',
-            ]);
+            this.router.navigate(['/admin/products', id, 'edit']);
           }
         },
       });
@@ -514,17 +450,10 @@ export class AdminProductFormComponent implements OnInit, OnDestroy {
 
   private finish(): void {
     this.saving = false;
-
     this.toast.success(
-      this.isEdit
-        ? 'Đã cập nhật sản phẩm.'
-        : 'Đã thêm sản phẩm.'
+      this.isEdit ? 'Đã cập nhật sản phẩm.' : 'Đã thêm sản phẩm.'
     );
-
     this.cdr.markForCheck();
-
-    this.router.navigate([
-      '/admin/products',
-    ]);
+    this.router.navigate(['/admin/products']);
   }
 }
