@@ -29,9 +29,20 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/orders" title="Đơn hàng của tôi" class="icon-btn">
             <i class="bi bi-receipt"></i>
           </a>
+
+          <!-- THÔNG BÁO -->
+        <a
+          routerLink="/thong-bao"
+          title="Thông báo"
+          class="icon-btn notification-btn"
+        >
+          <i class="fa-regular fa-bell"></i>
+        </a>
+
           <a routerLink="/cart" title="Giỏ hàng" class="icon-btn">
             <i class="bi bi-bag"></i>
           </a>
+
           <a routerLink="/quan-ly-tai-khoan" title="Tài khoản" class="icon-btn">
             <i class="bi bi-person"></i>
           </a>
