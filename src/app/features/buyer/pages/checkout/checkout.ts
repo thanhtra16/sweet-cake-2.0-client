@@ -948,6 +948,7 @@ export class CheckoutPage implements OnInit {
       },
       receiveMethod: this.receiveMethod,
       slotId: this.selectedSlotId,
+      receiveDate: this.selectedDate,
       pickupBranch:
         this.receiveMethod === 'pickup' ? this.selectedBranch : undefined,
       note: this.note.trim(),
