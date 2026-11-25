@@ -1,3 +1,4 @@
+
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -11,6 +12,16 @@ import { CakeCustomization } from '@features/buyer/components/cake-customizer/ca
 const CART_STORAGE_KEY = 'sweetcake_cart';
 const MAX_QUANTITY_PER_ITEM = 10;
 
+type ExtendedCartAccessory = CartItem['accessories'][number] & {
+  variantIds?: string[];
+  variantLabels?: string[];
+};
+
+type ExtendedCartItem = CartItem & {
+  variantIds?: string[];
+  variantLabels?: string[];
+};
+
 export interface AddCartItemInput {
   productId: string;
   productName: string;
@@ -19,8 +30,15 @@ export interface AddCartItemInput {
   unitPrice: number;
   customization: CakeCustomization | null;
   accessories: CartItem['accessories'];
+
+  // Tương thích dữ liệu cũ.
   variantId?: string | null;
   variantLabel?: string | null;
+
+  // Hỗ trợ nhiều biến thể.
+  variantIds?: string[];
+  variantLabels?: string[];
+
   variant?: string | null;
   quantity?: number;
 }
@@ -36,17 +54,21 @@ export class CartService {
   private readonly cartSubject = new BehaviorSubject<CartItem[]>([]);
   readonly cartItems$ = this.cartSubject.asObservable();
 
-  // State điều khiển ngăn kéo giỏ hàng (CartDrawerComponent)
   private readonly drawerOpenSubject = new BehaviorSubject<boolean>(false);
   readonly drawerOpen$ = this.drawerOpenSubject.asObservable();
 
   readonly totalItems$ = this.cartItems$.pipe(
-    map((items) => items.reduce((total, item) => total + item.quantity, 0))
+    map((items) =>
+      items.reduce((total, item) => total + item.quantity, 0)
+    )
   );
 
   readonly subtotal$ = this.cartItems$.pipe(
     map((items) =>
-      items.reduce((total, item) => total + item.unitPrice * item.quantity, 0)
+      items.reduce(
+        (total, item) => total + item.unitPrice * item.quantity,
+        0
+      )
     )
   );
 
@@ -68,6 +90,7 @@ export class CartService {
 
   private get isAuthenticated(): boolean {
     if (!this.isBrowser) return false;
+
     return !!(
       localStorage.getItem('access_token') ||
       localStorage.getItem('token') ||
@@ -75,7 +98,36 @@ export class CartService {
     );
   }
 
-  // ==================== ĐIỀU KHIỂN DRAWER ====================
+  // ========================================
+  // HELPER CHUẨN HÓA BIẾN THỂ
+  // ========================================
+
+  private normalizeStringArray(value: unknown): string[] {
+    if (Array.isArray(value)) {
+      return [
+        ...new Set(
+          value
+            .filter((item): item is string => typeof item === 'string')
+            .map((item) => item.trim())
+            .filter(Boolean)
+        ),
+      ];
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      return [value.trim()];
+    }
+
+    return [];
+  }
+
+  private getFirstVariant(ids: string[]): string | null {
+    return ids.length > 0 ? ids[0] : null;
+  }
+
+  // ========================================
+  // ĐIỀU KHIỂN DRAWER
+  // ========================================
 
   openDrawer(): void {
     this.drawerOpenSubject.next(true);
@@ -85,7 +137,9 @@ export class CartService {
     this.drawerOpenSubject.next(false);
   }
 
-  // ==================== KHỞI TẠO & ĐỒNG BỘ ====================
+  // ========================================
+  // KHỞI TẠO & ĐỒNG BỘ
+  // ========================================
 
   async initCart(): Promise<void> {
     if (!this.isBrowser) return;
@@ -97,39 +151,38 @@ export class CartService {
     }
   }
 
-  /**
-   * Tải giỏ hàng Buyer từ MongoDB (GET /api/cart)
-   */
   async fetchBuyerCart(): Promise<void> {
     try {
       const res = await firstValueFrom(
         this.http.get<{ items: any[] }>(this.apiUrl)
       );
+
       const mapped = (res.items || []).map((serverItem) =>
         this.mapServerItemToClient(serverItem)
       );
+
       this.cartSubject.next(mapped);
     } catch (error) {
-      console.error('[CartService] Không thể tải giỏ hàng từ server:', error);
+      console.error(
+        '[CartService] Không thể tải giỏ hàng từ server:',
+        error
+      );
     }
   }
 
-  /**
-   * Gọi ngay sau khi Đăng nhập thành công (UC-KH-02):
-   * Gộp giỏ hàng Guest từ localStorage lên collection carts trên MongoDB
-   */
   async mergeGuestCartOnLogin(): Promise<string[]> {
     if (!this.isBrowser) return [];
 
     const guestItems = this.readGuestCartRaw();
+
     if (guestItems.length === 0) {
       await this.fetchBuyerCart();
       return [];
     }
 
     try {
-      const payloadItems = guestItems.map((item) =>
-        this.mapClientItemToServerPayload(item)
+      const payloadItems = guestItems.flatMap((item) =>
+        this.mapClientItemToServerPayloads(item)
       );
 
       const res = await firstValueFrom(
@@ -139,39 +192,40 @@ export class CartService {
         )
       );
 
-      // Chỉ xóa localStorage khi server đã xác nhận gộp thành công (200 OK)
       localStorage.removeItem(CART_STORAGE_KEY);
 
       const mapped = (res.items || []).map((serverItem) =>
         this.mapServerItemToClient(serverItem)
       );
+
       this.cartSubject.next(mapped);
+
       return res.warnings || [];
     } catch (error) {
-      console.error('[CartService] Lỗi đồng bộ giỏ hàng khi đăng nhập:', error);
+      console.error(
+        '[CartService] Lỗi đồng bộ giỏ hàng khi đăng nhập:',
+        error
+      );
+
       await this.fetchBuyerCart();
+
       return ['Chưa thể đồng bộ giỏ hàng tạm do lỗi kết nối.'];
     }
   }
 
-  /**
-   * Gọi ngay khi Đăng xuất (UC-KH-03 & Mục 3.2.2.8):
-   * Xóa giỏ hiển thị trên client, trả về trạng thái Guest với giỏ trống.
-   * Giỏ hàng của Buyer vẫn được bảo toàn trên server.
-   */
   clearOnLogout(): void {
     if (this.isBrowser) {
       localStorage.removeItem(CART_STORAGE_KEY);
     }
+
     this.cartSubject.next([]);
   }
 
-  // ==================== CÁC THAO TÁC CRUD GIỎ HÀNG ====================
+  // ========================================
+  // THÊM SẢN PHẨM
+  // Mỗi lần gọi chỉ thêm một dòng sản phẩm.
+  // ========================================
 
-  /**
-   * Thêm sản phẩm vào giỏ (BR10, BR11, UC-KH-15).
-   * Tự động phân nhánh Buyer (API MongoDB) hoặc Guest (localStorage).
-   */
   async addItem(input: AddCartItemInput): Promise<boolean> {
     if (
       !input.productId ||
@@ -187,23 +241,43 @@ export class CartService {
       Math.min(MAX_QUANTITY_PER_ITEM, Math.floor(input.quantity || 1))
     );
 
+    const selectedVariantIds = this.normalizeStringArray(
+      input.variantIds?.length
+        ? input.variantIds
+        : input.variantId ?? input.variant
+    );
+
+    const selectedVariantLabels = this.normalizeStringArray(
+      input.variantLabels?.length
+        ? input.variantLabels
+        : input.variantLabel
+    );
+
     const normalizedAccessories = this.normalizeAccessories(
       input.accessories || [],
       input.customization
     );
 
-    const resolvedVariantId = input.variantId ?? input.variant ?? null;
-    const resolvedVariantLabel = input.variantLabel ?? null;
+    // Một dòng sản phẩm chỉ sử dụng một biến thể.
+    const resolvedVariantId = this.getFirstVariant(selectedVariantIds);
+    const resolvedVariantLabel = this.getFirstVariant(
+      selectedVariantLabels
+    );
 
     const normalizedInput: AddCartItemInput = {
       ...input,
       variantId: resolvedVariantId,
       variantLabel: resolvedVariantLabel,
       variant: resolvedVariantId,
+      variantIds: selectedVariantIds,
+      variantLabels: selectedVariantLabels,
       accessories: normalizedAccessories,
     };
 
-    // 1. LUỒNG BUYER: Lưu vào collection carts qua REST API
+    // ========================================
+    // BUYER: LƯU TRÊN SERVER
+    // ========================================
+
     if (this.isAuthenticated) {
       try {
         const serverPayload = {
@@ -214,7 +288,8 @@ export class CartService {
                 size: normalizedInput.customization.size,
                 filling: normalizedInput.customization.filling,
                 base: normalizedInput.customization.base,
-                frostingColor: normalizedInput.customization.frostingColor,
+                frostingColor:
+                  normalizedInput.customization.frostingColor,
                 sweetness: normalizedInput.customization.sweetness,
                 message: normalizedInput.customization.message,
               }
@@ -230,22 +305,32 @@ export class CartService {
             serverPayload
           )
         );
+
         const mapped = (res.items || []).map((serverItem) =>
           this.mapServerItemToClient(serverItem)
         );
+
         this.cartSubject.next(mapped);
+
         return true;
       } catch (error) {
-        console.error('[CartService] Lỗi thêm vào giỏ Buyer:', error);
+        console.error(
+          '[CartService] Lỗi thêm vào giỏ Buyer:',
+          error
+        );
+
         return false;
       }
     }
 
-    // 2. LUỒNG GUEST: Lưu vào localStorage
+    // ========================================
+    // GUEST: LƯU TRÊN LOCAL STORAGE
+    // ========================================
+
     const configurationKey = this.createConfigurationKey(
-      normalizedInput,
-      normalizedAccessories
+      normalizedInput
     );
+
     const currentItems = [...this.cartSubject.value];
 
     const existingIndex = currentItems.findIndex(
@@ -256,15 +341,17 @@ export class CartService {
 
     if (existingIndex >= 0) {
       const existingItem = currentItems[existingIndex];
+
       if (existingItem.quantity + qtyToAdd > MAX_QUANTITY_PER_ITEM) {
         return false;
       }
+
       currentItems[existingIndex] = {
         ...existingItem,
         quantity: existingItem.quantity + qtyToAdd,
       };
     } else {
-      const newItem: CartItem = {
+      const newItem = {
         id: this.createItemId(normalizedInput.productId),
         productId: normalizedInput.productId,
         productName: normalizedInput.productName,
@@ -272,31 +359,45 @@ export class CartService {
         imageUrl: normalizedInput.imageUrl,
         unitPrice: Math.round(normalizedInput.unitPrice),
         quantity: qtyToAdd,
+
         customization: normalizedInput.customization
           ? {
               ...normalizedInput.customization,
-              accessories: [...(normalizedInput.customization.accessories ?? [])],
-              accessoryVariants: {
-                ...(normalizedInput.customization.accessoryVariants ?? {}),
-              },
+              accessories: [
+                ...(normalizedInput.customization.accessories ?? []),
+              ],
+              accessoryVariants: Object.fromEntries(
+                Object.entries(
+                  normalizedInput.customization.accessoryVariants ?? {}
+                ).map(([id, ids]) => [
+                  id,
+                  this.normalizeStringArray(ids),
+                ])
+              ),
             }
           : null,
+
         variantId: resolvedVariantId,
         variantLabel: resolvedVariantLabel,
+        variantIds: selectedVariantIds,
+        variantLabels: selectedVariantLabels,
+
         accessories: normalizedAccessories,
         configurationKey,
-      };
+      } as ExtendedCartItem;
 
       currentItems.push(newItem);
     }
 
     this.updateGuestCart(currentItems);
+
     return true;
   }
 
-  /**
-   * Cập nhật số lượng một dòng sản phẩm (1..10) - UC-KH-17
-   */
+  // ========================================
+  // CẬP NHẬT SỐ LƯỢNG
+  // ========================================
+
   async updateQuantity(itemId: string, quantity: number): Promise<void> {
     if (!Number.isFinite(quantity)) return;
 
@@ -308,51 +409,69 @@ export class CartService {
     if (this.isAuthenticated) {
       try {
         const res = await firstValueFrom(
-          this.http.patch<{ items: any[] }>(`${this.apiUrl}/items/${itemId}`, {
-            qty: nextQuantity,
-          })
+          this.http.patch<{ items: any[] }>(
+            `${this.apiUrl}/items/${itemId}`,
+            { qty: nextQuantity }
+          )
         );
+
         const mapped = (res.items || []).map((serverItem) =>
           this.mapServerItemToClient(serverItem)
         );
+
         this.cartSubject.next(mapped);
       } catch (error) {
-        console.error('[CartService] Lỗi cập nhật số lượng Buyer:', error);
+        console.error(
+          '[CartService] Lỗi cập nhật số lượng Buyer:',
+          error
+        );
       }
+
       return;
     }
 
     const updatedItems = this.items.map((item) =>
-      item.id === itemId ? { ...item, quantity: nextQuantity } : item
+      item.id === itemId
+        ? { ...item, quantity: nextQuantity }
+        : item
     );
+
     this.updateGuestCart(updatedItems);
   }
 
-  /**
-   * Xóa một dòng khỏi giỏ hàng - UC-KH-18
-   */
+  // ========================================
+  // XÓA SẢN PHẨM
+  // ========================================
+
   async removeItem(itemId: string): Promise<void> {
     if (this.isAuthenticated) {
       try {
         const res = await firstValueFrom(
-          this.http.delete<{ items: any[] }>(`${this.apiUrl}/items/${itemId}`)
+          this.http.delete<{ items: any[] }>(
+            `${this.apiUrl}/items/${itemId}`
+          )
         );
+
         const mapped = (res.items || []).map((serverItem) =>
           this.mapServerItemToClient(serverItem)
         );
+
         this.cartSubject.next(mapped);
       } catch (error) {
-        console.error('[CartService] Lỗi xóa sản phẩm Buyer:', error);
+        console.error(
+          '[CartService] Lỗi xóa sản phẩm Buyer:',
+          error
+        );
       }
+
       return;
     }
 
-    this.updateGuestCart(this.items.filter((item) => item.id !== itemId));
+    this.updateGuestCart(
+      this.items.filter((item) => item.id !== itemId)
+    );
   }
 
-  /**
-   * Xóa các dòng sản phẩm đã đặt hàng sau khi POST /api/orders thành công
-   */
   async removeOrderedItems(orderedItemIds: string[]): Promise<void> {
     if (!orderedItemIds.length) return;
 
@@ -364,25 +483,36 @@ export class CartService {
             { itemIds: orderedItemIds }
           )
         );
+
         const mapped = (res.items || []).map((serverItem) =>
           this.mapServerItemToClient(serverItem)
         );
+
         this.cartSubject.next(mapped);
       } catch (error) {
-        console.error('[CartService] Lỗi xóa các dòng đã đặt:', error);
+        console.error(
+          '[CartService] Lỗi xóa các dòng đã đặt:',
+          error
+        );
       }
+
       return;
     }
 
     const idSet = new Set(orderedItemIds);
-    this.updateGuestCart(this.items.filter((item) => !idSet.has(item.id)));
+
+    this.updateGuestCart(
+      this.items.filter((item) => !idSet.has(item.id))
+    );
   }
 
   clearCart(): void {
     this.updateGuestCart([]);
   }
 
-  // ==================== HELPER & MAPPING METHODS ====================
+  // ========================================
+  // HELPER & MAPPING
+  // ========================================
 
   private createItemId(productId: string): string {
     return `${productId}-${Date.now()}-${Math.random()
@@ -421,16 +551,56 @@ export class CartService {
       variantId: serverItem.variant ?? null,
       variantLabel: serverItem.variantLabel ?? null,
       accessories: [],
-      configurationKey: JSON.stringify({
-        kind: serverItem.kind,
-        config: cfg,
-        variant: serverItem.variant ?? null,
+      configurationKey: this.createConfigurationKey({
+        productId: String(serverItem.productId),
+        productName: serverItem.name,
+        productKind: serverItem.kind,
+        imageUrl: null,
+        unitPrice: Number(serverItem.unitPrice || 0),
+        customization,
+        accessories: [],
+        variantId: serverItem.variant ?? null,
       }),
     };
   }
 
-  private mapClientItemToServerPayload(item: CartItem): any {
+  private mapClientItemToServerPayloads(item: CartItem): any[] {
+    const extendedItem = item as ExtendedCartItem;
+
+    const variantIds = this.normalizeStringArray(
+      extendedItem.variantIds?.length
+        ? extendedItem.variantIds
+        : item.variantId ?? (item as any).variant
+    );
+
+    // Tương thích dữ liệu giỏ hàng cũ có nhiều biến thể trong một dòng.
+    // Mỗi biến thể được chuyển thành một payload riêng.
+    if (item.productKind === 'accessory' && variantIds.length > 1) {
+      const extendedLabels = this.normalizeStringArray(
+        extendedItem.variantLabels
+      );
+
+      return variantIds.map((variantId, index) => ({
+        ...this.mapClientItemToServerPayload(item, variantId),
+        qty: 1,
+        variantLabel: extendedLabels[index] ?? null,
+      }));
+    }
+
+    return [
+      this.mapClientItemToServerPayload(
+        item,
+        variantIds[0] ?? null
+      ),
+    ];
+  }
+
+  private mapClientItemToServerPayload(
+    item: CartItem,
+    variant?: string | null
+  ): any {
     const cfg = item.customization;
+
     return {
       productId: item.productId,
       kind: item.productKind,
@@ -444,7 +614,10 @@ export class CartService {
             message: cfg.message,
           }
         : {},
-      variant: item.variantId ?? (item as any).variant ?? null,
+      variant:
+        variant !== undefined
+          ? variant
+          : item.variantId ?? (item as any).variant ?? null,
       surcharges: 0,
       qty: item.quantity,
     };
@@ -455,61 +628,76 @@ export class CartService {
     customization: CakeCustomization | null
   ): CartItem['accessories'] {
     return (accessories ?? []).map((accessory) => {
-      const variantId =
-        accessory.variantId ||
-        customization?.accessoryVariants?.[accessory.id] ||
-        null;
+      const extendedAccessory =
+        accessory as ExtendedCartAccessory;
+
+      const customizationVariants =
+        customization?.accessoryVariants?.[accessory.id];
+
+      const variantIds = this.normalizeStringArray(
+        extendedAccessory.variantIds?.length
+          ? extendedAccessory.variantIds
+          : extendedAccessory.variantId?.length
+            ? extendedAccessory.variantId
+            : customizationVariants
+      );
+
+      const variantLabels = this.normalizeStringArray(
+        extendedAccessory.variantLabels?.length
+          ? extendedAccessory.variantLabels
+          : extendedAccessory.variantLabel
+      );
 
       return {
         ...accessory,
-        variantId,
-        variantLabel: accessory.variantLabel ?? null,
-      };
+        variantId: this.getFirstVariant(variantIds),
+        variantLabel: this.getFirstVariant(variantLabels),
+        variantIds,
+        variantLabels,
+      } as ExtendedCartAccessory;
     });
   }
 
+  /**
+   * Tạo khóa định danh cho một dòng sản phẩm.
+   *
+   * Không đưa danh sách phụ kiện của bánh vào khóa.
+   * Phụ kiện đã được quản lý thành các dòng sản phẩm độc lập.
+   */
   private createConfigurationKey(
-    input: AddCartItemInput,
-    accessories: CartItem['accessories']
+    input: AddCartItemInput
   ): string {
     const customization = input.customization;
 
-    const sortedAccessories = accessories
-      .map((accessory) => ({
-        id: accessory.id,
-        variantId: accessory.variantId ?? null,
-      }))
-      .sort((a, b) => {
-        const idCompare = a.id.localeCompare(b.id);
-        if (idCompare !== 0) {
-          return idCompare;
-        }
-        return (a.variantId ?? '').localeCompare(b.variantId ?? '');
-      });
-
     const configuration: Record<string, unknown> = {
-      customization: null,
-      accessories: sortedAccessories,
+      kind: input.productKind,
     };
 
-    if (customization) {
+    if (input.productKind === 'cake' && customization) {
       configuration['size'] = customization.size;
       configuration['base'] = customization.base;
       configuration['filling'] = customization.filling;
       configuration['frostingColor'] = customization.frostingColor;
       configuration['sweetness'] = customization.sweetness;
-      configuration['message'] = customization.message.trim();
-
-      delete configuration['customization'];
+      configuration['message'] = (customization.message ?? '').trim();
     }
 
-    const resolvedVariant = input.variantId ?? input.variant ?? null;
-    if (resolvedVariant) {
-      configuration['variantId'] = resolvedVariant;
+    const variantIds = this.normalizeStringArray(
+      input.variantIds?.length
+        ? input.variantIds
+        : input.variantId ?? input.variant
+    ).sort();
+
+    if (variantIds.length > 0) {
+      configuration['variantIds'] = variantIds;
     }
 
     return JSON.stringify(configuration);
   }
+
+  // ========================================
+  // LOCAL STORAGE
+  // ========================================
 
   private updateGuestCart(items: CartItem[]): void {
     this.cartSubject.next(items);
@@ -521,9 +709,11 @@ export class CartService {
 
     try {
       const storedValue = localStorage.getItem(CART_STORAGE_KEY);
+
       if (!storedValue) return [];
 
       const parsed: unknown = JSON.parse(storedValue);
+
       if (!Array.isArray(parsed)) return [];
 
       const validItems = parsed.filter(
@@ -542,57 +732,88 @@ export class CartService {
       );
 
       return validItems.map((item) => {
-        const normalizedAccessories = Array.isArray(item.accessories)
-          ? item.accessories.map((accessory) => ({
-              ...accessory,
-              variantId: accessory.variantId ?? null,
-              variantLabel: accessory.variantLabel ?? null,
-            }))
-          : [];
+        const extendedItem = item as ExtendedCartItem;
 
-        return {
+        const variantIds = this.normalizeStringArray(
+          extendedItem.variantIds?.length
+            ? extendedItem.variantIds
+            : item.variantId ?? (item as any).variant
+        );
+
+        const variantLabels = this.normalizeStringArray(
+          extendedItem.variantLabels?.length
+            ? extendedItem.variantLabels
+            : item.variantLabel
+        );
+
+        const normalizedAccessories = this.normalizeAccessories(
+          Array.isArray(item.accessories) ? item.accessories : [],
+          item.customization ?? null
+        );
+
+        const normalizedItem = {
           ...item,
-          variantId: item.variantId ?? null,
-          variantLabel: item.variantLabel ?? null,
+          variantId: this.getFirstVariant(variantIds),
+          variantLabel: this.getFirstVariant(variantLabels),
+          variantIds,
+          variantLabels,
+
           customization: item.customization
             ? {
                 ...item.customization,
-                accessories: [...(item.customization.accessories ?? [])],
-                accessoryVariants: {
-                  ...(item.customization.accessoryVariants ?? {}),
-                },
+                accessories: [
+                  ...(item.customization.accessories ?? []),
+                ],
+                accessoryVariants: Object.fromEntries(
+                  Object.entries(
+                    item.customization.accessoryVariants ?? {}
+                  ).map(([id, variants]) => [
+                    id,
+                    this.normalizeStringArray(variants),
+                  ])
+                ),
               }
             : null,
+
           accessories: normalizedAccessories,
-          configurationKey:
-            typeof item.configurationKey === 'string' &&
-            item.configurationKey.length > 0
-              ? item.configurationKey
-              : this.createConfigurationKey(
-                  {
-                    productId: item.productId,
-                    productName: item.productName,
-                    productKind: item.productKind,
-                    imageUrl: item.imageUrl ?? null,
-                    unitPrice: item.unitPrice,
-                    customization: item.customization ?? null,
-                    accessories: normalizedAccessories,
-                    variantId: item.variantId ?? null,
-                    variantLabel: item.variantLabel ?? null,
-                  },
-                  normalizedAccessories
-                ),
-        };
+        } as ExtendedCartItem;
+
+        // Luôn tạo lại khóa theo cấu trúc mới.
+        // Không dùng phụ kiện tùy chỉnh để phân biệt dòng bánh.
+        const configurationKey = this.createConfigurationKey({
+          productId: item.productId,
+          productName: item.productName,
+          productKind: item.productKind,
+          imageUrl: item.imageUrl ?? null,
+          unitPrice: item.unitPrice,
+          customization: item.customization ?? null,
+          accessories: normalizedAccessories,
+          variantIds,
+          variantLabels,
+          variantId: this.getFirstVariant(variantIds),
+          variantLabel: this.getFirstVariant(variantLabels),
+        });
+
+        return {
+          ...normalizedItem,
+          configurationKey,
+        } as CartItem;
       });
     } catch (error) {
-      console.error('[CartService] Không thể đọc giỏ hàng:', error);
+      console.error(
+        '[CartService] Không thể đọc giỏ hàng:',
+        error
+      );
+
       return [];
     }
   }
 
   private loadGuestCartFromStorage(): void {
     const normalizedItems = this.readGuestCartRaw();
+
     this.cartSubject.next(normalizedItems);
+
     if (normalizedItems.length > 0) {
       this.saveGuestCartToStorage(normalizedItems);
     }
@@ -602,9 +823,15 @@ export class CartService {
     if (!this.isBrowser) return;
 
     try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(
+        CART_STORAGE_KEY,
+        JSON.stringify(items)
+      );
     } catch (error) {
-      console.error('[CartService] Không thể lưu giỏ hàng:', error);
+      console.error(
+        '[CartService] Không thể lưu giỏ hàng:',
+        error
+      );
     }
   }
 }

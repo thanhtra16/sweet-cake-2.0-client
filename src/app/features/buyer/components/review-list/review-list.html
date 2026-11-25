@@ -1,1 +1,74 @@
-<p>review-list works!</p>
+<section class="reviews" id="reviews">
+  <h2 class="reviews__title">Đánh giá của khách hàng</h2>
+
+  @if (summary(); as s) {
+    <div class="reviews__summary">
+      <div class="reviews__score">
+        <strong>{{ s.average | number: '1.1-1' }}</strong>
+        <span class="reviews__stars">{{ starText(s.average) }}</span>
+        <small>{{ s.reviewCount }} đánh giá</small>
+      </div>
+
+      <div class="reviews__bars">
+        @for (star of stars; track star) {
+          <button
+            type="button"
+            class="reviews__bar-row"
+            [class.reviews__bar-row--active]="ratingFilter() === star"
+            (click)="setFilter(star)"
+          >
+            <span>{{ star }} ★</span>
+            <span class="reviews__bar">
+              <span [style.width.%]="percent(star)"></span>
+            </span>
+            <span>{{ s.distribution[star] ?? 0 }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <p class="reviews__error">{{ errorMessage() }}</p>
+  }
+
+  @if (!loading() && reviews().length === 0 && !errorMessage()) {
+    <p class="reviews__empty">
+      {{ ratingFilter() ? 'Chưa có đánh giá nào ở mức sao này.' : 'Sản phẩm chưa có đánh giá nào.' }}
+    </p>
+  }
+
+  <ul class="reviews__list">
+    @for (review of reviews(); track review._id) {
+      <li class="reviews__item">
+        <div class="reviews__head">
+          <strong>{{ review.reviewerName }}</strong>
+          <span class="reviews__stars">{{ starText(review.rating) }}</span>
+          <time>{{ review.createdAt | date: 'dd/MM/yyyy' }}</time>
+        </div>
+
+        @if (review.comment) {
+          <p class="reviews__comment">{{ review.comment }}</p>
+        }
+
+        @if (review.imageIds.length) {
+          <div class="reviews__images">
+            @for (img of review.imageIds; track img) {
+              <img [src]="imageUrl(img)" alt="Ảnh đánh giá" loading="lazy" />
+            }
+          </div>
+        }
+      </li>
+    }
+  </ul>
+
+  @if (loading()) {
+    <p class="reviews__loading">Đang tải đánh giá...</p>
+  }
+
+  @if (!loading() && page() < totalPages()) {
+    <button type="button" class="sc-btn sc-btn--outline" (click)="loadMore()">
+      Xem thêm đánh giá
+    </button>
+  }
+</section>
