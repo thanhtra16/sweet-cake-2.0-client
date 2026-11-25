@@ -1,4 +1,3 @@
-
 import { CommonModule, Location } from '@angular/common';
 import {
   ChangeDetectorRef,
@@ -41,6 +40,12 @@ export class Cart implements OnInit, OnDestroy {
   private quoteSubscription?: Subscription;
   private cartSubscription?: Subscription;
 
+  // Lưu danh sách ID sản phẩm ở lần phát dữ liệu giỏ hàng trước đó.
+  // Dùng để nhận biết sản phẩm mới được thêm vào.
+  private previousCartItemIds = new Set<string>(
+    this.cartService.items.map((item) => item.id)
+  );
+
   readonly cartItems$ = this.cartService.cartItems$;
 
   selectedItemIds = new Set<string>(
@@ -53,6 +58,10 @@ export class Cart implements OnInit, OnDestroy {
   quoteLoading = false;
   quoteError = '';
 
+  // POPUP XÁC NHẬN XÓA SẢN PHẨM
+  itemToRemove: CartItem | null = null;
+  isRemovingItem = false;
+
   private quoteLines: {
     cartItemId: string;
     productName: string;
@@ -63,19 +72,36 @@ export class Cart implements OnInit, OnDestroy {
       const currentIds = new Set(items.map((item) => item.id));
       const nextSelected = new Set<string>();
 
+      // Giữ nguyên trạng thái chọn/bỏ chọn của các sản phẩm còn tồn tại.
       for (const id of this.selectedItemIds) {
         if (currentIds.has(id)) {
           nextSelected.add(id);
         }
       }
 
+      // Chỉ tự động chọn sản phẩm thực sự mới được thêm vào giỏ hàng.
+      // Không chọn lại những sản phẩm người dùng đã bỏ chọn.
       for (const item of items) {
-        if (!this.selectedItemIds.has(item.id)) {
+        if (!this.previousCartItemIds.has(item.id)) {
           nextSelected.add(item.id);
         }
       }
 
+      // Cập nhật danh sách ID để so sánh ở lần phát dữ liệu tiếp theo.
+      this.previousCartItemIds = currentIds;
+
       this.selectedItemIds = nextSelected;
+
+      // Đóng popup nếu sản phẩm đang chờ xác nhận
+      // đã bị xóa từ một nơi khác.
+      if (
+        this.itemToRemove &&
+        !currentIds.has(this.itemToRemove.id)
+      ) {
+        this.itemToRemove = null;
+        this.isRemovingItem = false;
+      }
+
       this.refreshQuote();
     });
   }
@@ -95,7 +121,7 @@ export class Cart implements OnInit, OnDestroy {
     );
   }
 
-  // Tổng số lượng sản phẩm được chọn, tính giống ngăn kéo giỏ hàng.
+  // Tổng số lượng sản phẩm được chọn.
   get selectedQuantity(): number {
     return this.selectedItems.reduce(
       (total, item) => total + item.quantity,
@@ -135,6 +161,7 @@ export class Cart implements OnInit, OnDestroy {
     if (!this.quoteResult) {
       return false;
     }
+
     return (
       this.quoteResult.valid &&
       this.quoteResult.items.every((item) => item.valid)
@@ -145,6 +172,7 @@ export class Cart implements OnInit, OnDestroy {
     if (!this.quoteResult) {
       return false;
     }
+
     return (
       !this.quoteResult.valid ||
       this.quoteResult.items.some((item) => !item.valid)
@@ -155,6 +183,7 @@ export class Cart implements OnInit, OnDestroy {
     return this.selectedItemIds.has(itemId);
   }
 
+  // CHỌN / BỎ CHỌN SẢN PHẨM
   toggleItem(itemId: string): void {
     const next = new Set(this.selectedItemIds);
 
@@ -168,6 +197,7 @@ export class Cart implements OnInit, OnDestroy {
     this.refreshQuote();
   }
 
+  // CHỌN TẤT CẢ / BỎ CHỌN TẤT CẢ
   toggleAll(checked: boolean): void {
     this.selectedItemIds = checked
       ? new Set(this.cartService.items.map((item) => item.id))
@@ -176,6 +206,7 @@ export class Cart implements OnInit, OnDestroy {
     this.refreshQuote();
   }
 
+  // THAY ĐỔI PHƯƠNG THỨC NHẬN HÀNG
   onReceiveMethodChange(value: string): void {
     if (value !== 'pickup' && value !== 'delivery') {
       return;
@@ -185,26 +216,80 @@ export class Cart implements OnInit, OnDestroy {
     this.refreshQuote();
   }
 
+  // TĂNG SỐ LƯỢNG
   async increaseQuantity(item: CartItem): Promise<void> {
-    if (item.quantity >= 10) return;
+    if (item.quantity >= 10) {
+      return;
+    }
 
-    await this.cartService.updateQuantity(item.id, item.quantity + 1);
+    await this.cartService.updateQuantity(
+      item.id,
+      item.quantity + 1
+    );
   }
 
+  // GIẢM SỐ LƯỢNG
   async decreaseQuantity(item: CartItem): Promise<void> {
-    if (item.quantity <= 1) return;
+    if (item.quantity <= 1) {
+      return;
+    }
 
-    await this.cartService.updateQuantity(item.id, item.quantity - 1);
+    await this.cartService.updateQuantity(
+      item.id,
+      item.quantity - 1
+    );
   }
 
+  // MỞ POPUP XÁC NHẬN XÓA
+  openRemoveConfirm(item: CartItem): void {
+    if (this.isRemovingItem) {
+      return;
+    }
+
+    this.itemToRemove = item;
+  }
+
+  // ĐÓNG POPUP, KHÔNG XÓA SẢN PHẨM
+  cancelRemoveConfirm(): void {
+    if (this.isRemovingItem) {
+      return;
+    }
+
+    this.itemToRemove = null;
+  }
+
+  // XÁC NHẬN XÓA SẢN PHẨM
+  async confirmRemoveItem(): Promise<void> {
+    if (!this.itemToRemove || this.isRemovingItem) {
+      return;
+    }
+
+    const itemId = this.itemToRemove.id;
+
+    this.isRemovingItem = true;
+    this.cdr.detectChanges();
+
+    try {
+      await this.removeItem(itemId);
+
+      this.itemToRemove = null;
+    } finally {
+      this.isRemovingItem = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // XÓA SẢN PHẨM KHỎI CART SERVICE
   async removeItem(itemId: string): Promise<void> {
     await this.cartService.removeItem(itemId);
 
     const next = new Set(this.selectedItemIds);
     next.delete(itemId);
+
     this.selectedItemIds = next;
   }
 
+  // XÂY DỰNG DỮ LIỆU GỬI LÊN API BÁO GIÁ
   private buildQuoteRequest(): QuoteRequest {
     const items: QuoteRequestItem[] = [];
     this.quoteLines = [];
@@ -235,6 +320,7 @@ export class Cart implements OnInit, OnDestroy {
           productName: cartItem.productName,
         });
 
+        // Thêm phụ kiện đi kèm bánh vào dữ liệu báo giá.
         for (const accessory of cartItem.accessories || []) {
           items.push({
             productId: accessory.id,
@@ -256,7 +342,9 @@ export class Cart implements OnInit, OnDestroy {
         items.push({
           productId: cartItem.productId,
           qty: cartItem.quantity,
-          ...(resolvedVariant ? { variant: resolvedVariant } : {}),
+          ...(resolvedVariant
+            ? { variant: resolvedVariant }
+            : {}),
         });
 
         this.quoteLines.push({
@@ -272,6 +360,7 @@ export class Cart implements OnInit, OnDestroy {
     };
   }
 
+  // LÀM MỚI BÁO GIÁ
   refreshQuote(): void {
     this.quoteSubscription?.unsubscribe();
 
@@ -286,6 +375,7 @@ export class Cart implements OnInit, OnDestroy {
     }
 
     const request = this.buildQuoteRequest();
+
     this.quoteLoading = true;
     this.cdr.detectChanges();
 
@@ -305,23 +395,31 @@ export class Cart implements OnInit, OnDestroy {
         error: (error) => {
           this.quoteResult = null;
           this.quoteError =
-            error?.error?.message || 'Không thể tính báo giá. Vui lòng thử lại.';
+            error?.error?.message ||
+            'Không thể tính báo giá. Vui lòng thử lại.';
+
           this.cdr.detectChanges();
         },
       });
   }
 
+  // CHUYỂN ĐẾN THANH TOÁN
   proceedToCheckout(): void {
-    if (
-      this.selectedItems.length === 0 ||
-      this.quoteLoading ||
-      this.hasInvalidSelectedItems
-    ) {
+    // Chỉ cho phép tiếp tục khi có ít nhất một sản phẩm được chọn.
+    const selectedItems = this.selectedItems;
+
+    if (selectedItems.length === 0) {
       return;
     }
 
+    // Tạo dữ liệu đặt hàng từ những sản phẩm đã chọn.
     const quotePayload = this.buildQuoteRequest();
 
+    if (quotePayload.items.length === 0) {
+      return;
+    }
+
+    // Lưu dữ liệu để trang checkout tiếp nhận.
     sessionStorage.setItem(
       this.BUY_NOW_STORAGE_KEY,
       JSON.stringify({
@@ -330,13 +428,21 @@ export class Cart implements OnInit, OnDestroy {
       })
     );
 
-    this.router.navigate(['/checkout']);
+    // Chuyển sang trang checkout.
+    this.router.navigate(['/checkout']).then((success) => {
+      if (!success) {
+        console.error('[Cart] Không thể điều hướng đến trang thanh toán.');
+      }
+    });
   }
 
+  // TÍNH TỔNG TIỀN CỦA MỘT DÒNG SẢN PHẨM
   getLineTotal(item: CartItem): number {
     if (this.quoteResult) {
       const indexes = this.quoteLines
-        .map((line, index) => (line.cartItemId === item.id ? index : -1))
+        .map((line, index) =>
+          line.cartItemId === item.id ? index : -1
+        )
         .filter((index) => index >= 0);
 
       if (indexes.length > 0) {
@@ -346,7 +452,9 @@ export class Cart implements OnInit, OnDestroy {
 
         if (
           results.every(
-            (result) => result?.valid && typeof result.lineTotal === 'number'
+            (result) =>
+              result?.valid &&
+              typeof result.lineTotal === 'number'
           )
         ) {
           return results.reduce(
@@ -360,6 +468,7 @@ export class Cart implements OnInit, OnDestroy {
     return item.unitPrice * item.quantity;
   }
 
+  // LẤY DANH SÁCH LỖI BÁO GIÁ CỦA SẢN PHẨM
   getQuoteErrors(item: CartItem): string[] {
     if (!this.quoteResult) {
       return [];
@@ -384,6 +493,7 @@ export class Cart implements OnInit, OnDestroy {
       );
   }
 
+  // QUAY LẠI TRANG TRƯỚC
   goBack(): void {
     this.location.back();
   }

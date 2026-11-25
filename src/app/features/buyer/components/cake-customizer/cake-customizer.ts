@@ -1,5 +1,5 @@
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -9,6 +9,8 @@ import {
   OnInit,
   Output,
   SimpleChanges,
+  PLATFORM_ID,
+  inject,
 } from '@angular/core';
 import {
   FormBuilder,
@@ -24,10 +26,6 @@ import {
   CustomizationOption,
   ProductCustomization,
 } from '@core/services/api.service';
-
-// ========================================
-// INTERFACES
-// ========================================
 
 export interface CakeSizeOption {
   name: string;
@@ -62,6 +60,16 @@ export interface CakeCustomization {
   estimatedPrice: number;
 }
 
+interface MessagePreference {
+  occasion: string;
+  style: string;
+}
+
+interface MessageOption {
+  value: string;
+  label: string;
+}
+
 type CakeCustomizerForm = FormGroup<{
   size: FormControl<string>;
   base: FormControl<string>;
@@ -70,6 +78,9 @@ type CakeCustomizerForm = FormGroup<{
   sweetness: FormControl<string>;
   message: FormControl<string>;
   accessories: FormControl<string[]>;
+  occasion: FormControl<string>;
+  messageStyle: FormControl<string>;
+  recipientName: FormControl<string>;
 }>;
 
 @Component({
@@ -80,7 +91,6 @@ type CakeCustomizerForm = FormGroup<{
   styleUrl: './cake-customizer.scss',
 })
 export class CakeCustomizer implements OnInit, OnChanges {
-
   @Input() basePrice = 0;
   @Input() promotionPrice: number | null = null;
   @Input() isPromotionValid = false;
@@ -97,13 +107,35 @@ export class CakeCustomizer implements OnInit, OnChanges {
 
   readonly form: CakeCustomizerForm;
 
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly storageKey = 'sweetcake_message_preferences';
+
   maxMessageLength = 30;
   sizeSurcharge = 0;
   accessoryTotal = 0;
   estimatedPrice = 0;
 
-  // Mỗi phụ kiện có thể chọn nhiều biến thể.
   selectedAccessoryVariants: Record<string, string[]> = {};
+
+  // Danh sách lời chúc đang hiển thị.
+  messageSuggestions: string[] = [];
+
+  readonly occasionOptions: MessageOption[] = [
+    { value: 'birthday', label: 'Sinh nhật' },
+    { value: 'anniversary', label: 'Kỷ niệm' },
+    { value: 'thanks', label: 'Cảm ơn' },
+    { value: 'congratulations', label: 'Chúc mừng' },
+    { value: 'love', label: 'Tình yêu' },
+    { value: 'encouragement', label: 'Động viên' },
+    { value: 'other', label: 'Dịp đặc biệt' },
+  ];
+
+  readonly messageStyleOptions: MessageOption[] = [
+    { value: 'sweet', label: 'Ngọt ngào' },
+    { value: 'elegant', label: 'Tinh tế' },
+    { value: 'funny', label: 'Vui nhộn' },
+    { value: 'warm', label: 'Ấm áp' },
+  ];
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -117,6 +149,11 @@ export class CakeCustomizer implements OnInit, OnChanges {
       sweetness: ['', Validators.required],
       message: ['', Validators.maxLength(140)],
       accessories: this.formBuilder.nonNullable.control<string[]>([]),
+
+      // Không mặc định chọn dịp tặng hoặc phong cách.
+      occasion: [''],
+      messageStyle: [''],
+      recipientName: [''],
     });
   }
 
@@ -187,6 +224,327 @@ export class CakeCustomizer implements OnInit, OnChanges {
   }
 
   // ========================================
+  // MESSAGE PERSONALIZATION
+  // ========================================
+
+  get recipientName(): string {
+    return this.form.controls.recipientName.value.trim();
+  }
+
+  /**
+   * Tạo danh sách lời chúc ngẫu nhiên.
+   *
+   * - Không chọn dịp: lấy mẫu từ tất cả các dịp.
+   * - Không chọn phong cách: lấy mẫu từ tất cả phong cách.
+   * - Có chọn thông tin nào: lọc theo thông tin đó.
+   * - Chỉ lấy lời chúc không vượt quá giới hạn ký tự.
+   */
+  private refreshMessageSuggestions(): void {
+    const occasion = this.form.controls.occasion.value;
+    const style = this.form.controls.messageStyle.value;
+    const name = this.recipientName;
+
+    const messages: Record<string, Record<string, string[]>> = {
+      birthday: {
+        sweet: [
+          'Chúc {name} tuổi mới thật ngọt ngào!',
+          'Mãi xinh tươi và hạnh phúc nhé {name}!',
+          'Tuổi mới, niềm vui mới, yêu thương thật nhiều!',
+          'Chúc mọi điều ước của {name} thành hiện thực!',
+          'Một ngày sinh nhật tràn đầy yêu thương nhé!',
+        ],
+        elegant: [
+          'Chúc {name} tuổi mới an nhiên và rạng rỡ.',
+          'Một tuổi mới với thật nhiều điều tốt đẹp.',
+          'Chúc {name} luôn thành công và hạnh phúc.',
+          'Thêm tuổi mới, thêm những hành trình đáng nhớ.',
+          'Chúc ngày đặc biệt của {name} thật trọn vẹn.',
+        ],
+        funny: [
+          'Chúc mừng sinh nhật, trẻ mãi không già nhé!',
+          'Thêm tuổi mới, thêm nhiều tiền nha {name}!',
+          'Hôm nay cứ ăn bánh, chuyện khác tính sau!',
+          'Chúc {name} tuổi mới vui hết cỡ!',
+          'Sinh nhật vui vẻ, quà đâu chưa thấy bánh đây!',
+        ],
+        warm: [
+          'Chúc {name} luôn bình an và được yêu thương.',
+          'Mong tuổi mới mang đến thật nhiều niềm vui.',
+          'Cảm ơn vì đã luôn tuyệt vời như thế.',
+          'Chúc {name} có một ngày thật đáng nhớ.',
+          'Mong mọi điều dịu dàng sẽ đến bên {name}.',
+        ],
+      },
+
+      anniversary: {
+        sweet: [
+          'Mong chúng ta luôn bên nhau thật lâu.',
+          'Thêm một chặng đường, thêm nhiều yêu thương.',
+          'Mỗi ngày bên nhau đều là một món quà.',
+          'Cùng nhau viết tiếp những ngày thật đẹp.',
+          'Gửi {name} tất cả yêu thương của mình.',
+        ],
+        elegant: [
+          'Trân trọng từng khoảnh khắc bên nhau.',
+          'Một hành trình đẹp, một tình yêu bền lâu.',
+          'Chúc chúng ta luôn đồng hành và thấu hiểu.',
+          'Mong những điều tốt đẹp luôn ở phía trước.',
+          'Kỷ niệm đẹp được viết nên từ hai chúng ta.',
+        ],
+        funny: [
+          'Cảm ơn vì vẫn chịu đựng nhau đến hôm nay!',
+          'Thêm một năm đồng hành, vẫn chưa chán nhau!',
+          'Mãi bên nhau, bánh thì nhớ chia đều nhé!',
+          'Yêu nhau lâu dài, ăn bánh lâu hơn nữa!',
+          'Chúng ta đúng là một cặp thật tuyệt!',
+        ],
+        warm: [
+          'Cảm ơn vì luôn là một phần đặc biệt.',
+          'Mong chúng ta luôn có nhau trong mọi hành trình.',
+          'Thật hạnh phúc vì được đồng hành cùng nhau.',
+          'Chúc những yêu thương luôn được gìn giữ.',
+          'Cùng nhau lưu giữ thêm thật nhiều kỷ niệm.',
+        ],
+      },
+
+      thanks: {
+        sweet: [
+          'Cảm ơn {name} vì tất cả những điều tốt đẹp!',
+          'Một chút ngọt ngào thay lời cảm ơn.',
+          'Thật may mắn khi có {name} bên cạnh.',
+          'Cảm ơn vì đã luôn quan tâm và sẻ chia.',
+          'Gửi đến {name} thật nhiều yêu thương.',
+        ],
+        elegant: [
+          'Trân trọng và biết ơn những điều bạn đã làm.',
+          'Xin gửi lời cảm ơn chân thành nhất.',
+          'Cảm ơn vì sự tận tâm và chu đáo.',
+          'Một món quà nhỏ thay lời tri ân.',
+          'Thật trân quý những điều tốt đẹp bạn mang đến.',
+        ],
+        funny: [
+          'Cảm ơn nhiều nha, bánh này là quà đó!',
+          'Công ơn này xin trả bằng một chiếc bánh!',
+          'Cảm ơn {name}, bạn đúng là tuyệt nhất!',
+          'Nhận bánh rồi nhớ nhận luôn lời cảm ơn nhé!',
+          'Cảm ơn thật nhiều, ăn bánh thật vui nha!',
+        ],
+        warm: [
+          'Cảm ơn vì đã luôn ở đây.',
+          'Sự tử tế của bạn luôn được trân trọng.',
+          'Mong chút ngọt ngào này thay lời cảm ơn.',
+          'Biết ơn vì đã mang đến những điều tốt đẹp.',
+          'Chúc {name} luôn nhận lại thật nhiều yêu thương.',
+        ],
+      },
+
+      congratulations: {
+        sweet: [
+          'Chúc mừng {name}, bạn thật tuyệt vời!',
+          'Thành công hôm nay, rực rỡ ngày mai!',
+          'Tự hào về những gì bạn đã đạt được!',
+          'Chúc niềm vui này còn kéo dài mãi!',
+          'Một cột mốc đáng nhớ, một khởi đầu mới!',
+        ],
+        elegant: [
+          'Chúc mừng thành tựu xứng đáng của bạn.',
+          'Chúc {name} tiếp tục vững bước và tỏa sáng.',
+          'Một dấu mốc đẹp trên hành trình thành công.',
+          'Chúc những mục tiêu tiếp theo đều thành hiện thực.',
+          'Thành công hôm nay mở ra nhiều cơ hội mới.',
+        ],
+        funny: [
+          'Đỉnh quá {name} ơi, bánh thưởng đây!',
+          'Chúc mừng nhé, khao bánh thôi nào!',
+          'Thành công rực rỡ, ăn bánh hết mình!',
+          'Bạn làm được rồi, quá là xuất sắc!',
+          'Hôm nay bạn là nhân vật chính!',
+        ],
+        warm: [
+          'Chúc mừng {name}, mọi nỗ lực đều xứng đáng.',
+          'Mong bạn luôn tự hào về chính mình.',
+          'Chúc hành trình phía trước thật nhiều niềm vui.',
+          'Thành quả ngọt ngào dành cho bạn.',
+          'Luôn tin tưởng và chúc bạn thành công.',
+        ],
+      },
+
+      love: {
+        sweet: [
+          'Gửi {name} ngàn điều yêu thương.',
+          'Bạn là điều ngọt ngào nhất của mình.',
+          'Thế giới của mình đẹp hơn khi có bạn.',
+          'Mỗi ngày đều muốn dành điều tốt đẹp cho bạn.',
+          'Thương {name} thật nhiều!',
+        ],
+        elegant: [
+          'You are my sweetest moment.',
+          'Một tình yêu, muôn vàn điều trân quý.',
+          'Cảm ơn vì đã làm cuộc sống thêm đẹp.',
+          'Bên bạn, mọi khoảnh khắc đều đáng nhớ.',
+          'Gửi người đặc biệt nhất của mình.',
+        ],
+        funny: [
+          'Yêu bạn nhiều hơn cả chiếc bánh này!',
+          'Bạn là gu, bánh là phụ!',
+          'Đã yêu là phải có bánh nhé!',
+          'Tim mình thuộc về bạn, bánh thì chia đôi!',
+          'Cảnh báo: chiếc bánh này có vị yêu thương!',
+        ],
+        warm: [
+          'Mong luôn được cùng bạn sẻ chia mọi điều.',
+          'Cảm ơn vì đã đến và ở lại.',
+          'Bạn luôn là điều đặc biệt trong tim mình.',
+          'Chúc chúng ta luôn bình yên bên nhau.',
+          'Gửi bạn một chiếc bánh và thật nhiều thương mến.',
+        ],
+      },
+
+      encouragement: {
+        sweet: [
+          'Cố lên {name}, bạn làm được mà!',
+          'Mọi chuyện rồi sẽ tốt đẹp hơn.',
+          'Gửi bạn một chút ngọt ngào và động lực.',
+          'Tin vào bản thân nhé!',
+          'Ngày mai sẽ là một ngày thật tươi sáng.',
+        ],
+        elegant: [
+          'Kiên trì hôm nay, thành quả ngày mai.',
+          'Chúc {name} luôn vững vàng trên hành trình.',
+          'Mỗi bước tiến đều đáng được trân trọng.',
+          'Hãy tin vào khả năng của chính mình.',
+          'Những điều tốt đẹp đang chờ phía trước.',
+        ],
+        funny: [
+          'Buồn thì ăn bánh, vui cũng ăn bánh!',
+          'Nạp đường rồi chiến tiếp nhé {name}!',
+          'Bạn mạnh mẽ hơn chiếc deadline nhiều!',
+          'Cố lên, bánh đang chờ bạn!',
+          'Không gì là không thể, trừ việc nhịn bánh!',
+        ],
+        warm: [
+          'Mong bạn luôn tìm thấy bình yên.',
+          'Bạn không đơn độc trên hành trình này.',
+          'Hãy nhẹ nhàng với bản thân một chút nhé.',
+          'Chúc {name} sớm vượt qua mọi khó khăn.',
+          'Gửi bạn thật nhiều năng lượng tích cực.',
+        ],
+      },
+
+      other: {
+        sweet: [
+          'Chúc {name} luôn ngập tràn niềm vui!',
+          'Một ngày đặc biệt thật ngọt ngào nhé!',
+          'Mong mọi điều tốt đẹp sẽ đến với bạn.',
+          'Gửi bạn một chiếc bánh đầy yêu thương.',
+          'Chúc ngày hôm nay thật đáng nhớ!',
+        ],
+        elegant: [
+          'Chúc bạn luôn hạnh phúc và thành công.',
+          'Mong những điều tốt đẹp luôn đồng hành.',
+          'Một dịp đặc biệt, một món quà chân thành.',
+          'Chúc mọi dự định đều thuận lợi.',
+          'Trân trọng những khoảnh khắc đáng nhớ.',
+        ],
+        funny: [
+          'Có bánh là có niềm vui!',
+          'Hôm nay cứ vui, chuyện khác để mai!',
+          'Chúc bạn vui như lúc mở hộp bánh!',
+          'Một chiếc bánh, vạn niềm vui!',
+          'Ăn bánh trước, tính tiếp sau nhé!',
+        ],
+        warm: [
+          'Chúc bạn luôn được yêu thương và trân trọng.',
+          'Mong hôm nay mang đến nhiều niềm vui.',
+          'Gửi bạn những điều chân thành nhất.',
+          'Chúc mọi khoảnh khắc đều thật ý nghĩa.',
+          'Mong nụ cười luôn ở trên môi bạn.',
+        ],
+      },
+    };
+
+    const candidates: string[] = [];
+
+    // Duyệt qua tất cả dịp phù hợp với lựa chọn hiện tại.
+    for (const [occasionKey, styles] of Object.entries(messages)) {
+      if (occasion && occasionKey !== occasion) {
+        continue;
+      }
+
+      // Duyệt qua tất cả phong cách phù hợp.
+      for (const [styleKey, templates] of Object.entries(styles)) {
+        if (style && styleKey !== style) {
+          continue;
+        }
+
+        candidates.push(...templates);
+      }
+    }
+
+    // Thay tên người nhận và chỉ giữ lời chúc đủ điều kiện.
+    const validMessages = [
+      ...new Set(
+        candidates
+          .map(message =>
+            message.replaceAll('{name}', name || 'bạn').trim()
+          )
+          .filter(message =>
+            message.length > 0 &&
+            message.length <= this.maxMessageLength
+          )
+      ),
+    ];
+
+    // Xáo trộn ngẫu nhiên các lời chúc hợp lệ.
+    for (let i = validMessages.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+
+      [validMessages[i], validMessages[j]] = [
+        validMessages[j],
+        validMessages[i],
+      ];
+    }
+
+    // Chỉ hiển thị tối đa 5 lời chúc.
+    this.messageSuggestions = validMessages.slice(0, 5);
+  }
+
+  applyMessageSuggestion(message: string): void {
+    // Kiểm tra lại giới hạn trước khi điền vào ô lời nhắn.
+    if (message.length > this.maxMessageLength) {
+      return;
+    }
+
+    this.form.controls.message.setValue(message);
+    this.form.controls.message.markAsDirty();
+    this.form.controls.message.markAsTouched();
+  }
+
+  /**
+   * Lưu lựa chọn gần nhất trên thiết bị.
+   * Không tự động khôi phục lựa chọn này vào form khi mở trang.
+   */
+  private saveMessagePreferences(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    try {
+      const preference: MessagePreference = {
+        occasion: this.form.controls.occasion.value,
+        style: this.form.controls.messageStyle.value,
+      };
+
+      localStorage.setItem(
+        this.storageKey,
+        JSON.stringify(preference)
+      );
+    } catch {
+      // Không làm gián đoạn thao tác tùy chỉnh nếu storage không khả dụng.
+    }
+  }
+
+  // ========================================
   // LIFECYCLE
   // ========================================
 
@@ -198,7 +556,9 @@ export class CakeCustomizer implements OnInit, OnChanges {
       )
       .subscribe(() => {
         this.updateMessageLimit();
+        this.refreshMessageSuggestions();
         this.calculatePrice();
+        this.saveMessagePreferences();
         this.emitCustomization();
       });
 
@@ -295,6 +655,7 @@ export class CakeCustomizer implements OnInit, OnChanges {
     );
 
     this.updateMessageLimit();
+    this.refreshMessageSuggestions();
     this.calculatePrice();
     this.emitCustomization();
   }
@@ -333,8 +694,6 @@ export class CakeCustomizer implements OnInit, OnChanges {
 
     const selectedIds = this.selectedAccessories;
 
-    // Mỗi loại phụ kiện được tính giá một lần,
-    // không phụ thuộc số biến thể được chọn.
     this.accessoryTotal = this.accessoryOptions
       .filter(option => selectedIds.includes(option.id))
       .reduce((total, option) => {
@@ -370,6 +729,15 @@ export class CakeCustomizer implements OnInit, OnChanges {
     messageControl.setValidators([
       Validators.maxLength(this.maxMessageLength),
     ]);
+
+    const currentMessage = messageControl.value;
+
+    if (currentMessage.length > this.maxMessageLength) {
+      messageControl.setValue(
+        currentMessage.slice(0, this.maxMessageLength),
+        { emitEvent: false }
+      );
+    }
 
     messageControl.updateValueAndValidity({
       emitEvent: false,

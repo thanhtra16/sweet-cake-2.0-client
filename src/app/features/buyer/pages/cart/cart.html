@@ -80,7 +80,7 @@
                       type="button"
                       class="cart-item__remove"
                       aria-label="Xóa sản phẩm"
-                      (click)="removeItem(item.id)"
+                      (click)="openRemoveConfirm(item)"
                     >
                       Xóa
                     </button>
@@ -202,22 +202,6 @@
           <aside class="cart-summary">
             <h2>Tóm tắt đơn hàng</h2>
 
-            <!-- PHƯƠNG THỨC NHẬN HÀNG -->
-            <div class="cart-summary__receive">
-              <label for="receiveMethod">
-                Phương thức nhận hàng
-              </label>
-
-              <select
-                id="receiveMethod"
-                [value]="receiveMethod"
-                (change)="onReceiveMethodChange($any($event.target).value)"
-              >
-                <option value="pickup">Nhận tại cửa hàng</option>
-                <option value="delivery">Giao hàng</option>
-              </select>
-            </div>
-
             <!-- SỐ LƯỢNG SẢN PHẨM ĐƯỢC CHỌN -->
             <div class="cart-summary__row">
               <span>Sản phẩm đã chọn</span>
@@ -278,15 +262,11 @@
               Giá thanh toán chính thức được xác nhận từ hệ thống.
             </p>
 
-            <!-- CHECKOUT -->
+           <!-- CHECKOUT -->
             <button
               type="button"
               class="cart-summary__checkout"
-              [disabled]="
-                selectedItems.length === 0 ||
-                quoteLoading ||
-                hasInvalidSelectedItems
-              "
+              [disabled]="selectedItems.length === 0"
               (click)="proceedToCheckout()"
             >
               Tiến hành đặt hàng ({{ selectedQuantity }})
@@ -316,4 +296,86 @@
       }
     }
   </div>
+
+  <!-- POPUP XÁC NHẬN XÓA SẢN PHẨM -->
+  @if (itemToRemove; as item) {
+    <div
+      class="cart-confirm"
+      (click)="cancelRemoveConfirm()"
+    >
+      <div
+        class="cart-confirm__dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="cart-confirm-title"
+        aria-describedby="cart-confirm-description"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="cart-confirm__icon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 6H21"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+            />
+            <path
+              d="M8 6V4.5C8 3.67 8.67 3 9.5 3H14.5C15.33 3 16 3.67 16 4.5V6"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+            />
+            <path
+              d="M19 6L18.1 19.1C18.03 20.18 17.14 21 16.06 21H7.94C6.86 21 5.97 20.18 5.9 19.1L5 6"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M10 10V17M14 10V17"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
+
+        <h2 id="cart-confirm-title">
+          Xóa sản phẩm khỏi giỏ hàng?
+        </h2>
+
+        <p id="cart-confirm-description">
+          Bạn có chắc chắn muốn xóa
+          <strong>{{ item.productName }}</strong>
+          khỏi giỏ hàng không?
+          Thao tác này sẽ không thể hoàn tác.
+        </p>
+
+        <div class="cart-confirm__actions">
+          <button
+            type="button"
+            class="cart-confirm__cancel"
+            [disabled]="isRemovingItem"
+            (click)="cancelRemoveConfirm()"
+          >
+            Hủy
+          </button>
+
+          <button
+            type="button"
+            class="cart-confirm__delete"
+            [disabled]="isRemovingItem"
+            (click)="confirmRemoveItem()"
+          >
+            {{ isRemovingItem ? 'Đang xóa...' : 'Xóa sản phẩm' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </section>
