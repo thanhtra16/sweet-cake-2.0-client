@@ -32,6 +32,7 @@ import { CartService } from '@shared/services/cart.service';
           <a routerLink="/blog" routerLinkActive="active-nav">Blog</a>
           <a routerLink="/gioi-thieu" routerLinkActive="active-nav">Giới thiệu</a>
           <a routerLink="/lien-he" routerLinkActive="active-nav">Liên hệ</a>
+          <a routerLink="/faq" routerLinkActive="active-nav">FAQ</a>
         </nav>
 
         <div class="header-icons">

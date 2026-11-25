@@ -8,14 +8,3 @@
   width: 100%;
   flex: 1;
 }
-.notification-btn {
-  position: relative;
-}
-
-.notification-btn i {
-  font-size: 20px;
-}
-
-.notification-btn:hover {
-  color: #7D562D;
-}
