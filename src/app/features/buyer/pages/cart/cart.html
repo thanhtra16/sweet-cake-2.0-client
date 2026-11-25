@@ -285,8 +285,9 @@
               [disabled]="
                 selectedItems.length === 0 ||
                 quoteLoading ||
-                !isQuoteValid
+                hasInvalidSelectedItems
               "
+              (click)="proceedToCheckout()"
             >
               Tiến hành đặt hàng ({{ selectedQuantity }})
             </button>
