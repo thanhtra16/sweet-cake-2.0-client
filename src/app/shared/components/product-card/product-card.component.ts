@@ -10,15 +10,17 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { VndPipe } from '../../pipes/vnd.pipe';
 import { Product } from '../../models/product.model';
+import { environment } from '../../../../environments/environment';
 
-export interface BuyerProduct extends Partial<Product> {
+export interface BuyerProduct extends Omit<Partial<Product>, 'thumbnail'> {
   _id?: string;
   id?: string;
   name: string;
   kind?: 'cake' | 'accessory';
   price: number;
-  image?: string;
-  thumbnail?: string;
+  image?: unknown;
+  thumbnail?: unknown;
+  imageIds?: unknown[];
   description?: string;
   bestSeller?: boolean;
 }
@@ -33,6 +35,7 @@ export interface BuyerProduct extends Partial<Product> {
 })
 export class ProductCardComponent {
   private readonly router = inject(Router);
+  private readonly fallbackImage = 'https://placehold.co/400x400?text=Sweet+Cake';
 
   @Input({ required: true }) product!: BuyerProduct;
   @Input() showAddToCart = true;
@@ -51,11 +54,42 @@ export class ProductCardComponent {
   }
 
   get productImage(): string {
-    return (
-      this.product.image ||
-      this.product.thumbnail ||
-      'https://placehold.co/400x400?text=Sweet+Cake'
-    );
+    const candidates = [this.product?.image, this.product?.thumbnail, this.product?.imageIds?.[0]];
+
+    for (const candidate of candidates) {
+      const resolved = this.normalizeImage(candidate);
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    return this.fallbackImage;
+  }
+
+  private normalizeImage(raw: unknown): string {
+    if (!raw) return '';
+
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (!trimmed || trimmed === '[object Object]') return '';
+      if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
+        return trimmed;
+      }
+      return `${environment.apiUrl}/images/${trimmed}`;
+    }
+
+    if (typeof raw === 'object') {
+      const obj = raw as { url?: string; _id?: unknown; id?: unknown };
+      if (obj.url && typeof obj.url === 'string') {
+        return obj.url;
+      }
+      const id = String(obj._id ?? obj.id ?? '').trim();
+      if (id && id !== '[object Object]') {
+        return `${environment.apiUrl}/images/${id}`;
+      }
+    }
+
+    return '';
   }
 
   onViewDetail(): void {

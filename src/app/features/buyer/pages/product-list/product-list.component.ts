@@ -5,7 +5,7 @@ import {
   OnInit,
   computed,
   inject,
-  signal
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,7 +15,7 @@ import { ProductService } from '@core/services/product.service';
 import { CartService } from '@shared/services/cart.service';
 import {
   BuyerProduct,
-  ProductCardComponent
+  ProductCardComponent,
 } from '@shared/components/product-card/product-card.component';
 
 type FilterKey = 'kind' | 'occasion' | 'filling' | 'cakeType' | 'price';
@@ -51,30 +51,30 @@ const CATEGORY_TO_OCCASION: Record<string, string> = {
   'wedding cake': 'Tiệc cưới',
   'tiệc cưới': 'Tiệc cưới',
   'valentine cake': 'Valentine',
-  'valentine': 'Valentine',
+  valentine: 'Valentine',
   'chúc mừng': 'Chúc mừng',
-  'congratulations': 'Chúc mừng'
+  congratulations: 'Chúc mừng',
 };
 
 /** Ánh xạ nhân bánh. */
 const FILLING_ALIASES: Record<string, string> = {
-  'bắp': 'Bắp',
-  'corn': 'Bắp',
-  'matcha': 'Matcha',
+  bắp: 'Bắp',
+  corn: 'Bắp',
+  matcha: 'Matcha',
   'phô mai': 'Phô mai',
   'pho mai': 'Phô mai',
-  'cheese': 'Phô mai',
+  cheese: 'Phô mai',
   'cream cheese': 'Phô mai',
   'trái cây tươi': 'Trái cây tươi',
   'trai cay tuoi': 'Trái cây tươi',
   'fresh fruit': 'Trái cây tươi',
-  'fruit': 'Trái cây tươi',
-  'socola': 'Socola',
+  fruit: 'Trái cây tươi',
+  socola: 'Socola',
   'sô cô la': 'Socola',
-  'chocolate': 'Socola',
+  chocolate: 'Socola',
   'mứt dâu tây': 'Mứt dâu tây',
   'mứt dâu': 'Mứt dâu tây',
-  'strawberry': 'Mứt dâu tây'
+  strawberry: 'Mứt dâu tây',
 };
 
 /** Ánh xạ loại bánh / danh mục phụ kiện. */
@@ -85,11 +85,11 @@ const CAKE_TYPE_ALIASES: Record<string, string> = {
   'bánh sinh nhật': 'Bông lan',
   'bánh kem': 'Bông lan',
   'sponge cake': 'Bông lan',
-  'mousse': 'Mousse',
+  mousse: 'Mousse',
   'bánh mousse': 'Mousse',
-  'bento': 'Bento',
+  bento: 'Bento',
   'bánh bento': 'Bento',
-  'bento cake': 'Bento'
+  'bento cake': 'Bento',
 };
 
 /** Quy tắc lọc giá. */
@@ -98,7 +98,7 @@ const PRICE_RULES: Record<string, (price: number) => boolean> = {
   '200-300': (price) => price >= 200_000 && price <= 300_000,
   '300-400': (price) => price > 300_000 && price <= 400_000,
   '400-500': (price) => price > 400_000 && price <= 500_000,
-  'over-500': (price) => price > 500_000
+  'over-500': (price) => price > 500_000,
 };
 
 function extractOccasions(product: any): string[] {
@@ -138,8 +138,7 @@ function extractCakeType(product: any): string {
 }
 
 function getEffectivePrice(product: any): number {
-  const rawPrice =
-    product?.salePrice ?? product?.basePrice ?? product?.price ?? 0;
+  const rawPrice = product?.salePrice ?? product?.basePrice ?? product?.price ?? 0;
   return Number(rawPrice) || 0;
 }
 
@@ -149,7 +148,7 @@ function getEffectivePrice(product: any): number {
   imports: [ProductCardComponent],
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductListComponent implements OnInit {
   private readonly productService = inject(ProductService);
@@ -166,8 +165,8 @@ export class ProductListComponent implements OnInit {
       title: 'Danh mục sản phẩm',
       options: [
         { value: 'cake', label: 'Bánh kem' },
-        { value: 'accessory', label: 'Phụ kiện sinh nhật' }
-      ]
+        { value: 'accessory', label: 'Phụ kiện sinh nhật' },
+      ],
     },
     {
       key: 'occasion',
@@ -177,8 +176,8 @@ export class ProductListComponent implements OnInit {
         { value: 'Kỷ niệm', label: 'Kỷ niệm' },
         { value: 'Tiệc cưới', label: 'Tiệc cưới' },
         { value: 'Valentine', label: 'Valentine' },
-        { value: 'Chúc mừng', label: 'Chúc mừng' }
-      ]
+        { value: 'Chúc mừng', label: 'Chúc mừng' },
+      ],
     },
     {
       key: 'filling',
@@ -189,8 +188,8 @@ export class ProductListComponent implements OnInit {
         { value: 'Phô mai', label: 'Phô mai' },
         { value: 'Trái cây tươi', label: 'Trái cây tươi' },
         { value: 'Socola', label: 'Socola' },
-        { value: 'Mứt dâu tây', label: 'Mứt dâu tây' }
-      ]
+        { value: 'Mứt dâu tây', label: 'Mứt dâu tây' },
+      ],
     },
     {
       key: 'cakeType',
@@ -198,8 +197,8 @@ export class ProductListComponent implements OnInit {
       options: [
         { value: 'Bông lan', label: 'Bông lan' },
         { value: 'Mousse', label: 'Mousse' },
-        { value: 'Bento', label: 'Bento' }
-      ]
+        { value: 'Bento', label: 'Bento' },
+      ],
     },
     {
       key: 'price',
@@ -209,9 +208,9 @@ export class ProductListComponent implements OnInit {
         { value: '200-300', label: '200.000 - 300.000' },
         { value: '300-400', label: '300.000 - 400.000' },
         { value: '400-500', label: '400.000 - 500.000' },
-        { value: 'over-500', label: 'Trên 500.000' }
-      ]
-    }
+        { value: 'over-500', label: 'Trên 500.000' },
+      ],
+    },
   ];
 
   // ---------- State ----------
@@ -228,7 +227,7 @@ export class ProductListComponent implements OnInit {
     occasion: [],
     filling: [],
     cakeType: [],
-    price: []
+    price: [],
   });
 
   readonly currentPage = signal(1);
@@ -256,8 +255,7 @@ export class ProductListComponent implements OnInit {
       const cakeType = extractCakeType(product);
       const effectivePrice = getEffectivePrice(product);
 
-      const matchesKind =
-        filters.kind.length === 0 || filters.kind.includes(productKind);
+      const matchesKind = filters.kind.length === 0 || filters.kind.includes(productKind);
 
       const matchesKeyword =
         !keyword ||
@@ -278,9 +276,7 @@ export class ProductListComponent implements OnInit {
 
       const matchesPrice =
         filters.price.length === 0 ||
-        filters.price.some(
-          (rule) => PRICE_RULES[rule]?.(effectivePrice) ?? false
-        );
+        filters.price.some((rule) => PRICE_RULES[rule]?.(effectivePrice) ?? false);
 
       return (
         matchesKind &&
@@ -294,14 +290,10 @@ export class ProductListComponent implements OnInit {
 
     switch (this.sortMode()) {
       case 'price-asc':
-        return [...result].sort(
-          (a, b) => getEffectivePrice(a) - getEffectivePrice(b)
-        );
+        return [...result].sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b));
 
       case 'price-desc':
-        return [...result].sort(
-          (a, b) => getEffectivePrice(b) - getEffectivePrice(a)
-        );
+        return [...result].sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
 
       default:
         return result;
@@ -311,7 +303,7 @@ export class ProductListComponent implements OnInit {
   // ---------- Pagination ----------
 
   readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.filteredProducts().length / PAGE_SIZE))
+    Math.max(1, Math.ceil(this.filteredProducts().length / PAGE_SIZE)),
   );
 
   readonly pagedProducts = computed(() => {
@@ -320,7 +312,7 @@ export class ProductListComponent implements OnInit {
   });
 
   readonly pageNumbers = computed(() =>
-    Array.from({ length: this.totalPages() }, (_, index) => index + 1)
+    Array.from({ length: this.totalPages() }, (_, index) => index + 1),
   );
 
   // ---------- Result title ----------
@@ -336,9 +328,8 @@ export class ProductListComponent implements OnInit {
 
   readonly hasActiveFilters = computed(
     () =>
-      Object.values(this.selectedFilters()).some(
-        (values) => values.length > 0
-      ) || this.searchKeyword().trim().length > 0
+      Object.values(this.selectedFilters()).some((values) => values.length > 0) ||
+      this.searchKeyword().trim().length > 0,
   );
 
   // ---------- Lifecycle ----------
@@ -355,15 +346,16 @@ export class ProductListComponent implements OnInit {
    * “Đã thêm vào giỏ hàng: [số lượng] × [tên bánh]” kèm nút Xem giỏ hàng.
    */
   private consumeAddedToastFromHistoryState(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
     const state = window.history.state as {
       cartAdded?: { quantity: number; productName: string };
     } | null;
 
     if (state?.cartAdded) {
       const { quantity, productName } = state.cartAdded;
-      this.showAddedCartBanner(
-        `Đã thêm vào giỏ hàng: ${quantity} × ${productName}`
-      );
+      this.showAddedCartBanner(`Đã thêm vào giỏ hàng: ${quantity} × ${productName}`);
 
       // Xóa state sau khi hiển thị để F5 không hiện lại
       const { cartAdded: _removed, ...restState } = state;
@@ -372,46 +364,31 @@ export class ProductListComponent implements OnInit {
   }
 
   private syncFiltersFromQueryParams(): void {
-    this.route.queryParamMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
-        const q = params.get('q') ?? params.get('search') ?? '';
-        const kindParam = params.get('kind');
-        const occasionParam = params.get('occasion');
-        const fillingParam = params.get('filling');
-        const cakeTypeParam =
-          params.get('cakeType') ?? params.get('category') ?? params.get('type');
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const q = params.get('q') ?? params.get('search') ?? '';
+      const kindParam = params.get('kind');
+      const occasionParam = params.get('occasion');
+      const fillingParam = params.get('filling');
+      const cakeTypeParam = params.get('cakeType') ?? params.get('category') ?? params.get('type');
 
-        this.searchKeyword.set(q);
+      this.searchKeyword.set(q);
 
-        this.selectedFilters.set({
-          kind:
-            kindParam === 'cake' || kindParam === 'accessory'
-              ? [kindParam]
-              : [],
-          occasion: occasionParam
-            ? [
-                CATEGORY_TO_OCCASION[normalizeValue(occasionParam)] ??
-                  occasionParam.trim()
-              ]
-            : [],
-          filling: fillingParam
-            ? [
-                FILLING_ALIASES[normalizeValue(fillingParam)] ??
-                  fillingParam.trim()
-              ]
-            : [],
-          cakeType: cakeTypeParam
-            ? [
-                CAKE_TYPE_ALIASES[normalizeValue(cakeTypeParam)] ??
-                  cakeTypeParam.trim()
-              ]
-            : [],
-          price: []
-        });
-
-        this.currentPage.set(1);
+      this.selectedFilters.set({
+        kind: kindParam === 'cake' || kindParam === 'accessory' ? [kindParam] : [],
+        occasion: occasionParam
+          ? [CATEGORY_TO_OCCASION[normalizeValue(occasionParam)] ?? occasionParam.trim()]
+          : [],
+        filling: fillingParam
+          ? [FILLING_ALIASES[normalizeValue(fillingParam)] ?? fillingParam.trim()]
+          : [],
+        cakeType: cakeTypeParam
+          ? [CAKE_TYPE_ALIASES[normalizeValue(cakeTypeParam)] ?? cakeTypeParam.trim()]
+          : [],
+        price: [],
       });
+
+      this.currentPage.set(1);
+    });
   }
 
   private loadProducts(): void {
@@ -436,7 +413,7 @@ export class ProductListComponent implements OnInit {
           console.error('Lỗi tải sản phẩm:', error);
           this.hasError.set(true);
           this.isLoading.set(false);
-        }
+        },
       });
   }
 
@@ -475,7 +452,7 @@ export class ProductListComponent implements OnInit {
         ...filters,
         [key]: current.includes(value)
           ? current.filter((item) => item !== value)
-          : [...current, value]
+          : [...current, value],
       };
     });
 
@@ -488,7 +465,7 @@ export class ProductListComponent implements OnInit {
       occasion: [],
       filling: [],
       cakeType: [],
-      price: []
+      price: [],
     });
 
     this.searchKeyword.set('');
@@ -498,7 +475,7 @@ export class ProductListComponent implements OnInit {
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: {},
-        replaceUrl: true
+        replaceUrl: true,
       });
     }
   }
@@ -514,7 +491,7 @@ export class ProductListComponent implements OnInit {
 
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   }
 
@@ -539,7 +516,7 @@ export class ProductListComponent implements OnInit {
     }
 
     this.router.navigate(['/product', productId], {
-      state: { returnUrl: this.router.url }
+      state: { returnUrl: this.router.url },
     });
   }
 
@@ -583,8 +560,6 @@ export class ProductListComponent implements OnInit {
     }
 
     const normalizedValues = values.map((v) => normalizeValue(v));
-    return selected.some((item) =>
-      normalizedValues.includes(normalizeValue(item))
-    );
+    return selected.some((item) => normalizedValues.includes(normalizeValue(item)));
   }
 }
