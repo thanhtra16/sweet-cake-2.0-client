@@ -1,7 +1,6 @@
 
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   Component,
   DestroyRef,
   EventEmitter,
@@ -56,7 +55,7 @@ export interface CakeCustomization {
   sweetness: string;
   message: string;
   accessories: string[];
-  accessoryVariants: Record<string, string>;
+  accessoryVariants: Record<string, string[]>;
   basePrice: number;
   sizeSurcharge: number;
   accessoryTotal: number;
@@ -80,8 +79,7 @@ type CakeCustomizerForm = FormGroup<{
   templateUrl: './cake-customizer.html',
   styleUrl: './cake-customizer.scss',
 })
-export class CakeCustomizer
-  implements OnInit, OnChanges, AfterViewInit {
+export class CakeCustomizer implements OnInit, OnChanges {
 
   @Input() basePrice = 0;
   @Input() promotionPrice: number | null = null;
@@ -104,7 +102,8 @@ export class CakeCustomizer
   accessoryTotal = 0;
   estimatedPrice = 0;
 
-  selectedAccessoryVariants: Record<string, string> = {};
+  // Mỗi phụ kiện có thể chọn nhiều biến thể.
+  selectedAccessoryVariants: Record<string, string[]> = {};
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -228,19 +227,6 @@ export class CakeCustomizer
     }
   }
 
-  /**
-   * Phát cấu hình mặc định sau khi view đã được khởi tạo.
-   * Giúp ProductDetail nhận được dữ liệu ngay khi mở trang,
-   * không cần khách hàng phải bấm chọn một tùy chọn.
-   */
-  ngAfterViewInit(): void {
-    if (!this.customizationConfig) {
-      return;
-    }
-
-    this.syncConfigurationToForm();
-  }
-
   // ========================================
   // SYNC CONFIGURATION
   // ========================================
@@ -257,6 +243,7 @@ export class CakeCustomizer
     const sweetnessOptions = this.sweetnessOptions;
 
     const current = this.form.getRawValue();
+    const config = this.customizationConfig;
 
     const getDefault = (
       options: CustomizationOption[],
@@ -275,8 +262,6 @@ export class CakeCustomizer
         ''
       );
     };
-
-    const config = this.customizationConfig;
 
     this.form.patchValue(
       {
@@ -348,6 +333,8 @@ export class CakeCustomizer
 
     const selectedIds = this.selectedAccessories;
 
+    // Mỗi loại phụ kiện được tính giá một lần,
+    // không phụ thuộc số biến thể được chọn.
     this.accessoryTotal = this.accessoryOptions
       .filter(option => selectedIds.includes(option.id))
       .reduce((total, option) => {
@@ -412,8 +399,23 @@ export class CakeCustomizer
     return this.selectedAccessories.includes(id);
   }
 
-  getSelectedVariantId(accessoryId: string): string {
-    return this.selectedAccessoryVariants[accessoryId] ?? '';
+  getSelectedVariantIds(accessoryId: string): string[] {
+    return [...(this.selectedAccessoryVariants[accessoryId] ?? [])];
+  }
+
+  getSelectedVariantLabels(accessory: AccessoryOption): string[] {
+    const selectedIds = this.getSelectedVariantIds(accessory.id);
+
+    return accessory.variants
+      .filter(variant => selectedIds.includes(variant.id))
+      .map(variant => variant.label);
+  }
+
+  isVariantSelected(accessoryId: string, variantId: string): boolean {
+    return (
+      this.selectedAccessoryVariants[accessoryId]?.includes(variantId) ??
+      false
+    );
   }
 
   toggleAccessory(id: string, checked: boolean): void {
@@ -435,13 +437,25 @@ export class CakeCustomizer
 
   onAccessoryVariantChange(
     accessoryId: string,
-    variantId: string
+    variantId: string,
+    checked: boolean
   ): void {
+    const current = this.getSelectedVariantIds(accessoryId);
+
+    const next = checked
+      ? (
+          current.includes(variantId)
+            ? current
+            : [...current, variantId]
+        )
+      : current.filter(id => id !== variantId);
+
     this.selectedAccessoryVariants = {
       ...this.selectedAccessoryVariants,
-      [accessoryId]: variantId,
+      [accessoryId]: next,
     };
 
+    this.calculatePrice();
     this.emitCustomization();
   }
 
@@ -452,6 +466,14 @@ export class CakeCustomizer
   private emitCustomization(): void {
     const values = this.form.getRawValue();
 
+    const accessoryVariants: Record<string, string[]> = {};
+
+    for (const [accessoryId, variantIds] of Object.entries(
+      this.selectedAccessoryVariants
+    )) {
+      accessoryVariants[accessoryId] = [...variantIds];
+    }
+
     this.customizationChange.emit({
       size: values.size,
       base: values.base,
@@ -459,8 +481,8 @@ export class CakeCustomizer
       frostingColor: values.frostingColor,
       sweetness: values.sweetness,
       message: values.message,
-      accessories: values.accessories,
-      accessoryVariants: { ...this.selectedAccessoryVariants },
+      accessories: [...values.accessories],
+      accessoryVariants,
       basePrice: this.appliedBasePrice,
       sizeSurcharge: this.sizeSurcharge,
       accessoryTotal: this.accessoryTotal,

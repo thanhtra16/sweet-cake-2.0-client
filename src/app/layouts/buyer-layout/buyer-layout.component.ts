@@ -1,11 +1,20 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+
+import { CartDrawerComponent } from '@features/buyer/components/cart-drawer/cart-drawer';
+import { CartService } from '@shared/services/cart.service';
 
 @Component({
   selector: 'app-buyer-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [
+    CommonModule,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    CartDrawerComponent,
+  ],
   template: `
     <div class="buyer-shell">
       <!-- ==================== HEADER (MEGA MENU) ==================== -->
@@ -29,9 +38,21 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/orders" title="Đơn hàng của tôi" class="icon-btn">
             <i class="bi bi-receipt"></i>
           </a>
-          <a routerLink="/cart" title="Giỏ hàng" class="icon-btn">
+
+          <!-- Giỏ hàng: mở ngăn kéo -->
+          <button
+            type="button"
+            class="icon-btn cart-btn"
+            title="Giỏ hàng"
+            aria-label="Mở giỏ hàng"
+            (click)="openCart()"
+          >
             <i class="bi bi-bag"></i>
-          </a>
+            @if ((cartCount$ | async); as count) {
+              <span class="cart-badge">{{ count > 99 ? '99+' : count }}</span>
+            }
+          </button>
+
           <a routerLink="/quan-ly-tai-khoan" title="Tài khoản" class="icon-btn">
             <i class="bi bi-person"></i>
           </a>
@@ -164,6 +185,9 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           </div>
         </div>
       </footer>
+
+      <!-- ==================== NGĂN KÉO GIỎ HÀNG ==================== -->
+      <app-cart-drawer></app-cart-drawer>
     </div>
   `,
   styles: [`
@@ -243,6 +267,32 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
     .icon-btn:hover {
       color: #7D562D;
+    }
+
+    /* Nút giỏ hàng (là <button>) + số lượng */
+    .cart-btn {
+      position: relative;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .cart-badge {
+      position: absolute;
+      top: -8px;
+      right: -10px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: #a46b70;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
     }
 
     /* MEGA MENU */
@@ -515,6 +565,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   `]
 })
 export class BuyerLayoutComponent {
+  private readonly cartService = inject(CartService);
+
+  /** Tổng số lượng trong giỏ, hiện trên icon giỏ hàng. */
+  readonly cartCount$ = this.cartService.totalItems$;
+
   showMegaMenu = false;
   selectedCategory = 'birthday';
 
@@ -524,4 +579,9 @@ export class BuyerLayoutComponent {
     { key: 'wedding', label: 'BÁNH CƯỚI & SỰ KIỆN' },
     { key: 'accessories', label: 'PHỤ KIỆN & NẾN' }
   ];
+
+  openCart(): void {
+    this.showMegaMenu = false;
+    this.cartService.openDrawer();
+  }
 }

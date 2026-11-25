@@ -1,3 +1,4 @@
+
 import { CommonModule, Location } from '@angular/common';
 import {
   ChangeDetectorRef,
@@ -94,8 +95,17 @@ export class Cart implements OnInit, OnDestroy {
     );
   }
 
+  // Tổng số lượng sản phẩm được chọn, tính giống ngăn kéo giỏ hàng.
   get selectedQuantity(): number {
-    return this.selectedItems.reduce((total, item) => total + item.quantity, 0);
+    return this.selectedItems.reduce(
+      (total, item) => total + item.quantity,
+      0
+    );
+  }
+
+  // Số sản phẩm được chọn, dùng thống nhất với ngăn kéo.
+  get selectedCount(): number {
+    return this.selectedQuantity;
   }
 
   get selectedSubtotal(): number {
@@ -107,6 +117,7 @@ export class Cart implements OnInit, OnDestroy {
 
   get isAllSelected(): boolean {
     const items = this.cartService.items;
+
     return (
       items.length > 0 &&
       items.every((item) => this.selectedItemIds.has(item.id))
@@ -116,6 +127,7 @@ export class Cart implements OnInit, OnDestroy {
   get isIndeterminate(): boolean {
     const selectedCount = this.selectedItems.length;
     const totalCount = this.cartService.items.length;
+
     return selectedCount > 0 && selectedCount < totalCount;
   }
 
@@ -145,11 +157,13 @@ export class Cart implements OnInit, OnDestroy {
 
   toggleItem(itemId: string): void {
     const next = new Set(this.selectedItemIds);
+
     if (next.has(itemId)) {
       next.delete(itemId);
     } else {
       next.add(itemId);
     }
+
     this.selectedItemIds = next;
     this.refreshQuote();
   }
@@ -158,6 +172,7 @@ export class Cart implements OnInit, OnDestroy {
     this.selectedItemIds = checked
       ? new Set(this.cartService.items.map((item) => item.id))
       : new Set<string>();
+
     this.refreshQuote();
   }
 
@@ -165,22 +180,26 @@ export class Cart implements OnInit, OnDestroy {
     if (value !== 'pickup' && value !== 'delivery') {
       return;
     }
+
     this.receiveMethod = value;
     this.refreshQuote();
   }
 
   async increaseQuantity(item: CartItem): Promise<void> {
     if (item.quantity >= 10) return;
+
     await this.cartService.updateQuantity(item.id, item.quantity + 1);
   }
 
   async decreaseQuantity(item: CartItem): Promise<void> {
     if (item.quantity <= 1) return;
+
     await this.cartService.updateQuantity(item.id, item.quantity - 1);
   }
 
   async removeItem(itemId: string): Promise<void> {
     await this.cartService.removeItem(itemId);
+
     const next = new Set(this.selectedItemIds);
     next.delete(itemId);
     this.selectedItemIds = next;
@@ -220,7 +239,9 @@ export class Cart implements OnInit, OnDestroy {
           items.push({
             productId: accessory.id,
             qty: cartItem.quantity,
-            ...(accessory.variantId ? { variant: accessory.variantId } : {}),
+            ...(accessory.variantId
+              ? { variant: accessory.variantId }
+              : {}),
           });
 
           this.quoteLines.push({
@@ -319,7 +340,10 @@ export class Cart implements OnInit, OnDestroy {
         .filter((index) => index >= 0);
 
       if (indexes.length > 0) {
-        const results = indexes.map((index) => this.quoteResult!.items[index]);
+        const results = indexes.map(
+          (index) => this.quoteResult!.items[index]
+        );
+
         if (
           results.every(
             (result) => result?.valid && typeof result.lineTotal === 'number'
