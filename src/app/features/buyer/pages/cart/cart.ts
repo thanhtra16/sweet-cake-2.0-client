@@ -1,4 +1,3 @@
-
 import { CommonModule, Location } from '@angular/common';
 import {
   ChangeDetectorRef,
@@ -325,6 +324,8 @@ export class Cart implements OnInit, OnDestroy {
     sessionStorage.setItem(
       this.BUY_NOW_STORAGE_KEY,
       JSON.stringify({
+        source: 'cart',
+        cartItemIds: this.selectedItems.map((item) => item.id),
         items: quotePayload.items,
         receiveMethod: this.receiveMethod,
       })
