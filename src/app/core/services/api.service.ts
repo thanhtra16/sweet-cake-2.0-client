@@ -1,4 +1,3 @@
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
@@ -68,9 +67,18 @@ export interface ProductCustomization {
 export type ProductPayload = Partial<
   Pick<
     Product,
-    | 'name' | 'kind' | 'category' | 'occasions' | 'description'
-    | 'basePrice' | 'salePrice' | 'status' | 'featured'
-    | 'availableSizes' | 'availableFillings' | 'variants'
+    | 'name'
+    | 'kind'
+    | 'category'
+    | 'occasions'
+    | 'description'
+    | 'basePrice'
+    | 'salePrice'
+    | 'status'
+    | 'featured'
+    | 'availableSizes'
+    | 'availableFillings'
+    | 'variants'
   >
 >;
 
@@ -87,7 +95,6 @@ export interface UploadedImage {
 export type CustomizationPayload = Partial<Omit<ProductCustomization, 'required'>> & {
   required?: Partial<ProductCustomization['required']>;
 };
-
 
 // Response danh sách sản phẩm
 export interface ProductListResponse {
@@ -109,13 +116,7 @@ export interface AdminProductQuery {
   status?: 'visible' | 'hidden' | '';
   page?: number;
   limit?: number;
-  sort?:
-    | 'newest'
-    | 'oldest'
-    | 'name_asc'
-    | 'name_desc'
-    | 'price_asc'
-    | 'price_desc';
+  sort?: 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'price_asc' | 'price_desc';
 }
 
 // Phương thức nhận hàng khi tính báo giá
@@ -184,9 +185,7 @@ export class ApiService {
 
   /** Gọi GET và trả về trực tiếp phần data của phản hồi. */
   get<T>(path: string): Observable<T> {
-    return this.http
-      .get<ApiResponse<T>>(`${this.apiUrl}${path}`)
-      .pipe(map((res) => res.data));
+    return this.http.get<ApiResponse<T>>(`${this.apiUrl}${path}`).pipe(map((res) => res.data));
   }
 
   /** Gọi POST và trả về trực tiếp phần data của phản hồi. */
@@ -213,43 +212,56 @@ export class ApiService {
   // GET /api/products/customization
   getProductCustomization(): Observable<ProductCustomization> {
     return this.http
-      .get<ApiResponse<ProductCustomization>>(
-        `${this.apiUrl}/products/customization`
-      )
+      .get<ApiResponse<ProductCustomization>>(`${this.apiUrl}/products/customization`)
       .pipe(map((response) => response.data));
   }
 
   // GET /api/products?kind=accessory
   getAccessories(): Observable<Product[]> {
     return this.http
-      .get<ProductListResponse>(
-        `${this.apiUrl}/products?kind=accessory&page=1&limit=100`
-      )
+      .get<ProductListResponse>(`${this.apiUrl}/products?kind=accessory&page=1&limit=100`)
       .pipe(map((response) => response.data));
   }
 
   // POST /api/orders/quote
   quoteOrder(request: QuoteRequest): Observable<OrderQuote> {
     return this.http
-      .post<ApiResponse<OrderQuote>>(
-        `${this.apiUrl}/orders/quote`,
-        request
-      )
+      .post<ApiResponse<OrderQuote>>(`${this.apiUrl}/orders/quote`, request)
       .pipe(map((response) => response.data));
   }
 
   // URL ảnh GridFS: GET /api/images/:fileId
-  getProductImageUrl(fileId: string): string {
-    return `${this.apiUrl}/images/${fileId}`;
+  getProductImageUrl(file: unknown): string {
+    if (!file) return '';
+
+    if (typeof file === 'string') {
+      const trimmed = file.trim();
+      if (!trimmed || trimmed === '[object Object]') return '';
+      if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
+        return trimmed;
+      }
+      return `${this.apiUrl}/images/${trimmed}`;
+    }
+
+    if (typeof file === 'object') {
+      const obj = file as { url?: string; _id?: unknown; id?: unknown };
+      if (obj.url && typeof obj.url === 'string') {
+        return obj.url;
+      }
+      const id = String(obj._id ?? obj.id ?? '').trim();
+      if (id && id !== '[object Object]') {
+        return `${this.apiUrl}/images/${id}`;
+      }
+    }
+
+    return '';
   }
 
   /**
    * GET /api/admin/products
    * Lấy danh sách sản phẩm kèm thông tin phân trang.
    */
-  getAdminProducts(
-    filters: AdminProductQuery = {}
-  ): Observable<ProductListResponse> {
+  getAdminProducts(filters: AdminProductQuery = {}): Observable<ProductListResponse> {
     let params = new HttpParams();
 
     Object.entries(filters).forEach(([key, value]) => {
@@ -258,35 +270,26 @@ export class ApiService {
       }
     });
 
-    return this.http.get<ProductListResponse>(
-      `${this.apiUrl}/admin/products`,
-      { params }
-    );
+    return this.http.get<ProductListResponse>(`${this.apiUrl}/admin/products`, { params });
   }
 
   /**
    * PATCH /api/admin/products/:id/status
    * Cập nhật trạng thái hiển thị sản phẩm.
    */
-  updateAdminProductStatus(
-    id: string,
-    status: 'visible' | 'hidden'
-  ): Observable<Product> {
+  updateAdminProductStatus(id: string, status: 'visible' | 'hidden'): Observable<Product> {
     return this.http
-      .patch<ApiResponse<Product>>(
-        `${this.apiUrl}/admin/products/${id}/status`,
-        { status }
-      )
+      .patch<ApiResponse<Product>>(`${this.apiUrl}/admin/products/${id}/status`, { status })
       .pipe(map((response) => response.data));
   }
 
-   /** GET /api/admin/products/:id */
+  /** GET /api/admin/products/:id */
   getAdminProductById(id: string): Observable<Product> {
     return this.http
       .get<ApiResponse<Product>>(`${this.apiUrl}/admin/products/${id}`)
       .pipe(map((res) => res.data));
   }
-/** Gọi PUT và trả về trực tiếp phần data của phản hồi. */
+  /** Gọi PUT và trả về trực tiếp phần data của phản hồi. */
   put<T>(path: string, body: unknown = {}): Observable<T> {
     return this.http
       .put<ApiResponse<T>>(`${this.apiUrl}${path}`, body)
@@ -295,9 +298,7 @@ export class ApiService {
 
   /** Gọi DELETE và trả về trực tiếp phần data của phản hồi. */
   delete<T>(path: string): Observable<T> {
-    return this.http
-      .delete<ApiResponse<T>>(`${this.apiUrl}${path}`)
-      .pipe(map((res) => res.data));
+    return this.http.delete<ApiResponse<T>>(`${this.apiUrl}${path}`).pipe(map((res) => res.data));
   }
 
   /** POST /api/admin/products */

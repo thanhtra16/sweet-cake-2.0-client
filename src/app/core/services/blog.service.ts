@@ -1,4 +1,3 @@
-
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
@@ -22,48 +21,40 @@ export interface BlogPost {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class BlogService {
-  private readonly apiUrl = 'http://localhost:5001/api/blogs';
+  private readonly apiUrl = 'http://localhost:3000/api/blogs';
 
   constructor(private http: HttpClient) {}
 
   // Lấy danh sách bài viết đã xuất bản
   getBlogs(): Observable<BlogPost[]> {
     return this.http.get<BlogPost[]>(this.apiUrl).pipe(
-      map(response => Array.isArray(response) ? response : []),
-      map(blogs => blogs.filter(
-        blog => blog.status === 'published'
-      ))
+      map((response) => (Array.isArray(response) ? response : [])),
+      map((blogs) => blogs.filter((blog) => blog.status === 'published')),
     );
   }
 
   // Lấy chi tiết bài viết theo slug
   getBlogBySlug(slug: string): Observable<BlogPost> {
-    return this.http.get<BlogPost>(
-      `${this.apiUrl}/${encodeURIComponent(slug)}`
-    );
+    return this.http.get<BlogPost>(`${this.apiUrl}/${encodeURIComponent(slug)}`);
   }
 
   // Lấy bài viết liên quan
-  getRelatedBlogs(
-    currentSlug: string,
-    category: string,
-    limit = 3
-  ): Observable<BlogPost[]> {
+  getRelatedBlogs(currentSlug: string, category: string, limit = 3): Observable<BlogPost[]> {
     return this.getBlogs().pipe(
-      map(blogs =>
+      map((blogs) =>
         blogs
-          .filter(blog => blog.slug !== currentSlug)
+          .filter((blog) => blog.slug !== currentSlug)
           .sort((a, b) => {
             const aSameCategory = a.category === category ? 1 : 0;
             const bSameCategory = b.category === category ? 1 : 0;
 
             return bSameCategory - aSameCategory;
           })
-          .slice(0, limit)
-      )
+          .slice(0, limit),
+      ),
     );
   }
 }
