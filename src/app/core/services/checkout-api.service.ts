@@ -124,13 +124,17 @@ export class CheckoutApiService {
    * POST /api/orders/:id/payment/qr
    * Tạo mã QR thanh toán cho đơn hàng.
    */
-  createQr(orderId: string): Observable<any> {
-    return this.http
-      .post<ApiResponse<any>>(
-        `${this.apiUrl}/orders/${orderId}/payment/qr`,
-        {}
-      )
-      .pipe(map((response) => response.data));
+  createQr(orderId: string, trackToken?: string): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/orders/${orderId}/payment/qr`, {},
+      { headers: trackToken ? { 'X-Track-Token': trackToken } : {} }
+    ).pipe(map((response) => response.data));
+  }
+
+  simulatePaymentWebhook(orderId: string, txnId: string, result: 'success' | 'failed'): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/orders/${orderId}/payment/mock-webhook`, { txnId, result }
+    ).pipe(map((response) => response.data));
   }
 
   /**
@@ -150,6 +154,6 @@ export class CheckoutApiService {
           },
         }
       )
-      .pipe(map((response) => response.data));
+      .pipe(map((response: any) => response?.data ?? response));
   }
 }

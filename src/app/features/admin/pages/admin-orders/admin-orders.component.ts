@@ -136,9 +136,12 @@ import { OrderService } from '../../../../core/services/order.service';
                         {{ o.payment?.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán' }}
                       </span>
                     </div>
+                    <div *ngIf="o.payment?.latePayment" class="refund-tag rf-pending">
+                      Thanh toán muộn - cần hoàn 100%
+                    </div>
                     <div *ngIf="o.refund?.status" class="refund-tag" [ngClass]="'rf-' + o.refund.status">
                       Hoàn tiền: {{ o.refund.amount | number }}đ
-                      ({{ o.refund.status === 'completed' ? 'Đã hoàn' : 'Chờ hoàn' }})
+                      ({{ ['processed', 'completed'].includes(o.refund.status) ? 'Đã hoàn' : 'Chờ hoàn' }})
                     </div>
                   </td>
 
@@ -681,9 +684,18 @@ export class AdminOrdersComponent implements OnInit {
   }
 
   onConfirmPayment(order: any) {
+    const verified = window.confirm(
+      `Chỉ xác nhận khi đã đối chiếu mã giao dịch và bằng chứng thanh toán với ngân hàng/cổng thanh toán.\\n\\nĐơn #${order.code} đã được xác minh tiền đã vào tài khoản?`
+    );
+    if (!verified) return;
     this.orderService.confirmPaymentManual(order._id).subscribe({
-      next: () => {
-        this.showToast(`Đã xác nhận thanh toán cho đơn #${order.code}`);
+      next: (result: any) => {
+        const updated = result?.data ?? result;
+        this.showToast(
+          updated?.payment?.latePayment
+            ? `Đã ghi nhận thanh toán muộn của đơn #${order.code}. Đơn không được khôi phục, cần hoàn 100%.`
+            : `Đã xác nhận thanh toán cho đơn #${order.code}`
+        );
         this.loadAdminOrders();
       },
       error: (err: any) => alert(err.error?.message || 'Lỗi xác nhận thanh toán')
