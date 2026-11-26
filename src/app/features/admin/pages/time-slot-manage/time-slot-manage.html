@@ -139,6 +139,82 @@
   }
 </section>
 
+<section class="sc-card ad-card ts-tpl-card" aria-labelledby="ts-tpl-title">
+  <div class="ad-card__head">
+    <div>
+      <h2 id="ts-tpl-title" class="ad-card-title">
+        Khung giờ mẫu mặc định (Settings)
+        <span class="ad-count">{{ templateDrafts().length }} ca</span>
+      </h2>
+      <p class="ad-subtitle">
+        Dùng làm khung giờ gợi ý trên trang đặt bánh khi ngày chọn chưa có bản ghi riêng.
+      </p>
+    </div>
+
+    <div class="ts-toolbar">
+      <button
+        type="button"
+        class="sc-btn sc-btn--secondary sc-btn--sm"
+        [disabled]="savingTemplates()"
+        (click)="addTemplate()"
+      >
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Thêm ca mẫu
+      </button>
+      <button
+        type="button"
+        class="sc-btn sc-btn--primary sc-btn--sm"
+        [disabled]="savingTemplates()"
+        (click)="saveTemplates()"
+      >
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+        {{ savingTemplates() ? 'Đang lưu...' : 'Lưu khung giờ mẫu' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sc-card__body">
+    @if (templateDrafts().length === 0) {
+      <p class="sc-help-text">Chưa có khung giờ mẫu nào. Bấm “Thêm ca mẫu” để tạo mới.</p>
+    } @else {
+      <div class="ts-tpl-list">
+        @for (tpl of templateDrafts(); track $index) {
+          <div class="ts-tpl-row">
+            <div class="sc-form-field">
+              <label class="sc-label">Khung giờ</label>
+              <input
+                class="sc-input"
+                type="text"
+                [(ngModel)]="tpl.label"
+                placeholder="Ví dụ: 09:00 - 11:00"
+              />
+            </div>
+
+            <div class="sc-form-field">
+              <label class="sc-label">Sức chứa</label>
+              <input
+                class="sc-input"
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="tpl.capacity"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="sc-btn ad-btn-danger-soft sc-btn--sm ts-tpl-remove"
+              [disabled]="savingTemplates()"
+              (click)="removeTemplate($index)"
+            >
+              <i class="fa-solid fa-trash" aria-hidden="true"></i> Xóa
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>
+
 <aside class="ad-note">
   <span class="ad-note__icon"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></span>
   <div>

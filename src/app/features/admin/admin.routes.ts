@@ -47,21 +47,21 @@ export const ADMIN_ROUTES: Routes = [
           ),
       },
       {
+        path: 'time-slots',
+        title: 'Khung giờ nhận bánh | SweetCake',
+        data: { title: 'Khung giờ nhận bánh' },
+        loadComponent: () =>
+          import(
+            './pages/time-slot-manage/time-slot-manage'
+          ).then((m) => m.TimeSlotManage),
+      },
+      {
         path: 'users',
         title: 'Quản lý khách hàng | SweetCake',
         data: { title: 'Quản lý khách hàng' },
         loadComponent: () =>
           import('./pages/user-management/user-management').then(
             (m) => m.UserManagement
-          ),
-      },
-      {
-        path: 'time-slots',
-        title: 'Khung giờ nhận bánh | SweetCake',
-        data: { title: 'Khung giờ nhận bánh' },
-        loadComponent: () =>
-          import('./pages/time-slot-manage/time-slot-manage').then(
-            (m) => m.TimeSlotManage
           ),
       },
       {

@@ -1,5 +1,4 @@
-﻿
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   ActivatedRoute,
@@ -35,7 +34,11 @@ export class AdminLayout {
 
   protected readonly navItems: NavItem[] = [
     { label: 'Quản lý đơn hàng', icon: 'fa-receipt', link: '/admin/orders' },
+    { label: 'Quản lý sản phẩm', icon: 'fa-cake-candles', link: '/admin/products' },
+    { label: 'Cấu hình tùy biến', icon: 'fa-sliders', link: '/admin/customizations' },
+    { label: 'Cấu hình khung giờ', icon: 'fa-clock', link: '/admin/time-slots' },
     { label: 'Quản lý khách hàng', icon: 'fa-users', link: '/admin/users' },
+    { label: 'Quản lý voucher', icon: 'fa-ticket', link: '/admin/vouchers' },
   ];
 
   protected readonly pageTitle = toSignal(
@@ -63,4 +66,3 @@ export class AdminLayout {
     this.router.navigateByUrl('/auth/login');
   }
 }
-
