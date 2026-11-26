@@ -1,4 +1,4 @@
-<header class="ad-head">
+﻿<header class="ad-head">
   <div>
     <h1 class="ad-title">{{ isEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm' }}</h1>
     <p class="ad-sub">Giá bán cuối cùng do hệ thống tính và kiểm tra khi khách đặt hàng.</p>
@@ -167,9 +167,11 @@
 
     <div class="ad-actions">
       <a class="sc-btn sc-btn--outline" routerLink="/admin/products">Hủy</a>
+      <a routerLink="/admin/slot-config" routerLinkActive="active" class="nav-item">🕒 Cấu hình khung giờ</a>
       <button type="submit" class="sc-btn sc-btn--primary" [disabled]="saving">
         {{ saving ? 'Đang lưu...' : (isEdit ? 'Lưu thay đổi' : 'Thêm sản phẩm') }}
       </button>
     </div>
   </form>
 }
+

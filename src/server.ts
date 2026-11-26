@@ -1,4 +1,4 @@
-import {
+﻿import {
   AngularNodeAppEngine,
   createNodeRequestHandler,
   isMainModule,
@@ -44,7 +44,7 @@ app.use((req, res, next) => {
     .then((response) =>
       response ? writeResponseToNodeResponse(response, res) : next(),
     )
-    .catch(next);
+    .catch((err) => { if (err?.name !== "AbortError") next(err); });
 });
 
 /**
@@ -66,3 +66,4 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
  * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
  */
 export const reqHandler = createNodeRequestHandler(app);
+

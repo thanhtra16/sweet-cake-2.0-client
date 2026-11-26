@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from '../../layouts/admin-layout/admin-layout';
 import { AdminOrderFullComponent } from './pages/admin-order-full/admin-order-full.component';
 import { adminGuard } from '../../core/guards/admin.guard';
