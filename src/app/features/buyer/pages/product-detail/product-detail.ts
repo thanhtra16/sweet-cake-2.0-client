@@ -213,6 +213,14 @@ export class ProductDetail
             price: Math.round(
               hasValidPromotion ? salePrice : basePrice
             ),
+
+            // Lấy ảnh đầu tiên của phụ kiện
+            imageUrl: accessory.imageIds?.[0]
+              ? this.apiService.getProductImageUrl(
+                  accessory.imageIds[0]
+                )
+              : null,
+
             variants: (accessory.variants ?? [])
               .filter(
                 (variant) =>
@@ -632,7 +640,7 @@ export class ProductDetail
             productId: accessory.id,
             productName: accessory.name,
             productKind: 'accessory',
-            imageUrl: null,
+            imageUrl: accessory.imageUrl,
             unitPrice: accessory.price,
             customization: null,
             accessories: [],
@@ -653,7 +661,7 @@ export class ProductDetail
         productId: accessory.id,
         productName: accessory.name,
         productKind: 'accessory',
-        imageUrl: null,
+        imageUrl: accessory.imageUrl,
         unitPrice: accessory.price,
         customization: null,
         accessories: [],

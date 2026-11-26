@@ -1,3 +1,4 @@
+
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
@@ -11,22 +12,29 @@ import { Product, ProductDto } from '@shared/models/product.model';
 export class ProductService {
   private readonly http = inject(HttpClient);
 
-  /** Lấy toàn bộ sản phẩm: GET {apiUrl}/products */
+  /** Lấy toàn bộ sản phẩm */
   getProducts(): Observable<Product[]> {
     return this.http
       .get<unknown>(`${environment.apiUrl}/products`, {
-        params: { kind: 'cake', limit: '100' },
+        params: { limit: '100' },
       })
-      .pipe(map((res) => this.extractList(res).map((dto) => this.toProduct(dto))));
+      .pipe(
+        map((res) =>
+          this.extractList(res).map((dto) => this.toProduct(dto)),
+        ),
+      );
   }
 
-  /** Sản phẩm nổi bật cho trang chủ: những sản phẩm có featured = true. */
+  /** Lấy sản phẩm nổi bật */
   getFeaturedProducts(limit = 8): Observable<Product[]> {
     return this.getProducts().pipe(
-      map((products) => products.filter((p) => p.bestSeller).slice(0, limit)),
+      map((products) =>
+        products.filter((p) => p.bestSeller).slice(0, limit),
+      ),
     );
   }
 
+  /** Trích xuất danh sách sản phẩm từ API */
   private extractList(res: unknown): ProductDto[] {
     if (Array.isArray(res)) {
       return res;
@@ -40,34 +48,51 @@ export class ProductService {
     if (Array.isArray(body?.data)) {
       return body.data;
     }
+
     if (Array.isArray(body?.data?.products)) {
       return body.data.products;
     }
+
     if (Array.isArray(body?.products)) {
       return body.products;
     }
+
     return [];
   }
 
-  /** Chuẩn hóa đường dẫn ảnh từ nhiều dạng dữ liệu API (string ID, object {_id}, hoặc {url}) */
+  /** Chuẩn hóa đường dẫn ảnh */
   private resolveImageUrl(raw: unknown): string {
     if (!raw) return '';
 
     if (typeof raw === 'string') {
       const trimmed = raw.trim();
-      if (!trimmed || trimmed === '[object Object]') return '';
+
+      if (!trimmed || trimmed === '[object Object]') {
+        return '';
+      }
+
+      // URL ảnh đầy đủ hoặc đường dẫn tương đối
       if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
         return trimmed;
       }
+
+      // ID ảnh lưu trong GridFS
       return `${environment.apiUrl}/images/${trimmed}`;
     }
 
     if (typeof raw === 'object') {
-      const obj = raw as { url?: string; _id?: unknown; id?: unknown };
+      const obj = raw as {
+        url?: string;
+        _id?: unknown;
+        id?: unknown;
+      };
+
       if (obj.url && typeof obj.url === 'string') {
         return obj.url;
       }
+
       const id = String(obj._id ?? obj.id ?? '').trim();
+
       if (id && id !== '[object Object]') {
         return `${environment.apiUrl}/images/${id}`;
       }
@@ -76,10 +101,19 @@ export class ProductService {
     return '';
   }
 
+  /** Chuyển dữ liệu Backend thành Product dùng ở giao diện */
   private toProduct(dto: ProductDto): Product {
-    const createdAt = dto.createdAt ? new Date(dto.createdAt).getTime() : 0;
+    const createdAt = dto.createdAt
+      ? new Date(dto.createdAt).getTime()
+      : 0;
+
     const rawAny = dto as any;
-    const firstImage = dto.imageIds?.[0] ?? rawAny.images?.[0] ?? rawAny.thumbnail ?? rawAny.image;
+
+    const firstImage =
+      dto.imageIds?.[0] ??
+      rawAny.images?.[0] ??
+      rawAny.thumbnail ??
+      rawAny.image;
 
     return {
       id: String(dto.id ?? dto._id ?? ''),
@@ -87,11 +121,17 @@ export class ProductService {
       price: Number(dto.salePrice ?? dto.basePrice ?? 0),
       thumbnail: this.resolveImageUrl(firstImage),
       category: dto.category ?? '',
-      occasion: Array.isArray(dto.occasions) ? dto.occasions.join(', ') : '',
-      flavor: Array.isArray(dto.availableFillings) ? dto.availableFillings.join(', ') : '',
+      occasion: Array.isArray(dto.occasions)
+        ? dto.occasions.join(', ')
+        : '',
+      flavor: Array.isArray(dto.availableFillings)
+        ? dto.availableFillings.join(', ')
+        : '',
       type: dto.type ?? dto.category?.replace(/^Bánh\s+/i, '') ?? '',
       bestSeller: !!dto.featured,
       createdAt,
+      kind: dto.kind ?? 'cake',
+      status: dto.status ?? 'visible',
     };
   }
 }
