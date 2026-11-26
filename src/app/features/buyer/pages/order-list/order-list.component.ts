@@ -3,7 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { OrderService } from '../../../../core/services/order.service';
-
+import { environment } from '../../../../../environments/environment';
 @Component({
   selector: 'app-order-list',
   standalone: true,
@@ -11,7 +11,6 @@ import { OrderService } from '../../../../core/services/order.service';
   template: `
     <div class="orders-page">
       <div class="page-wrapper">
-
         <!-- 1. BANNER CHÀO KHÁCH HÀNG THÂN THIẾT -->
         <section class="welcome-banner">
           <div class="welcome-left">
@@ -27,7 +26,7 @@ import { OrderService } from '../../../../core/services/order.service';
               <i class="bi bi-bag-check"></i>
               <div>
                 <span class="st-label">Tổng đơn hoàn tất</span>
-                <strong class="st-val">{{ completedCount | number:'2.0-0' }} đơn</strong>
+                <strong class="st-val">{{ completedCount | number: '2.0-0' }} đơn</strong>
               </div>
             </div>
             <div class="stat-pill">
@@ -133,7 +132,7 @@ import { OrderService } from '../../../../core/services/order.service';
                   <span class="oc-code">#{{ o.code }}</span>
                   <span class="oc-time">
                     {{ o.status === 'done' ? 'Hoàn thành:' : 'Đặt lúc:' }}
-                    {{ o.createdAt | date:'HH:mm - dd/MM/yyyy' }}
+                    {{ o.createdAt | date: 'HH:mm - dd/MM/yyyy' }}
                   </span>
                 </div>
                 <span class="oc-status" [ngClass]="'st-' + o.status">
@@ -143,15 +142,22 @@ import { OrderService } from '../../../../core/services/order.service';
 
               <div class="oc-delivery-bar">
                 <span class="method-pill">
-                  <i class="bi" [ngClass]="o.receiveMethod === 'delivery' ? 'bi-truck' : 'bi-shop'"></i>
+                  <i
+                    class="bi"
+                    [ngClass]="o.receiveMethod === 'delivery' ? 'bi-truck' : 'bi-shop'"
+                  ></i>
                   {{ o.receiveMethod === 'delivery' ? 'Giao hàng tận nơi' : 'Nhận tại cửa hàng' }}
                 </span>
                 <span class="slot-pill">
-                  Nhận: {{ o.receiveDate | date:'dd/MM/yyyy' }} ({{ o.slotLabel }})
+                  Nhận: {{ o.receiveDate | date: 'dd/MM/yyyy' }} ({{ o.slotLabel }})
                 </span>
-                <span class="addr-text" *ngIf="o.receiveMethod === 'delivery' && o.shippingAddress?.detail">
+                <span
+                  class="addr-text"
+                  *ngIf="o.receiveMethod === 'delivery' && o.shippingAddress?.detail"
+                >
                   <i class="bi bi-geo-alt"></i>
-                  {{ o.shippingAddress.detail }}, {{ o.shippingAddress.district }}, {{ o.shippingAddress.province }}
+                  {{ o.shippingAddress.detail }}, {{ o.shippingAddress.district }},
+                  {{ o.shippingAddress.province }}
                 </span>
                 <span class="addr-text" *ngIf="o.receiver?.fullName">
                   • Người nhận: {{ o.receiver.fullName }} ({{ o.receiver.phone }})
@@ -162,7 +168,7 @@ import { OrderService } from '../../../../core/services/order.service';
                 <div class="oc-item-row" *ngFor="let item of o.items">
                   <div class="thumb-wrap">
                     <img [src]="getItemImage(item)" [alt]="item.name" />
-                    <span class="qty-tag">SL: {{ item.qty | number:'2.0-0' }}</span>
+                    <span class="qty-tag">SL: {{ item.qty | number: '2.0-0' }}</span>
                   </div>
 
                   <div class="item-details">
@@ -172,15 +178,26 @@ import { OrderService } from '../../../../core/services/order.service';
                     </div>
 
                     <div class="item-specs" *ngIf="item.config || item.variant">
-                      <span *ngIf="item.config?.size">Kích cỡ: <strong>{{ item.config.size }}</strong></span>
-                      <span *ngIf="item.config?.base"> • Cốt bánh: <strong>{{ item.config.base }}</strong></span>
-                      <span *ngIf="item.config?.filling"> • Nhân: <strong>{{ item.config.filling }}</strong></span>
-                      <span *ngIf="item.config?.sweetness"> • Độ ngọt: <strong>{{ item.config.sweetness }}</strong></span>
-                      <span *ngIf="item.variant">Phân loại: <strong>{{ item.variant }}</strong></span>
+                      <span *ngIf="item.config?.size"
+                        >Kích cỡ: <strong>{{ item.config.size }}</strong></span
+                      >
+                      <span *ngIf="item.config?.base">
+                        • Cốt bánh: <strong>{{ item.config.base }}</strong></span
+                      >
+                      <span *ngIf="item.config?.filling">
+                        • Nhân: <strong>{{ item.config.filling }}</strong></span
+                      >
+                      <span *ngIf="item.config?.sweetness">
+                        • Độ ngọt: <strong>{{ item.config.sweetness }}</strong></span
+                      >
+                      <span *ngIf="item.variant"
+                        >Phân loại: <strong>{{ item.variant }}</strong></span
+                      >
                     </div>
 
                     <div class="cake-message" *ngIf="item.config?.message">
-                      <i class="bi bi-pen"></i> Chữ viết trên bánh: <em>"{{ item.config.message }}"</em>
+                      <i class="bi bi-pen"></i> Chữ viết trên bánh:
+                      <em>"{{ item.config.message }}"</em>
                     </div>
                   </div>
                 </div>
@@ -196,7 +213,8 @@ import { OrderService } from '../../../../core/services/order.service';
               <div class="cancel-note-box" *ngIf="o.status === 'cancelled'">
                 <i class="bi bi-info-circle"></i>
                 <span>
-                  Lý do hủy: {{ o.cancellation?.reason || o.cancel?.reason || 'Khách hàng yêu cầu hủy đơn' }}
+                  Lý do hủy:
+                  {{ o.cancellation?.reason || o.cancel?.reason || 'Khách hàng yêu cầu hủy đơn' }}
                 </span>
               </div>
 
@@ -221,16 +239,17 @@ import { OrderService } from '../../../../core/services/order.service';
 
                   <!-- Nút Gửi yêu cầu hủy (Frame 05) -->
                   <button
-                    *ngIf="['accepted', 'baking', 'delivering'].includes(o.status) && !o.cancelRequest?.status"
+                    *ngIf="
+                      ['accepted', 'baking', 'delivering'].includes(o.status) &&
+                      !o.cancelRequest?.status
+                    "
                     class="btn-soft-warn"
                     (click)="openRequestCancelModal(o)"
                   >
                     Yêu cầu hủy đơn
                   </button>
 
-                  <button class="btn-dark" (click)="viewDetail(o._id)">
-                    Xem chi tiết →
-                  </button>
+                  <button class="btn-dark" (click)="viewDetail(o._id)">Xem chi tiết →</button>
 
                   <button
                     *ngIf="['done', 'cancelled'].includes(o.status)"
@@ -263,13 +282,22 @@ import { OrderService } from '../../../../core/services/order.service';
                   [class.current]="getStepState(selectedOrder.status, step.key) === 'current'"
                 >
                   <div class="tl-dot">
-                    <i class="bi bi-check" *ngIf="getStepState(selectedOrder.status, step.key) === 'completed'"></i>
-                    <span *ngIf="getStepState(selectedOrder.status, step.key) !== 'completed'">{{ i + 1 }}</span>
+                    <i
+                      class="bi bi-check"
+                      *ngIf="getStepState(selectedOrder.status, step.key) === 'completed'"
+                    ></i>
+                    <span *ngIf="getStepState(selectedOrder.status, step.key) !== 'completed'">{{
+                      i + 1
+                    }}</span>
                   </div>
                   <div class="tl-info">
                     <div class="tl-title">
                       {{ step.label }}
-                      <span class="now-pill" *ngIf="getStepState(selectedOrder.status, step.key) === 'current'">Hiện tại</span>
+                      <span
+                        class="now-pill"
+                        *ngIf="getStepState(selectedOrder.status, step.key) === 'current'"
+                        >Hiện tại</span
+                      >
                     </div>
                     <div class="tl-desc">{{ step.desc }}</div>
                   </div>
@@ -321,7 +349,8 @@ import { OrderService } from '../../../../core/services/order.service';
             <div class="side-card">
               <h3>Hỗ trợ & Khiếu nại</h3>
               <p class="side-text">
-                Nếu quý khách có bất kỳ băn khoăn nào về hương vị, quy cách đóng gói hay trải nghiệm giao hàng của các đơn đã đặt:
+                Nếu quý khách có bất kỳ băn khoăn nào về hương vị, quy cách đóng gói hay trải nghiệm
+                giao hàng của các đơn đã đặt:
               </p>
               <div class="hotline-box">
                 <i class="bi bi-telephone-fill"></i>
@@ -336,7 +365,8 @@ import { OrderService } from '../../../../core/services/order.service';
             <div class="side-card tip-card">
               <h4><i class="bi bi-snow2"></i> Mẹo bảo quản bánh kem tươi</h4>
               <p class="side-text">
-                Bảo quản ở nhiệt độ 2°C - 6°C ngay khi nhận. Thưởng thức thơm ngon nhất trong vòng 24 - 48 giờ. Tránh để nơi có ánh nắng chiếu trực tiếp hoặc gần nguồn nhiệt.
+                Bảo quản ở nhiệt độ 2°C - 6°C ngay khi nhận. Thưởng thức thơm ngon nhất trong vòng
+                24 - 48 giờ. Tránh để nơi có ánh nắng chiếu trực tiếp hoặc gần nguồn nhiệt.
               </p>
             </div>
           </aside>
@@ -373,12 +403,18 @@ import { OrderService } from '../../../../core/services/order.service';
       <!-- =========================================================================
            FRAME 04: MODAL XÁC NHẬN HỦY ĐƠN HÀNG TRỰC TIẾP
            ========================================================================= -->
-      <div class="modal-backdrop" *ngIf="activeModal === 'direct_cancel' && targetOrder" (click)="closeModal()">
+      <div
+        class="modal-backdrop"
+        *ngIf="activeModal === 'direct_cancel' && targetOrder"
+        (click)="closeModal()"
+      >
         <div class="modal-box" (click)="$event.stopPropagation()">
           <button class="modal-close-btn" (click)="closeModal()">✕</button>
 
           <h2 class="modal-title">Xác nhận hủy đơn hàng</h2>
-          <p class="modal-subtitle">Vui lòng kiểm tra thông tin đơn hàng và chính sách hoàn tiền trước khi xác nhận.</p>
+          <p class="modal-subtitle">
+            Vui lòng kiểm tra thông tin đơn hàng và chính sách hoàn tiền trước khi xác nhận.
+          </p>
 
           <!-- Box sản phẩm tóm tắt -->
           <div class="m-product-card">
@@ -390,9 +426,13 @@ import { OrderService } from '../../../../core/services/order.service';
               </div>
               <div class="mp-name">{{ targetOrder.items?.[0]?.name }}</div>
               <div class="mp-meta">
-                <span *ngIf="targetOrder.items?.[0]?.config?.size">Size {{ targetOrder.items[0].config.size }} • </span>
-                <span *ngIf="targetOrder.items?.[0]?.config?.sweetness">Độ ngọt: {{ targetOrder.items[0].config.sweetness }} • </span>
-                <span>Số lượng: {{ (targetOrder.items?.[0]?.qty || 1) | number:'2.0-0' }} ổ</span>
+                <span *ngIf="targetOrder.items?.[0]?.config?.size"
+                  >Size {{ targetOrder.items[0].config.size }} •
+                </span>
+                <span *ngIf="targetOrder.items?.[0]?.config?.sweetness"
+                  >Độ ngọt: {{ targetOrder.items[0].config.sweetness }} •
+                </span>
+                <span>Số lượng: {{ targetOrder.items?.[0]?.qty || 1 | number: '2.0-0' }} ổ</span>
               </div>
             </div>
             <div class="mp-right">
@@ -404,12 +444,17 @@ import { OrderService } from '../../../../core/services/order.service';
           <!-- Cảnh báo đỏ nhạt -->
           <div class="m-alert-red">
             <i class="bi bi-info-circle"></i>
-            <span>Sau khi xác nhận, đơn hàng sẽ chuyển sang trạng thái <strong>Đã hủy</strong>. Thao tác này không thể tự khôi phục.</span>
+            <span
+              >Sau khi xác nhận, đơn hàng sẽ chuyển sang trạng thái <strong>Đã hủy</strong>. Thao
+              tác này không thể tự khôi phục.</span
+            >
           </div>
 
           <!-- Chính sách thanh toán & hoàn tiền -->
           <div class="m-policy-box">
-            <div class="mpol-head"><i class="bi bi-wallet2"></i> Chính sách thanh toán & hoàn tiền</div>
+            <div class="mpol-head">
+              <i class="bi bi-wallet2"></i> Chính sách thanh toán & hoàn tiền
+            </div>
 
             <div class="mpol-grid">
               <div>
@@ -418,31 +463,64 @@ import { OrderService } from '../../../../core/services/order.service';
               </div>
               <div>
                 <span class="lbl">Trạng thái thanh toán:</span>
-                <strong>{{ targetOrder.payment?.status === 'paid' ? 'Đã thanh toán (100%)' : 'Chưa thanh toán' }}</strong>
+                <strong>{{
+                  targetOrder.payment?.status === 'paid'
+                    ? 'Đã thanh toán (100%)'
+                    : 'Chưa thanh toán'
+                }}</strong>
               </div>
               <div>
                 <span class="lbl">Số tiền hoàn dự kiến:</span>
-                <strong class="big-refund">{{ (targetOrder.payment?.status === 'paid' ? targetOrder.total : 0) | number }} đ</strong>
-                <small>{{ targetOrder.payment?.status === 'paid' ? '(Hoàn 100% số tiền đã thanh toán, thời gian tối đa 3 ngày làm việc)' : '(Đơn chưa thanh toán nên không phát sinh hoàn tiền)' }}</small>
+                <strong class="big-refund"
+                  >{{
+                    (targetOrder.payment?.status === 'paid' ? targetOrder.total : 0) | number
+                  }}
+                  đ</strong
+                >
+                <small>{{
+                  targetOrder.payment?.status === 'paid'
+                    ? '(Hoàn 100% số tiền đã thanh toán, thời gian tối đa 3 ngày làm việc)'
+                    : '(Đơn chưa thanh toán nên không phát sinh hoàn tiền)'
+                }}</small>
               </div>
               <div>
                 <span class="lbl">Voucher & Điểm thưởng:</span>
-                <strong>Tự động hoàn lại mã ưu đãi và điểm tích lũy vào tài khoản ví sau khi hủy thành công.</strong>
+                <strong
+                  >Tự động hoàn lại mã ưu đãi và điểm tích lũy vào tài khoản ví sau khi hủy thành
+                  công.</strong
+                >
               </div>
             </div>
 
             <div class="mpol-rules">
-              <div class="rules-lbl"><i class="bi bi-info-circle"></i> Quy định hoàn tiền theo trạng thái xử lý:</div>
+              <div class="rules-lbl">
+                <i class="bi bi-info-circle"></i> Quy định hoàn tiền theo trạng thái xử lý:
+              </div>
               <div class="rules-3col">
-                <div class="rule-card" [class.active-rule]="targetOrder.status === 'pending_payment'">
+                <div
+                  class="rule-card"
+                  [class.active-rule]="targetOrder.status === 'pending_payment'"
+                >
                   <span>Chờ thanh toán:</span>
                   <strong>Không hoàn tiền</strong>
                 </div>
-                <div class="rule-card" [class.active-rule]="targetOrder.status === 'pending_approval' && targetOrder.payment?.status !== 'paid'">
+                <div
+                  class="rule-card"
+                  [class.active-rule]="
+                    targetOrder.status === 'pending_approval' &&
+                    targetOrder.payment?.status !== 'paid'
+                  "
+                >
                   <span>Chờ duyệt & chưa thanh toán:</span>
                   <strong>Không phát sinh hoàn tiền</strong>
                 </div>
-                <div class="rule-card" [class.active-rule]="targetOrder.status === 'pending_approval' && targetOrder.payment?.status === 'paid'">
+                <div
+                  class="rule-card"
+                  [class.active-rule]="
+                    targetOrder.status === 'pending_approval' &&
+                    targetOrder.payment?.status === 'paid'
+                  "
+                >
                   <span>Chờ duyệt & đã thanh toán:</span>
                   <strong>Hoàn 100% (tối đa 3 ngày)</strong>
                 </div>
@@ -492,26 +570,40 @@ import { OrderService } from '../../../../core/services/order.service';
       <!-- =========================================================================
            FRAME 05: MODAL GỬI YÊU CẦU HỦY ĐƠN HÀNG
            ========================================================================= -->
-      <div class="modal-backdrop" *ngIf="activeModal === 'request_cancel' && targetOrder" (click)="closeModal()">
+      <div
+        class="modal-backdrop"
+        *ngIf="activeModal === 'request_cancel' && targetOrder"
+        (click)="closeModal()"
+      >
         <div class="modal-box" (click)="$event.stopPropagation()">
           <button class="modal-close-btn" (click)="closeModal()">✕</button>
 
           <h2 class="modal-title">Gửi yêu cầu hủy đơn hàng</h2>
-          <p class="modal-subtitle">Đơn hàng đã được cửa hàng tiếp nhận hoặc đang chuẩn bị. Bạn có thể gửi yêu cầu để cửa hàng xem xét.</p>
+          <p class="modal-subtitle">
+            Đơn hàng đã được cửa hàng tiếp nhận hoặc đang chuẩn bị. Bạn có thể gửi yêu cầu để cửa
+            hàng xem xét.
+          </p>
 
           <!-- Box sản phẩm -->
           <div class="m-product-card">
             <img [src]="getItemImage(targetOrder.items?.[0])" alt="Bánh" />
             <div class="mp-mid">
               <div class="mp-top">
-                <span class="mp-code-line">Mã đơn: <strong>#{{ targetOrder.code }}</strong> • Ngày đặt: {{ targetOrder.createdAt | date:'HH:mm - dd/MM/yyyy' }}</span>
+                <span class="mp-code-line"
+                  >Mã đơn: <strong>#{{ targetOrder.code }}</strong> • Ngày đặt:
+                  {{ targetOrder.createdAt | date: 'HH:mm - dd/MM/yyyy' }}</span
+                >
                 <span class="mp-badge">● {{ getStatusLabel(targetOrder.status) }}</span>
               </div>
               <div class="mp-name">{{ targetOrder.items?.[0]?.name }}</div>
               <div class="mp-meta">
-                <span *ngIf="targetOrder.items?.[0]?.config?.size">Size {{ targetOrder.items[0].config.size }} • </span>
-                <span *ngIf="targetOrder.items?.[0]?.config?.sweetness">Độ ngọt: {{ targetOrder.items[0].config.sweetness }} • </span>
-                <span>Số lượng: {{ (targetOrder.items?.[0]?.qty || 1) | number:'2.0-0' }} ổ</span>
+                <span *ngIf="targetOrder.items?.[0]?.config?.size"
+                  >Size {{ targetOrder.items[0].config.size }} •
+                </span>
+                <span *ngIf="targetOrder.items?.[0]?.config?.sweetness"
+                  >Độ ngọt: {{ targetOrder.items[0].config.sweetness }} •
+                </span>
+                <span>Số lượng: {{ targetOrder.items?.[0]?.qty || 1 | number: '2.0-0' }} ổ</span>
               </div>
             </div>
             <div class="mp-right">
@@ -524,7 +616,10 @@ import { OrderService } from '../../../../core/services/order.service';
           <div class="m-note-cream">
             <div class="mnc-top">
               <i class="bi bi-info-circle"></i>
-              <span>Yêu cầu của bạn cần được cửa hàng xem xét. Đơn hàng vẫn tiếp tục được xử lý trong thời gian chờ phản hồi.</span>
+              <span
+                >Yêu cầu của bạn cần được cửa hàng xem xét. Đơn hàng vẫn tiếp tục được xử lý trong
+                thời gian chờ phản hồi.</span
+              >
             </div>
             <div class="mnc-bottom">
               <span>Hotline hỗ trợ:</span>
@@ -563,7 +658,12 @@ import { OrderService } from '../../../../core/services/order.service';
           <!-- Mô tả chi tiết lý do -->
           <div class="m-field">
             <div class="m-label-row">
-              <label>Mô tả chi tiết lý do <span class="opt-txt">({{ requestReasonOption === 'other' ? 'Bắt buộc' : 'Không bắt buộc' }})</span></label>
+              <label
+                >Mô tả chi tiết lý do
+                <span class="opt-txt"
+                  >({{ requestReasonOption === 'other' ? 'Bắt buộc' : 'Không bắt buộc' }})</span
+                ></label
+              >
               <span class="hint">Tối đa 300 ký tự</span>
             </div>
             <textarea
@@ -584,9 +684,17 @@ import { OrderService } from '../../../../core/services/order.service';
                   <strong>Đã tiếp nhận</strong>
                   <span class="pct-pill">Hoàn 30%</span>
                 </div>
-                <p>Nếu yêu cầu hủy được cửa hàng chấp nhận, mức hoàn tiền dự kiến là 30% tổng số tiền đã thanh toán.</p>
+                <p>
+                  Nếu yêu cầu hủy được cửa hàng chấp nhận, mức hoàn tiền dự kiến là 30% tổng số tiền
+                  đã thanh toán.
+                </p>
               </div>
-              <div class="rule-card" [class.active-rule]="targetOrder.status === 'baking' || targetOrder.status === 'delivering'">
+              <div
+                class="rule-card"
+                [class.active-rule]="
+                  targetOrder.status === 'baking' || targetOrder.status === 'delivering'
+                "
+              >
                 <div class="rc-top">
                   <strong>Đang làm bánh</strong>
                   <span class="pct-pill gray">Hoàn 0%</span>
@@ -598,7 +706,9 @@ import { OrderService } from '../../../../core/services/order.service';
                   <strong>Lỗi từ cửa hàng</strong>
                   <span class="pct-pill">Hoàn 100%</span>
                 </div>
-                <p>Khách hàng được hoàn 100% số tiền đã thanh toán nếu phát sinh lỗi từ tiệm bánh.</p>
+                <p>
+                  Khách hàng được hoàn 100% số tiền đã thanh toán nếu phát sinh lỗi từ tiệm bánh.
+                </p>
               </div>
             </div>
           </div>
@@ -606,7 +716,9 @@ import { OrderService } from '../../../../core/services/order.service';
           <p *ngIf="modalError" class="m-error">{{ modalError }}</p>
 
           <div class="m-actions-row">
-            <button class="btn-modal-text" (click)="closeModal()" [disabled]="submitting">Quay lại</button>
+            <button class="btn-modal-text" (click)="closeModal()" [disabled]="submitting">
+              Quay lại
+            </button>
             <button class="btn-modal-dark" (click)="submitRequestCancel()" [disabled]="submitting">
               {{ submitting ? 'Đang gửi yêu cầu...' : 'Gửi yêu cầu hủy ➤' }}
             </button>
@@ -617,7 +729,11 @@ import { OrderService } from '../../../../core/services/order.service';
       <!-- =========================================================================
            FRAME 06: MODAL KẾT QUẢ GỬI YÊU CẦU HỦY THÀNH CÔNG
            ========================================================================= -->
-      <div class="modal-backdrop" *ngIf="activeModal === 'request_success' && targetOrder" (click)="closeModal()">
+      <div
+        class="modal-backdrop"
+        *ngIf="activeModal === 'request_success' && targetOrder"
+        (click)="closeModal()"
+      >
         <div class="modal-box modal-success-box" (click)="$event.stopPropagation()">
           <button class="modal-close-btn" (click)="closeModal()">✕</button>
 
@@ -625,7 +741,8 @@ import { OrderService } from '../../../../core/services/order.service';
             <div class="hourglass-badge"><i class="bi bi-hourglass-split"></i></div>
             <h2 class="modal-title center">Gửi yêu cầu thành công</h2>
             <p class="modal-subtitle center">
-              Yêu cầu hủy đơn của bạn đã được gửi đến cửa hàng. Vui lòng chờ cửa hàng xem xét và phản hồi.
+              Yêu cầu hủy đơn của bạn đã được gửi đến cửa hàng. Vui lòng chờ cửa hàng xem xét và
+              phản hồi.
             </p>
           </div>
 
@@ -634,14 +751,21 @@ import { OrderService } from '../../../../core/services/order.service';
             <img [src]="getItemImage(targetOrder.items?.[0])" alt="Bánh" />
             <div class="mp-mid">
               <div class="mp-top">
-                <strong>#{{ targetOrder.code }} • {{ targetOrder.createdAt | date:'HH:mm - dd/MM/yyyy' }}</strong>
+                <strong
+                  >#{{ targetOrder.code }} •
+                  {{ targetOrder.createdAt | date: 'HH:mm - dd/MM/yyyy' }}</strong
+                >
                 <span class="mp-badge">● Đang chờ xử lý</span>
               </div>
               <div class="mp-name">{{ targetOrder.items?.[0]?.name }}</div>
               <div class="mp-meta">
-                <span *ngIf="targetOrder.items?.[0]?.config?.size">Size {{ targetOrder.items[0].config.size }} • </span>
-                <span *ngIf="targetOrder.items?.[0]?.config?.sweetness">Độ ngọt: {{ targetOrder.items[0].config.sweetness }} • </span>
-                <span>SL: {{ (targetOrder.items?.[0]?.qty || 1) | number:'2.0-0' }} ổ</span>
+                <span *ngIf="targetOrder.items?.[0]?.config?.size"
+                  >Size {{ targetOrder.items[0].config.size }} •
+                </span>
+                <span *ngIf="targetOrder.items?.[0]?.config?.sweetness"
+                  >Độ ngọt: {{ targetOrder.items[0].config.sweetness }} •
+                </span>
+                <span>SL: {{ targetOrder.items?.[0]?.qty || 1 | number: '2.0-0' }} ổ</span>
               </div>
               <div class="mp-price-inline">{{ targetOrder.total | number }}đ</div>
             </div>
@@ -657,7 +781,9 @@ import { OrderService } from '../../../../core/services/order.service';
           <div class="m-summary-strip flex-between">
             <div>
               <div class="ms-lbl"><i class="bi bi-wallet2"></i> CHÍNH SÁCH HOÀN TIỀN DỰ KIẾN</div>
-              <span>Trạng thái: <strong>{{ getStatusLabel(targetOrder.status) }}</strong></span>
+              <span
+                >Trạng thái: <strong>{{ getStatusLabel(targetOrder.status) }}</strong></span
+              >
             </div>
             <span class="refund-pct-tag">
               Mức hoàn {{ targetOrder.status === 'accepted' ? '30%' : '0%' }}
@@ -669,7 +795,9 @@ import { OrderService } from '../../../../core/services/order.service';
             <div class="mnc-top">
               <i class="bi bi-info-circle"></i>
               <span>
-                <strong>Lưu ý quan trọng:</strong> Đơn hàng vẫn giữ trạng thái hiện tại, chưa chuyển thành Đã hủy. Thợ làm bánh vẫn đang tiếp tục hoàn thiện đơn theo lịch hẹn đã cam kết.
+                <strong>Lưu ý quan trọng:</strong> Đơn hàng vẫn giữ trạng thái hiện tại, chưa chuyển
+                thành Đã hủy. Thợ làm bánh vẫn đang tiếp tục hoàn thiện đơn theo lịch hẹn đã cam
+                kết.
               </span>
             </div>
           </div>
@@ -684,509 +812,1265 @@ import { OrderService } from '../../../../core/services/order.service';
           </div>
         </div>
       </div>
-
     </div>
   `,
-  styles: [`
-    .orders-page {
-      background-color: #F9F6F2;
-      color: #2D1B10;
-      font-family: 'Inter', sans-serif;
-      padding: 28px 20px 60px;
-    }
+  styles: [
+    `
+      .orders-page {
+        background-color: #f9f6f2;
+        color: #2d1b10;
+        font-family: 'Inter', sans-serif;
+        padding: 28px 20px 60px;
+      }
 
-    .page-wrapper {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+      .page-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-    /* Welcome Banner */
-    .welcome-banner {
-      background: #FFFFFF;
-      border: 1px solid #EAE2D9;
-      border-radius: 14px;
-      padding: 20px 26px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 18px;
-      box-shadow: 0 2px 10px rgba(45, 27, 16, 0.03);
-    }
+      /* Welcome Banner */
+      .welcome-banner {
+        background: #ffffff;
+        border: 1px solid #eae2d9;
+        border-radius: 14px;
+        padding: 20px 26px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 10px rgba(45, 27, 16, 0.03);
+      }
 
-    .welcome-left { display: flex; align-items: center; gap: 16px; }
-    .tier-icon { width: 48px; height: 48px; border-radius: 50%; background: #F4ECE3; color: #7D562D; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-    .tier-meta { font-size: 11px; font-weight: 600; color: #8C7564; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .welcome-left h1 { font-family: 'Playfair Display', serif; font-size: 22px; margin: 0; color: #2D1B10; }
-    .welcome-stats { display: flex; gap: 12px; }
-    .stat-pill { display: flex; align-items: center; gap: 10px; background: #FAF7F4; border: 1px solid #EDE5DC; padding: 10px 16px; border-radius: 10px; }
-    .stat-pill i { font-size: 18px; color: #7D562D; }
-    .st-label { display: block; font-size: 11px; color: #7D6B5D; }
-    .st-val { font-size: 14px; color: #2D1B10; }
+      .welcome-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .tier-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #f4ece3;
+        color: #7d562d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+      .tier-meta {
+        font-size: 11px;
+        font-weight: 600;
+        color: #8c7564;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+      .welcome-left h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        margin: 0;
+        color: #2d1b10;
+      }
+      .welcome-stats {
+        display: flex;
+        gap: 12px;
+      }
+      .stat-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #faf7f4;
+        border: 1px solid #ede5dc;
+        padding: 10px 16px;
+        border-radius: 10px;
+      }
+      .stat-pill i {
+        font-size: 18px;
+        color: #7d562d;
+      }
+      .st-label {
+        display: block;
+        font-size: 11px;
+        color: #7d6b5d;
+      }
+      .st-val {
+        font-size: 14px;
+        color: #2d1b10;
+      }
 
-    /* Filter Bar */
-    .filter-bar { background: #FFFFFF; border: 1px solid #EAE2D9; border-radius: 12px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
-    .search-input-wrap { flex: 1; min-width: 240px; display: flex; align-items: center; gap: 10px; color: #8C7564; }
-    .search-input-wrap input { border: none; outline: none; width: 100%; font-size: 13px; color: #2D1B10; }
-    .filter-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .phone-box { display: flex; align-items: center; gap: 6px; border: 1px solid #E2D9CF; border-radius: 8px; padding: 6px 10px; font-size: 12px; color: #7D6B5D; }
-    .phone-box input { border: none; outline: none; width: 115px; font-size: 12px; }
-    .status-select { border: 1px solid #E2D9CF; border-radius: 8px; padding: 7px 12px; font-size: 12px; color: #2D1B10; background: #fff; outline: none; }
-    .btn-track-mini { text-decoration: none; font-size: 12px; font-weight: 600; color: #7D562D; background: #F6EFE7; padding: 7px 12px; border-radius: 8px; }
+      /* Filter Bar */
+      .filter-bar {
+        background: #ffffff;
+        border: 1px solid #eae2d9;
+        border-radius: 12px;
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .search-input-wrap {
+        flex: 1;
+        min-width: 240px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #8c7564;
+      }
+      .search-input-wrap input {
+        border: none;
+        outline: none;
+        width: 100%;
+        font-size: 13px;
+        color: #2d1b10;
+      }
+      .filter-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .phone-box {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #e2d9cf;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        color: #7d6b5d;
+      }
+      .phone-box input {
+        border: none;
+        outline: none;
+        width: 115px;
+        font-size: 12px;
+      }
+      .status-select {
+        border: 1px solid #e2d9cf;
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 12px;
+        color: #2d1b10;
+        background: #fff;
+        outline: none;
+      }
+      .btn-track-mini {
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 600;
+        color: #7d562d;
+        background: #f6efe7;
+        padding: 7px 12px;
+        border-radius: 8px;
+      }
 
-    /* Tabs */
-    .main-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .m-tab { display: flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 24px; border: 1px solid #E2D9CF; background: #FFFFFF; color: #5E4B3E; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .m-tab.active { background: #7D562D; border-color: #7D562D; color: #FFFFFF; }
-    .count-badge { background: rgba(0, 0, 0, 0.12); padding: 2px 8px; border-radius: 12px; font-size: 11px; }
-    .m-tab.active .count-badge { background: rgba(255, 255, 255, 0.25); }
+      /* Tabs */
+      .main-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .m-tab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border-radius: 24px;
+        border: 1px solid #e2d9cf;
+        background: #ffffff;
+        color: #5e4b3e;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .m-tab.active {
+        background: #7d562d;
+        border-color: #7d562d;
+        color: #ffffff;
+      }
+      .count-badge {
+        background: rgba(0, 0, 0, 0.12);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
+      .m-tab.active .count-badge {
+        background: rgba(255, 255, 255, 0.25);
+      }
 
-    .toast-banner { background: #E6F6EC; border: 1px solid #B7EB8F; color: #15803D; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+      .toast-banner {
+        background: #e6f6ec;
+        border: 1px solid #b7eb8f;
+        color: #15803d;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-    /* Content Grid */
-    .content-grid { display: grid; grid-template-columns: 1fr 330px; gap: 22px; align-items: start; }
-    .left-column { display: flex; flex-direction: column; gap: 16px; }
-    .empty-card { background: #FFFFFF; border: 1px solid #EAE2D9; border-radius: 14px; padding: 48px 20px; text-align: center; color: #7D6B5D; font-size: 14px; }
-    .empty-card.error { color: #BA1A1A; border-color: #F5C2C7; background: #FFF5F5; }
+      /* Content Grid */
+      .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 330px;
+        gap: 22px;
+        align-items: start;
+      }
+      .left-column {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .empty-card {
+        background: #ffffff;
+        border: 1px solid #eae2d9;
+        border-radius: 14px;
+        padding: 48px 20px;
+        text-align: center;
+        color: #7d6b5d;
+        font-size: 14px;
+      }
+      .empty-card.error {
+        color: #ba1a1a;
+        border-color: #f5c2c7;
+        background: #fff5f5;
+      }
 
-    /* Order Card */
-    .order-card { background: #FFFFFF; border: 1px solid #EAE2D9; border-radius: 14px; padding: 20px 22px; box-shadow: 0 2px 10px rgba(45, 27, 16, 0.02); cursor: pointer; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
-    .order-card:hover, .order-card.selected-card { border-color: #7D562D; box-shadow: 0 6px 20px rgba(125, 86, 45, 0.08); }
-    .oc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
-    .oc-code { font-weight: 700; font-size: 15px; color: #2D1B10; margin-right: 10px; }
-    .oc-time { font-size: 12px; color: #8C7564; }
-    .oc-status { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 14px; background: #FDF3E7; color: #B45309; }
-    .st-done { background: #E6F6EC; color: #15803D; }
-    .st-cancelled { background: #FEE2E2; color: #B91C1C; }
+      /* Order Card */
+      .order-card {
+        background: #ffffff;
+        border: 1px solid #eae2d9;
+        border-radius: 14px;
+        padding: 20px 22px;
+        box-shadow: 0 2px 10px rgba(45, 27, 16, 0.02);
+        cursor: pointer;
+        transition:
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .order-card:hover,
+      .order-card.selected-card {
+        border-color: #7d562d;
+        box-shadow: 0 6px 20px rgba(125, 86, 45, 0.08);
+      }
+      .oc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .oc-code {
+        font-weight: 700;
+        font-size: 15px;
+        color: #2d1b10;
+        margin-right: 10px;
+      }
+      .oc-time {
+        font-size: 12px;
+        color: #8c7564;
+      }
+      .oc-status {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 14px;
+        background: #fdf3e7;
+        color: #b45309;
+      }
+      .st-done {
+        background: #e6f6ec;
+        color: #15803d;
+      }
+      .st-cancelled {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
 
-    .oc-delivery-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #6B584C; padding-bottom: 14px; border-bottom: 1px solid #F3ECE4; margin-bottom: 14px; }
-    .method-pill { background: #F5EFEA; color: #2D1B10; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
-    .slot-pill { background: #FAF6F2; border: 1px solid #EBE2D8; padding: 2px 8px; border-radius: 6px; }
+      .oc-delivery-bar {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 12px;
+        color: #6b584c;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f3ece4;
+        margin-bottom: 14px;
+      }
+      .method-pill {
+        background: #f5efea;
+        color: #2d1b10;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 6px;
+      }
+      .slot-pill {
+        background: #faf6f2;
+        border: 1px solid #ebe2d8;
+        padding: 2px 8px;
+        border-radius: 6px;
+      }
 
-    .oc-items { display: flex; flex-direction: column; gap: 14px; }
-    .oc-item-row { display: flex; gap: 16px; align-items: flex-start; }
-    .thumb-wrap { position: relative; width: 84px; height: 84px; border-radius: 10px; overflow: hidden; flex-shrink: 0; border: 1px solid #EDE5DC; }
-    .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
-    .qty-tag { position: absolute; bottom: 5px; left: 5px; background: rgba(45, 27, 16, 0.85); color: #fff; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
-    .item-details { flex: 1; }
-    .item-top-line { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
-    .item-top-line h4 { font-family: 'Playfair Display', serif; font-size: 16px; margin: 0; color: #2D1B10; }
-    .item-price { font-weight: 700; font-size: 14px; color: #2D1B10; }
-    .item-specs { font-size: 12px; color: #6B584C; line-height: 1.5; }
-    .cake-message { margin-top: 6px; background: #FAF6F2; border-left: 3px solid #7D562D; padding: 4px 10px; font-size: 12px; color: #5E4B3E; border-radius: 0 6px 6px 0; }
+      .oc-items {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .oc-item-row {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .thumb-wrap {
+        position: relative;
+        width: 84px;
+        height: 84px;
+        border-radius: 10px;
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 1px solid #ede5dc;
+      }
+      .thumb-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .qty-tag {
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
+        background: rgba(45, 27, 16, 0.85);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .item-details {
+        flex: 1;
+      }
+      .item-top-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 4px;
+      }
+      .item-top-line h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 16px;
+        margin: 0;
+        color: #2d1b10;
+      }
+      .item-price {
+        font-weight: 700;
+        font-size: 14px;
+        color: #2d1b10;
+      }
+      .item-specs {
+        font-size: 12px;
+        color: #6b584c;
+        line-height: 1.5;
+      }
+      .cake-message {
+        margin-top: 6px;
+        background: #faf6f2;
+        border-left: 3px solid #7d562d;
+        padding: 4px 10px;
+        font-size: 12px;
+        color: #5e4b3e;
+        border-radius: 0 6px 6px 0;
+      }
 
-    .req-pending-box { margin-top: 12px; background: #FFFBE6; border: 1px solid #FFE58F; color: #B45309; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
-    .cancel-note-box { margin-top: 12px; background: #FFF5F5; border: 1px solid #FED7D7; color: #9B2C2C; padding: 8px 12px; border-radius: 8px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+      .req-pending-box {
+        margin-top: 12px;
+        background: #fffbe6;
+        border: 1px solid #ffe58f;
+        color: #b45309;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cancel-note-box {
+        margin-top: 12px;
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        color: #9b2c2c;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-    .oc-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed #E6DDD3; }
-    .total-block { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .t-lbl { font-size: 12px; color: #7D6B5D; }
-    .t-val { font-size: 17px; color: #2D1B10; }
-    .pay-badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: #F3ECE4; color: #7D562D; font-weight: 600; }
-    .pay-badge.paid { background: #E6F6EC; color: #15803D; }
+      .oc-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px dashed #e6ddd3;
+      }
+      .total-block {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .t-lbl {
+        font-size: 12px;
+        color: #7d6b5d;
+      }
+      .t-val {
+        font-size: 17px;
+        color: #2d1b10;
+      }
+      .pay-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: #f3ece4;
+        color: #7d562d;
+        font-weight: 600;
+      }
+      .pay-badge.paid {
+        background: #e6f6ec;
+        color: #15803d;
+      }
 
-    .oc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn-dark { background: #2D1B10; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .btn-brown { background: #7D562D; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
-    .btn-soft-danger { background: #FFF1F0; color: #CF1322; border: 1px solid #FFA39E; padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .btn-soft-warn { background: #FFFBE6; color: #D46B08; border: 1px solid #FFE58F; padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+      .oc-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .btn-dark {
+        background: #2d1b10;
+        color: #fff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-brown {
+        background: #7d562d;
+        color: #fff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .btn-soft-danger {
+        background: #fff1f0;
+        color: #cf1322;
+        border: 1px solid #ffa39e;
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-soft-warn {
+        background: #fffbe6;
+        color: #d46b08;
+        border: 1px solid #ffe58f;
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
 
-    /* Sidebar */
-    .right-sidebar { display: flex; flex-direction: column; gap: 16px; }
-    .side-card { background: #FFFFFF; border: 1px solid #EAE2D9; border-radius: 14px; padding: 18px 20px; }
-    .sc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .sc-sub { font-size: 10px; font-weight: 700; color: #8C7564; letter-spacing: 0.6px; }
-    .side-card h3 { font-family: 'Playfair Display', serif; font-size: 17px; margin: 2px 0 0 0; color: #2D1B10; }
-    .side-card h4 { font-size: 14px; margin: 0 0 8px 0; color: #2D1B10; }
-    .link-detail { font-size: 12px; font-weight: 600; color: #7D562D; cursor: pointer; }
+      /* Sidebar */
+      .right-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .side-card {
+        background: #ffffff;
+        border: 1px solid #eae2d9;
+        border-radius: 14px;
+        padding: 18px 20px;
+      }
+      .sc-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .sc-sub {
+        font-size: 10px;
+        font-weight: 700;
+        color: #8c7564;
+        letter-spacing: 0.6px;
+      }
+      .side-card h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 17px;
+        margin: 2px 0 0 0;
+        color: #2d1b10;
+      }
+      .side-card h4 {
+        font-size: 14px;
+        margin: 0 0 8px 0;
+        color: #2d1b10;
+      }
+      .link-detail {
+        font-size: 12px;
+        font-weight: 600;
+        color: #7d562d;
+        cursor: pointer;
+      }
 
-    .timeline-list { display: flex; flex-direction: column; gap: 14px; }
-    .tl-step { display: flex; gap: 12px; align-items: flex-start; opacity: 0.45; }
-    .tl-step.completed, .tl-step.current { opacity: 1; }
-    .tl-dot { width: 22px; height: 22px; border-radius: 50%; background: #EAE2D9; color: #5E4B3E; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
-    .tl-step.completed .tl-dot { background: #F6E6D4; color: #7D562D; }
-    .tl-step.current .tl-dot { background: #7D562D; color: #FFFFFF; }
-    .tl-title { font-size: 13px; font-weight: 600; color: #2D1B10; display: flex; align-items: center; gap: 6px; }
-    .now-pill { background: #FDF3E7; color: #B45309; font-size: 10px; padding: 1px 7px; border-radius: 10px; }
-    .tl-desc { font-size: 11px; color: #8C7564; margin-top: 2px; }
+      .timeline-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .tl-step {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        opacity: 0.45;
+      }
+      .tl-step.completed,
+      .tl-step.current {
+        opacity: 1;
+      }
+      .tl-dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #eae2d9;
+        color: #5e4b3e;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .tl-step.completed .tl-dot {
+        background: #f6e6d4;
+        color: #7d562d;
+      }
+      .tl-step.current .tl-dot {
+        background: #7d562d;
+        color: #ffffff;
+      }
+      .tl-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2d1b10;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .now-pill {
+        background: #fdf3e7;
+        color: #b45309;
+        font-size: 10px;
+        padding: 1px 7px;
+        border-radius: 10px;
+      }
+      .tl-desc {
+        font-size: 11px;
+        color: #8c7564;
+        margin-top: 2px;
+      }
 
-    .year-pill { background: #F6EFE7; color: #7D562D; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 10px; }
-    .spend-label { font-size: 11px; color: #8C7564; }
-    .spend-amount { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #2D1B10; margin: 4px 0 14px; }
-    .mb-top { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
-    .mb-track { height: 7px; background: #EFE8E0; border-radius: 6px; overflow: hidden; }
-    .mb-fill { height: 100%; background: #7D562D; }
-    .voucher-box { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #FAF7F4; border: 1px dashed #D8CBBF; padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; }
-    .voucher-box strong { font-size: 12px; color: #7D562D; }
-    .voucher-box p { font-size: 11px; color: #6B584C; margin: 2px 0 0 0; }
-    .btn-brown-sm { background: #7D562D; color: #fff; font-size: 11px; font-weight: 600; padding: 6px 10px; border-radius: 6px; text-decoration: none; white-space: nowrap; }
-    .side-text { font-size: 12px; color: #6B584C; line-height: 1.55; margin: 8px 0 12px; }
-    .hotline-box { display: flex; align-items: center; gap: 12px; background: #FAF7F4; border: 1px solid #EDE5DC; padding: 12px; border-radius: 10px; }
-    .hotline-box i { width: 34px; height: 34px; border-radius: 50%; background: #7D562D; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .hotline-box span { display: block; font-size: 11px; color: #8C7564; }
-    .hotline-box strong { display: block; font-size: 16px; color: #2D1B10; }
-    .hotline-box small { font-size: 10px; color: #8C7564; }
-    .tip-card { background: #FAF7F4; }
+      .year-pill {
+        background: #f6efe7;
+        color: #7d562d;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 10px;
+      }
+      .spend-label {
+        font-size: 11px;
+        color: #8c7564;
+      }
+      .spend-amount {
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #2d1b10;
+        margin: 4px 0 14px;
+      }
+      .mb-top {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        margin-bottom: 6px;
+      }
+      .mb-track {
+        height: 7px;
+        background: #efe8e0;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .mb-fill {
+        height: 100%;
+        background: #7d562d;
+      }
+      .voucher-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        background: #faf7f4;
+        border: 1px dashed #d8cbbf;
+        padding: 10px 12px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+      }
+      .voucher-box strong {
+        font-size: 12px;
+        color: #7d562d;
+      }
+      .voucher-box p {
+        font-size: 11px;
+        color: #6b584c;
+        margin: 2px 0 0 0;
+      }
+      .btn-brown-sm {
+        background: #7d562d;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 6px 10px;
+        border-radius: 6px;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .side-text {
+        font-size: 12px;
+        color: #6b584c;
+        line-height: 1.55;
+        margin: 8px 0 12px;
+      }
+      .hotline-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #faf7f4;
+        border: 1px solid #ede5dc;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .hotline-box i {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #7d562d;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+      .hotline-box span {
+        display: block;
+        font-size: 11px;
+        color: #8c7564;
+      }
+      .hotline-box strong {
+        display: block;
+        font-size: 16px;
+        color: #2d1b10;
+      }
+      .hotline-box small {
+        font-size: 10px;
+        color: #8c7564;
+      }
+      .tip-card {
+        background: #faf7f4;
+      }
 
-    /* Guarantees Strip */
-    .guarantees-strip { margin-top: 40px; padding-top: 28px; border-top: 1px solid #E5DDD4; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-    .g-item { display: flex; gap: 14px; align-items: flex-start; }
-    .g-icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #D8CBBF; display: flex; align-items: center; justify-content: center; color: #7D562D; font-size: 18px; flex-shrink: 0; }
-    .g-item h4 { font-size: 14px; margin: 0 0 4px 0; color: #2D1B10; }
-    .g-item p { font-size: 12px; color: #7D6B5D; line-height: 1.5; margin: 0; }
+      /* Guarantees Strip */
+      .guarantees-strip {
+        margin-top: 40px;
+        padding-top: 28px;
+        border-top: 1px solid #e5ddd4;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+      }
+      .g-item {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .g-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid #d8cbbf;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #7d562d;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .g-item h4 {
+        font-size: 14px;
+        margin: 0 0 4px 0;
+        color: #2d1b10;
+      }
+      .g-item p {
+        font-size: 12px;
+        color: #7d6b5d;
+        line-height: 1.5;
+        margin: 0;
+      }
 
-    /* =========================================================================
+      /* =========================================================================
        STYLES CHO 3 HỘP THOẠI HỦY ĐƠN (FRAME 04, 05, 06)
        ========================================================================= */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(28, 17, 10, 0.55);
-      backdrop-filter: blur(2px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      padding: 16px;
-      overflow-y: auto;
-    }
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(28, 17, 10, 0.55);
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 16px;
+        overflow-y: auto;
+      }
 
-    .modal-box {
-      position: relative;
-      background: #FFFFFF;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 620px;
-      max-height: 92vh;
-      overflow-y: auto;
-      padding: 28px 32px 22px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
-      color: #2D1B10;
-    }
+      .modal-box {
+        position: relative;
+        background: #ffffff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 620px;
+        max-height: 92vh;
+        overflow-y: auto;
+        padding: 28px 32px 22px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+        color: #2d1b10;
+      }
 
-    .modal-success-box {
-      max-width: 540px;
-    }
+      .modal-success-box {
+        max-width: 540px;
+      }
 
-    .modal-close-btn {
-      position: absolute;
-      top: 18px;
-      right: 20px;
-      background: transparent;
-      border: none;
-      font-size: 18px;
-      color: #7D6B5D;
-      cursor: pointer;
-    }
+      .modal-close-btn {
+        position: absolute;
+        top: 18px;
+        right: 20px;
+        background: transparent;
+        border: none;
+        font-size: 18px;
+        color: #7d6b5d;
+        cursor: pointer;
+      }
 
-    .modal-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 24px;
-      font-weight: 700;
-      margin: 0 0 6px 0;
-      color: #2D1B10;
-    }
+      .modal-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 6px 0;
+        color: #2d1b10;
+      }
 
-    .modal-title.center, .modal-subtitle.center {
-      text-align: center;
-    }
+      .modal-title.center,
+      .modal-subtitle.center {
+        text-align: center;
+      }
 
-    .modal-subtitle {
-      font-size: 13px;
-      color: #7D6B5D;
-      margin: 0 0 18px 0;
-      line-height: 1.5;
-    }
+      .modal-subtitle {
+        font-size: 13px;
+        color: #7d6b5d;
+        margin: 0 0 18px 0;
+        line-height: 1.5;
+      }
 
-    /* Product summary box in modal */
-    .m-product-card {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      background: #FAF7F4;
-      border: 1px solid #EDE5DC;
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin-bottom: 14px;
-    }
+      /* Product summary box in modal */
+      .m-product-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: #faf7f4;
+        border: 1px solid #ede5dc;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+      }
 
-    .m-product-card img {
-      width: 60px;
-      height: 60px;
-      border-radius: 8px;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
+      .m-product-card img {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
 
-    .mp-mid { flex: 1; }
-    .mp-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; font-size: 12px; }
-    .mp-code-line { color: #6B584C; font-size: 11px; }
-    .mp-badge { background: #FDF3E7; color: #B45309; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
-    .mp-name { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 15px; color: #2D1B10; }
-    .mp-meta { font-size: 11px; color: #7D6B5D; margin-top: 2px; }
-    .mp-price-inline { font-weight: 700; font-size: 14px; color: #2D1B10; margin-top: 4px; }
+      .mp-mid {
+        flex: 1;
+      }
+      .mp-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+        font-size: 12px;
+      }
+      .mp-code-line {
+        color: #6b584c;
+        font-size: 11px;
+      }
+      .mp-badge {
+        background: #fdf3e7;
+        color: #b45309;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+      .mp-name {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 15px;
+        color: #2d1b10;
+      }
+      .mp-meta {
+        font-size: 11px;
+        color: #7d6b5d;
+        margin-top: 2px;
+      }
+      .mp-price-inline {
+        font-weight: 700;
+        font-size: 14px;
+        color: #2d1b10;
+        margin-top: 4px;
+      }
 
-    .mp-right { text-align: right; flex-shrink: 0; }
-    .mp-right span { display: block; font-size: 10px; color: #8C7564; }
-    .mp-right strong { font-size: 16px; color: #2D1B10; }
+      .mp-right {
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .mp-right span {
+        display: block;
+        font-size: 10px;
+        color: #8c7564;
+      }
+      .mp-right strong {
+        font-size: 16px;
+        color: #2d1b10;
+      }
 
-    /* Alerts & Notes in modal */
-    .m-alert-red {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #FFF2F2;
-      border: 1px solid #FFCCC7;
-      color: #A8071A;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 12px;
-      margin-bottom: 16px;
-    }
+      /* Alerts & Notes in modal */
+      .m-alert-red {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff2f2;
+        border: 1px solid #ffccc7;
+        color: #a8071a;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 12px;
+        margin-bottom: 16px;
+      }
 
-    .m-note-cream {
-      background: #FAF6F1;
-      border: 1px solid #EAE0D5;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 12px;
-      color: #5E4B3E;
-      margin-bottom: 16px;
-    }
+      .m-note-cream {
+        background: #faf6f1;
+        border: 1px solid #eae0d5;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 12px;
+        color: #5e4b3e;
+        margin-bottom: 16px;
+      }
 
-    .mnc-top { display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
-    .mnc-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #E2D6C8; font-size: 11px; }
-    .mnc-contacts { display: flex; gap: 14px; font-weight: 600; color: #2D1B10; }
+      .mnc-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        line-height: 1.5;
+      }
+      .mnc-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed #e2d6c8;
+        font-size: 11px;
+      }
+      .mnc-contacts {
+        display: flex;
+        gap: 14px;
+        font-weight: 600;
+        color: #2d1b10;
+      }
 
-    /* Policy Box */
-    .m-policy-box {
-      background: #FAF8F5;
-      border: 1px solid #EAE2D9;
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 16px;
-    }
+      /* Policy Box */
+      .m-policy-box {
+        background: #faf8f5;
+        border: 1px solid #eae2d9;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+      }
 
-    .mpol-head {
-      font-size: 13px;
-      font-weight: 700;
-      color: #2D1B10;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+      .mpol-head {
+        font-size: 13px;
+        font-weight: 700;
+        color: #2d1b10;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
 
-    .mpol-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px 18px;
-      font-size: 12px;
-      margin-bottom: 14px;
-    }
+      .mpol-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 18px;
+        font-size: 12px;
+        margin-bottom: 14px;
+      }
 
-    .mpol-grid .lbl { display: block; font-size: 11px; color: #8C7564; margin-bottom: 2px; }
-    .mpol-grid strong { display: block; color: #2D1B10; line-height: 1.4; }
-    .mpol-grid .big-refund { font-size: 16px; color: #7D562D; }
-    .mpol-grid small { display: block; font-size: 10px; color: #8C7564; margin-top: 2px; }
+      .mpol-grid .lbl {
+        display: block;
+        font-size: 11px;
+        color: #8c7564;
+        margin-bottom: 2px;
+      }
+      .mpol-grid strong {
+        display: block;
+        color: #2d1b10;
+        line-height: 1.4;
+      }
+      .mpol-grid .big-refund {
+        font-size: 16px;
+        color: #7d562d;
+      }
+      .mpol-grid small {
+        display: block;
+        font-size: 10px;
+        color: #8c7564;
+        margin-top: 2px;
+      }
 
-    .rules-lbl { font-size: 11px; color: #6B584C; margin-bottom: 8px; }
-    .rules-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .rules-lbl {
+        font-size: 11px;
+        color: #6b584c;
+        margin-bottom: 8px;
+      }
+      .rules-3col {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
 
-    .rule-card {
-      background: #FFFFFF;
-      border: 1px solid #E5DDD4;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 11px;
-    }
+      .rule-card {
+        background: #ffffff;
+        border: 1px solid #e5ddd4;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 11px;
+      }
 
-    .rule-card.active-rule {
-      border-color: #7D562D;
-      background: #FDF8F2;
-    }
+      .rule-card.active-rule {
+        border-color: #7d562d;
+        background: #fdf8f2;
+      }
 
-    .rule-card span { display: block; color: #7D6B5D; font-size: 10px; margin-bottom: 3px; }
-    .rule-card strong { color: #2D1B10; font-size: 11px; }
-    .rule-card p { margin: 4px 0 0 0; font-size: 10px; color: #6B584C; line-height: 1.4; }
-    .rc-top { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
-    .pct-pill { background: #FDF3E7; color: #B45309; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
-    .pct-pill.gray { background: #F0ECE8; color: #6B584C; }
+      .rule-card span {
+        display: block;
+        color: #7d6b5d;
+        font-size: 10px;
+        margin-bottom: 3px;
+      }
+      .rule-card strong {
+        color: #2d1b10;
+        font-size: 11px;
+      }
+      .rule-card p {
+        margin: 4px 0 0 0;
+        font-size: 10px;
+        color: #6b584c;
+        line-height: 1.4;
+      }
+      .rc-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 4px;
+      }
+      .pct-pill {
+        background: #fdf3e7;
+        color: #b45309;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 8px;
+      }
+      .pct-pill.gray {
+        background: #f0ece8;
+        color: #6b584c;
+      }
 
-    /* Form Controls in Modal */
-    .m-field { margin-bottom: 14px; }
-    .m-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .m-field label { font-size: 12px; font-weight: 700; color: #2D1B10; display: block; margin-bottom: 6px; }
-    .m-label-row label { margin-bottom: 0; }
-    .req { color: #CF1322; }
-    .opt-txt { font-weight: 400; color: #8C7564; }
-    .hint { font-size: 11px; color: #8C7564; }
+      /* Form Controls in Modal */
+      .m-field {
+        margin-bottom: 14px;
+      }
+      .m-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .m-field label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #2d1b10;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .m-label-row label {
+        margin-bottom: 0;
+      }
+      .req {
+        color: #cf1322;
+      }
+      .opt-txt {
+        font-weight: 400;
+        color: #8c7564;
+      }
+      .hint {
+        font-size: 11px;
+        color: #8c7564;
+      }
 
-    .m-select, .m-input, .m-textarea {
-      width: 100%;
-      border: 1px solid #DCD2C8;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-family: 'Inter', sans-serif;
-      color: #2D1B10;
-      background: #FAF8F5;
-      outline: none;
-      box-sizing: border-box;
-    }
+      .m-select,
+      .m-input,
+      .m-textarea {
+        width: 100%;
+        border: 1px solid #dcd2c8;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 13px;
+        font-family: 'Inter', sans-serif;
+        color: #2d1b10;
+        background: #faf8f5;
+        outline: none;
+        box-sizing: border-box;
+      }
 
-    .m-select:focus, .m-input:focus, .m-textarea:focus {
-      border-color: #7D562D;
-      background: #FFFFFF;
-    }
+      .m-select:focus,
+      .m-input:focus,
+      .m-textarea:focus {
+        border-color: #7d562d;
+        background: #ffffff;
+      }
 
-    .radio-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+      .radio-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
 
-    .radio-card {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #FAF8F5;
-      border: 1px solid #E5DDD4;
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-    }
+      .radio-card {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #faf8f5;
+        border: 1px solid #e5ddd4;
+        border-radius: 8px;
+        padding: 9px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+      }
 
-    .radio-card.checked {
-      border-color: #7D562D;
-      background: #FDF7F0;
-      font-weight: 600;
-    }
+      .radio-card.checked {
+        border-color: #7d562d;
+        background: #fdf7f0;
+        font-weight: 600;
+      }
 
-    .radio-card.full-span {
-      grid-column: span 2;
-    }
+      .radio-card.full-span {
+        grid-column: span 2;
+      }
 
-    .m-error { color: #CF1322; font-size: 12px; font-weight: 500; margin: 6px 0; }
+      .m-error {
+        color: #cf1322;
+        font-size: 12px;
+        font-weight: 500;
+        margin: 6px 0;
+      }
 
-    .m-actions-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 16px;
-    }
+      .m-actions-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 16px;
+      }
 
-    .btn-modal-outline {
-      background: #FFFFFF;
-      border: 1px solid #DCD2C8;
-      color: #2D1B10;
-      padding: 11px 16px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+      .btn-modal-outline {
+        background: #ffffff;
+        border: 1px solid #dcd2c8;
+        color: #2d1b10;
+        padding: 11px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
 
-    .btn-modal-text {
-      background: transparent;
-      border: none;
-      color: #2D1B10;
-      padding: 11px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+      .btn-modal-text {
+        background: transparent;
+        border: none;
+        color: #2d1b10;
+        padding: 11px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
 
-    .btn-modal-dark {
-      background: #2D1B10;
-      border: none;
-      color: #FFFFFF;
-      padding: 11px 16px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+      .btn-modal-dark {
+        background: #2d1b10;
+        border: none;
+        color: #ffffff;
+        padding: 11px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
 
-    .btn-modal-dark:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+      .btn-modal-dark:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
 
-    /* Frame 06 Success Modal specifics */
-    .success-top { text-align: center; margin-bottom: 16px; }
-    .hourglass-badge {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: #F6EFE7;
-      color: #7D562D;
-      font-size: 22px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 10px;
-    }
+      /* Frame 06 Success Modal specifics */
+      .success-top {
+        text-align: center;
+        margin-bottom: 16px;
+      }
+      .hourglass-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: #f6efe7;
+        color: #7d562d;
+        font-size: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+      }
 
-    .m-summary-strip {
-      background: #FAF8F5;
-      border: 1px solid #EAE2D9;
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 12px;
-      font-size: 12px;
-    }
+      .m-summary-strip {
+        background: #faf8f5;
+        border: 1px solid #eae2d9;
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 12px;
+        font-size: 12px;
+      }
 
-    .m-summary-strip.flex-between {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+      .m-summary-strip.flex-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    .ms-lbl {
-      font-size: 10px;
-      font-weight: 700;
-      color: #8C7564;
-      margin-bottom: 4px;
-    }
+      .ms-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        color: #8c7564;
+        margin-bottom: 4px;
+      }
 
-    .refund-pct-tag {
-      background: #FDF3E7;
-      color: #B45309;
-      font-weight: 700;
-      font-size: 11px;
-      padding: 4px 10px;
-      border-radius: 8px;
-    }
+      .refund-pct-tag {
+        background: #fdf3e7;
+        color: #b45309;
+        font-weight: 700;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 8px;
+      }
 
-    .m-hotline-right {
-      text-align: right;
-      font-size: 12px;
-      margin-top: 10px;
-    }
+      .m-hotline-right {
+        text-align: right;
+        font-size: 12px;
+        margin-top: 10px;
+      }
 
-    .m-hotline-right span { display: block; font-size: 10px; color: #8C7564; }
-    .m-hotline-right strong { color: #2D1B10; font-size: 14px; }
+      .m-hotline-right span {
+        display: block;
+        font-size: 10px;
+        color: #8c7564;
+      }
+      .m-hotline-right strong {
+        color: #2d1b10;
+        font-size: 14px;
+      }
 
-    .m-footer-note {
-      margin-top: 16px;
-      padding-top: 12px;
-      border-top: 1px solid #F0EAE3;
-      text-align: center;
-      font-size: 11px;
-      color: #8C7564;
-    }
+      .m-footer-note {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #f0eae3;
+        text-align: center;
+        font-size: 11px;
+        color: #8c7564;
+      }
 
-    @media (max-width: 960px) {
-      .content-grid { grid-template-columns: 1fr; }
-      .guarantees-strip { grid-template-columns: 1fr; }
-      .mpol-grid, .rules-3col, .radio-grid, .m-actions-row { grid-template-columns: 1fr; }
-      .radio-card.full-span { grid-column: span 1; }
-    }
-  `]
+      @media (max-width: 960px) {
+        .content-grid {
+          grid-template-columns: 1fr;
+        }
+        .guarantees-strip {
+          grid-template-columns: 1fr;
+        }
+        .mpol-grid,
+        .rules-3col,
+        .radio-grid,
+        .m-actions-row {
+          grid-template-columns: 1fr;
+        }
+        .radio-card.full-span {
+          grid-column: span 1;
+        }
+      }
+    `,
+  ],
 })
 export class OrderListComponent implements OnInit {
   activeTab: 'active' | 'history' = 'active';
@@ -1219,10 +2103,14 @@ export class OrderListComponent implements OnInit {
 
   requestReasonOptions = [
     { value: 'wrong_info', label: 'Đặt nhầm đơn hàng', fullWidth: false },
-    { value: 'change_config', label: 'Muốn thay đổi sản phẩm hoặc cấu hình bánh', fullWidth: false },
+    {
+      value: 'change_config',
+      label: 'Muốn thay đổi sản phẩm hoặc cấu hình bánh',
+      fullWidth: false,
+    },
     { value: 'change_schedule', label: 'Muốn thay đổi thời gian nhận bánh', fullWidth: false },
     { value: 'change_mind', label: 'Đã tìm được cửa hàng khác', fullWidth: false },
-    { value: 'other', label: 'Lý do khác (kèm ô nhập chi tiết)', fullWidth: true }
+    { value: 'other', label: 'Lý do khác (kèm ô nhập chi tiết)', fullWidth: true },
   ];
 
   timelineSteps = [
@@ -1231,7 +2119,7 @@ export class OrderListComponent implements OnInit {
     { key: 'accepted', label: 'Đã tiếp nhận', desc: 'Bếp trung tâm đã nhận đơn' },
     { key: 'baking', label: 'Đang làm bánh', desc: 'Bếp trưởng đang phủ kem & trang trí' },
     { key: 'delivering', label: 'Đang giao', desc: 'Xe lạnh chuyên dụng đang di chuyển' },
-    { key: 'done', label: 'Đã giao thành công', desc: 'Hoàn tất đơn hàng ngọt ngào' }
+    { key: 'done', label: 'Đã giao thành công', desc: 'Hoàn tất đơn hàng ngọt ngào' },
   ];
 
   private statusRank: Record<string, number> = {
@@ -1242,14 +2130,14 @@ export class OrderListComponent implements OnInit {
     delivering: 5,
     delivered: 6,
     done: 7,
-    cancelled: 0
+    cancelled: 0,
   };
 
   constructor(
     private orderService: OrderService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
@@ -1263,20 +2151,20 @@ export class OrderListComponent implements OnInit {
   }
 
   get activeCount(): number {
-    return this.allOrders.filter(o => !['done', 'cancelled'].includes(o.status)).length;
+    return this.allOrders.filter((o) => !['done', 'cancelled'].includes(o.status)).length;
   }
 
   get historyCount(): number {
-    return this.allOrders.filter(o => ['done', 'cancelled'].includes(o.status)).length;
+    return this.allOrders.filter((o) => ['done', 'cancelled'].includes(o.status)).length;
   }
 
   get completedCount(): number {
-    return this.allOrders.filter(o => o.status === 'done').length;
+    return this.allOrders.filter((o) => o.status === 'done').length;
   }
 
   get totalSpent(): number {
     return this.allOrders
-      .filter(o => o.status !== 'cancelled')
+      .filter((o) => o.status !== 'cancelled')
       .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
   }
 
@@ -1306,7 +2194,7 @@ export class OrderListComponent implements OnInit {
         this.loading = false;
         this.errorMsg = err.error?.message || 'Không thể kết nối tới máy chủ (cổng 3000).';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -1319,7 +2207,7 @@ export class OrderListComponent implements OnInit {
   applyClientFilter() {
     const kw = this.searchKeyword.trim().toLowerCase();
 
-    this.filteredOrders = this.allOrders.filter(o => {
+    this.filteredOrders = this.allOrders.filter((o) => {
       const isHistory = ['done', 'cancelled'].includes(o.status);
       if (this.activeTab === 'active' && isHistory) return false;
       if (this.activeTab === 'history' && !isHistory) return false;
@@ -1328,14 +2216,19 @@ export class OrderListComponent implements OnInit {
 
       if (kw) {
         const matchCode = (o.code || '').toLowerCase().includes(kw);
-        const matchItem = (o.items || []).some((i: any) => (i.name || '').toLowerCase().includes(kw));
+        const matchItem = (o.items || []).some((i: any) =>
+          (i.name || '').toLowerCase().includes(kw),
+        );
         return matchCode || matchItem;
       }
       return true;
     });
 
     if (this.filteredOrders.length > 0) {
-      if (!this.selectedOrder || !this.filteredOrders.some(o => o._id === this.selectedOrder._id)) {
+      if (
+        !this.selectedOrder ||
+        !this.filteredOrders.some((o) => o._id === this.selectedOrder._id)
+      ) {
         this.selectedOrder = this.filteredOrders[0];
       }
     } else {
@@ -1386,18 +2279,22 @@ export class OrderListComponent implements OnInit {
       change_mind: 'Đổi ý / Không còn nhu cầu đặt bánh',
       wrong_info: 'Đặt nhầm mẫu bánh hoặc sai thông tin nhận',
       change_schedule: 'Thay đổi lịch trình / thời gian tổ chức tiệc',
-      other: this.directReasonText.trim()
+      other: this.directReasonText.trim(),
     };
 
     this.submitting = true;
     this.modalError = '';
 
     this.orderService
-      .cancelOrder(this.targetOrder._id, this.directReasonCode, reasonLabelMap[this.directReasonCode])
+      .cancelOrder(
+        this.targetOrder._id,
+        this.directReasonCode,
+        reasonLabelMap[this.directReasonCode],
+      )
       .subscribe({
         next: (updated) => {
           this.submitting = false;
-          const idx = this.allOrders.findIndex(o => o._id === updated._id);
+          const idx = this.allOrders.findIndex((o) => o._id === updated._id);
           if (idx !== -1) this.allOrders[idx] = updated;
           this.activeModal = 'none';
           this.applyClientFilter();
@@ -1408,7 +2305,7 @@ export class OrderListComponent implements OnInit {
           this.submitting = false;
           this.modalError = err.error?.message || 'Không thể hủy đơn hàng, vui lòng thử lại.';
           this.cdr.detectChanges();
-        }
+        },
       });
   }
 
@@ -1418,10 +2315,10 @@ export class OrderListComponent implements OnInit {
       return;
     }
 
-    const foundOpt = this.requestReasonOptions.find(o => o.value === this.requestReasonOption);
+    const foundOpt = this.requestReasonOptions.find((o) => o.value === this.requestReasonOption);
     const displayReason = this.requestReasonDetail.trim()
       ? `${foundOpt?.label}: ${this.requestReasonDetail.trim()}`
-      : (foundOpt?.label || 'Yêu cầu hủy đơn');
+      : foundOpt?.label || 'Yêu cầu hủy đơn';
 
     // Map sang mã chuẩn Backend chấp nhận (CUSTOMER_CANCEL_REASONS)
     const backendCodeMap: Record<string, string> = {
@@ -1429,7 +2326,7 @@ export class OrderListComponent implements OnInit {
       change_config: 'wrong_info',
       change_schedule: 'change_schedule',
       change_mind: 'change_mind',
-      other: 'other'
+      other: 'other',
     };
 
     this.submitting = true;
@@ -1439,12 +2336,12 @@ export class OrderListComponent implements OnInit {
       .createCancelRequest(
         this.targetOrder._id,
         backendCodeMap[this.requestReasonOption] || 'other',
-        displayReason
+        displayReason,
       )
       .subscribe({
         next: (updated) => {
           this.submitting = false;
-          const idx = this.allOrders.findIndex(o => o._id === updated._id);
+          const idx = this.allOrders.findIndex((o) => o._id === updated._id);
           if (idx !== -1) this.allOrders[idx] = updated;
           this.targetOrder = updated;
           this.submittedRequestReason = displayReason;
@@ -1457,7 +2354,7 @@ export class OrderListComponent implements OnInit {
           this.submitting = false;
           this.modalError = err.error?.message || 'Không thể gửi yêu cầu hủy đơn.';
           this.cdr.detectChanges();
-        }
+        },
       });
   }
 
@@ -1480,7 +2377,7 @@ export class OrderListComponent implements OnInit {
   getItemImage(item: any): string {
     if (!item) return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&q=80';
     if (item.imageUrl) return item.imageUrl;
-    if (item.imageId) return `http://localhost:3000/api/files/${item.imageId}`;
+    if (item.imageId) return `${environment.apiUrl}/files/${item.imageId}`;
     const name = (item.name || '').toLowerCase();
     if (name.includes('wedding') || name.includes('cưới')) {
       return 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=300&q=80';
@@ -1500,7 +2397,7 @@ export class OrderListComponent implements OnInit {
       delivering: 'Đang giao',
       delivered: 'Đã giao',
       done: 'Hoàn thành',
-      cancelled: 'Đã hủy'
+      cancelled: 'Đã hủy',
     };
     return map[status] || status;
   }

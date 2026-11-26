@@ -2,7 +2,7 @@ import { Component, OnInit, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angu
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { OrderService } from '../../../../core/services/order.service';
-
+import { environment } from '../../../../../environments/environment';
 @Component({
   selector: 'app-order-detail',
   standalone: true,
@@ -10,7 +10,6 @@ import { OrderService } from '../../../../core/services/order.service';
   template: `
     <div class="detail-page">
       <div class="page-wrapper" *ngIf="order; else stateTpl">
-
         <!-- 1. BREADCRUMB -->
         <nav class="breadcrumb">
           <a routerLink="/danh-sach-san-pham">Trang chủ</a>
@@ -26,11 +25,14 @@ import { OrderService } from '../../../../core/services/order.service';
             <div class="meta-pills">
               <span class="pill-tracking">MÃ THEO DÕI TRỰC TUYẾN</span>
               <span class="pill-date">
-                <i class="bi bi-calendar3"></i> Ngày đặt: {{ order.createdAt | date:'dd/MM/yyyy — HH:mm' }}
+                <i class="bi bi-calendar3"></i> Ngày đặt:
+                {{ order.createdAt | date: 'dd/MM/yyyy — HH:mm' }}
               </span>
             </div>
             <h1>Đơn hàng #{{ order.code }}</h1>
-            <p class="workshop-sub">Được chế tác thủ công bởi Xưởng bánh nghệ thuật SweetCake Quận 3</p>
+            <p class="workshop-sub">
+              Được chế tác thủ công bởi Xưởng bánh nghệ thuật SweetCake Quận 3
+            </p>
           </div>
 
           <div class="top-actions">
@@ -51,7 +53,8 @@ import { OrderService } from '../../../../core/services/order.service';
               <h2>Tiến độ thực hiện đơn hàng</h2>
             </div>
             <span class="live-badge">
-              <i class="bi bi-clock"></i> Cập nhật thực tế: {{ order.updatedAt | date:'HH:mm' }}, hôm nay
+              <i class="bi bi-clock"></i> Cập nhật thực tế: {{ order.updatedAt | date: 'HH:mm' }},
+              hôm nay
             </span>
           </div>
 
@@ -62,11 +65,22 @@ import { OrderService } from '../../../../core/services/order.service';
               [class.completed]="getStepState(order.status, step.key) === 'completed'"
               [class.current]="getStepState(order.status, step.key) === 'current'"
             >
-              <div class="step-line-right" *ngIf="!last" [class.filled]="getStepState(order.status, step.key) === 'completed'"></div>
+              <div
+                class="step-line-right"
+                *ngIf="!last"
+                [class.filled]="getStepState(order.status, step.key) === 'completed'"
+              ></div>
 
               <div class="step-circle">
-                <i class="bi bi-check-lg" *ngIf="getStepState(order.status, step.key) === 'completed'"></i>
-                <i class="bi" [ngClass]="step.icon" *ngIf="getStepState(order.status, step.key) !== 'completed'"></i>
+                <i
+                  class="bi bi-check-lg"
+                  *ngIf="getStepState(order.status, step.key) === 'completed'"
+                ></i>
+                <i
+                  class="bi"
+                  [ngClass]="step.icon"
+                  *ngIf="getStepState(order.status, step.key) !== 'completed'"
+                ></i>
               </div>
 
               <div class="step-name">{{ step.label }}</div>
@@ -80,7 +94,9 @@ import { OrderService } from '../../../../core/services/order.service';
           <div class="card-head-row">
             <div>
               <span class="eyebrow"><i class="bi bi-camera"></i> ẢNH THỰC TẾ TỪ TIỆM BÁNH</span>
-              <h2>{{ isCakeReady ? 'Bánh đã hoàn thành' : 'Mẫu bánh nghệ thuật từ xưởng SweetCake' }}</h2>
+              <h2>
+                {{ isCakeReady ? 'Bánh đã hoàn thành' : 'Mẫu bánh nghệ thuật từ xưởng SweetCake' }}
+              </h2>
             </div>
           </div>
 
@@ -91,7 +107,9 @@ import { OrderService } from '../../../../core/services/order.service';
               <div class="img-overlay-bottom">
                 <div>
                   <strong>{{ primaryItem?.name || 'Bánh kem thủ công SweetCake' }}</strong>
-                  <small *ngIf="primaryItem?.config?.message">Chữ viết trên bánh: "{{ primaryItem.config.message }}"</small>
+                  <small *ngIf="primaryItem?.config?.message"
+                    >Chữ viết trên bánh: "{{ primaryItem.config.message }}"</small
+                  >
                 </div>
                 <button class="btn-zoom" (click)="zoomOpen = true">
                   <i class="bi bi-arrows-fullscreen"></i> Phóng to ảnh
@@ -101,9 +119,13 @@ import { OrderService } from '../../../../core/services/order.service';
 
             <div class="showcase-note-col">
               <div class="baker-quote-box">
-                <div class="bq-title"><i class="bi bi-chat-quote"></i> Lời nhắn từ tiệm bánh SweetCake</div>
+                <div class="bq-title">
+                  <i class="bi bi-chat-quote"></i> Lời nhắn từ tiệm bánh SweetCake
+                </div>
                 <p>
-                  "Chiếc bánh của bạn đang được chăm chút tỉ mỉ theo đúng yêu cầu. Tiệm luôn kiểm tra kỹ phần trang trí và các chi tiết trước khi đóng gói. Cảm ơn bạn đã tin tưởng và lựa chọn SweetCake!"
+                  "Chiếc bánh của bạn đang được chăm chút tỉ mỉ theo đúng yêu cầu. Tiệm luôn kiểm
+                  tra kỹ phần trang trí và các chi tiết trước khi đóng gói. Cảm ơn bạn đã tin tưởng
+                  và lựa chọn SweetCake!"
                 </p>
               </div>
 
@@ -114,11 +136,15 @@ import { OrderService } from '../../../../core/services/order.service';
                 </div>
                 <div class="qa-row">
                   <span>Thời gian dự kiến:</span>
-                  <strong>{{ order.receiveDate | date:'dd/MM/yyyy' }} ({{ order.slotLabel }})</strong>
+                  <strong
+                    >{{ order.receiveDate | date: 'dd/MM/yyyy' }} ({{ order.slotLabel }})</strong
+                  >
                 </div>
                 <div class="qa-row">
                   <span>Tình trạng:</span>
-                  <strong class="ok-txt">{{ isCakeReady ? 'Đã kiểm duyệt & sẵn sàng' : 'Đang theo dõi tiến độ' }}</strong>
+                  <strong class="ok-txt">{{
+                    isCakeReady ? 'Đã kiểm duyệt & sẵn sàng' : 'Đang theo dõi tiến độ'
+                  }}</strong>
                 </div>
               </div>
             </div>
@@ -145,7 +171,8 @@ import { OrderService } from '../../../../core/services/order.service';
                       <strong class="pi-price">{{ item.lineTotal | number }} đ</strong>
                     </div>
                     <p class="pi-desc">
-                      Kích thước: {{ item.config?.size || 'Tiêu chuẩn 18cm' }} (6 - 8 người thưởng thức)
+                      Kích thước: {{ item.config?.size || 'Tiêu chuẩn 18cm' }} (6 - 8 người thưởng
+                      thức)
                     </p>
                     <div class="pi-tags">
                       <span>Số lượng: {{ item.qty }}</span>
@@ -157,22 +184,34 @@ import { OrderService } from '../../../../core/services/order.service';
 
                 <!-- Thông số bánh tùy biến theo yêu cầu -->
                 <div class="custom-specs-box">
-                  <div class="cs-title"><i class="bi bi-sliders"></i> Thông số bánh tùy biến theo yêu cầu</div>
+                  <div class="cs-title">
+                    <i class="bi bi-sliders"></i> Thông số bánh tùy biến theo yêu cầu
+                  </div>
 
                   <div class="cs-2col">
                     <div>
                       <span class="cs-lbl">Hương vị & Cốt bánh:</span>
-                      <strong>{{ item.config?.base || 'Cốt bông lan vani truyền thống, kem phô mai ít ngọt thanh dịu.' }}</strong>
+                      <strong>{{
+                        item.config?.base ||
+                          'Cốt bông lan vani truyền thống, kem phô mai ít ngọt thanh dịu.'
+                      }}</strong>
                     </div>
                     <div>
                       <span class="cs-lbl">Trang trí bề mặt:</span>
-                      <strong>{{ item.config?.filling || 'Trái cây tươi tuyển chọn Đà Lạt, lá bạc hà tươi và viền vàng thực phẩm.' }}</strong>
+                      <strong>{{
+                        item.config?.filling ||
+                          'Trái cây tươi tuyển chọn Đà Lạt, lá bạc hà tươi và viền vàng thực phẩm.'
+                      }}</strong>
                     </div>
                   </div>
 
                   <div class="cake-msg-pink">
                     <span class="cmp-lbl">THÔNG ĐIỆP VIẾT TRÊN BÁNH (PHỤ PHÍ: +20.000 Đ)</span>
-                    <div class="cmp-text">"{{ item.config?.message || 'Happy Birthday — Chúc mừng sinh nhật ngọt ngào' }}"</div>
+                    <div class="cmp-text">
+                      "{{
+                        item.config?.message || 'Happy Birthday — Chúc mừng sinh nhật ngọt ngào'
+                      }}"
+                    </div>
                     <small>Chất liệu: Chocolate đen nguyên chất Bỉ nung chảy viết thủ công.</small>
                   </div>
 
@@ -195,11 +234,17 @@ import { OrderService } from '../../../../core/services/order.service';
               <div class="care-2col">
                 <div class="care-box">
                   <h4><i class="bi bi-thermometer-snow"></i> Nhiệt độ bảo quản</h4>
-                  <p>Luôn giữ bánh ở 4°C - 6°C trong ngăn mát tủ lạnh. Bánh giữ trọn vẹn hương vị ngon nhất trong vòng 24 - 48 giờ.</p>
+                  <p>
+                    Luôn giữ bánh ở 4°C - 6°C trong ngăn mát tủ lạnh. Bánh giữ trọn vẹn hương vị
+                    ngon nhất trong vòng 24 - 48 giờ.
+                  </p>
                 </div>
                 <div class="care-box">
                   <h4><i class="bi bi-shield-check"></i> Vận chuyển an toàn</h4>
-                  <p>Shipper SweetCake di chuyển bằng thùng lạnh chống nghiêng. Khi di chuyển bằng xe cá nhân, giữ mặt phẳng đế bánh.</p>
+                  <p>
+                    Shipper SweetCake di chuyển bằng thùng lạnh chống nghiêng. Khi di chuyển bằng xe
+                    cá nhân, giữ mặt phẳng đế bánh.
+                  </p>
                 </div>
               </div>
             </section>
@@ -235,8 +280,14 @@ import { OrderService } from '../../../../core/services/order.service';
                 <div class="info-item">
                   <i class="bi bi-clock"></i>
                   <div>
-                    <span class="i-lbl">{{ order.receiveMethod === 'delivery' ? 'Thời gian giao dự kiến' : 'Thời gian nhận bánh tại tiệm' }}</span>
-                    <strong>{{ order.slotLabel }} — {{ order.receiveDate | date:'dd/MM/yyyy' }}</strong>
+                    <span class="i-lbl">{{
+                      order.receiveMethod === 'delivery'
+                        ? 'Thời gian giao dự kiến'
+                        : 'Thời gian nhận bánh tại tiệm'
+                    }}</span>
+                    <strong
+                      >{{ order.slotLabel }} — {{ order.receiveDate | date: 'dd/MM/yyyy' }}</strong
+                    >
                     <small>Đúng giờ hẹn như đã đăng ký</small>
                   </div>
                 </div>
@@ -244,12 +295,20 @@ import { OrderService } from '../../../../core/services/order.service';
                 <div class="info-item">
                   <i class="bi bi-geo-alt"></i>
                   <div>
-                    <span class="i-lbl">{{ order.receiveMethod === 'delivery' ? 'Địa chỉ nhận bánh' : 'Địa chỉ cửa hàng nhận bánh' }}</span>
+                    <span class="i-lbl">{{
+                      order.receiveMethod === 'delivery'
+                        ? 'Địa chỉ nhận bánh'
+                        : 'Địa chỉ cửa hàng nhận bánh'
+                    }}</span>
                     <strong *ngIf="order.receiveMethod === 'delivery'; else storeAddr">
-                      {{ order.shippingAddress?.detail }}, {{ order.shippingAddress?.ward }}, {{ order.shippingAddress?.district }}, {{ order.shippingAddress?.province }}
+                      {{ order.shippingAddress?.detail }}, {{ order.shippingAddress?.ward }},
+                      {{ order.shippingAddress?.district }}, {{ order.shippingAddress?.province }}
                     </strong>
                     <ng-template #storeAddr>
-                      <strong>SweetCake Quận 3 — 128 Nguyễn Đình Chiểu, Phường Võ Thị Sáu, Quận 3, TP.HCM</strong>
+                      <strong
+                        >SweetCake Quận 3 — 128 Nguyễn Đình Chiểu, Phường Võ Thị Sáu, Quận 3,
+                        TP.HCM</strong
+                      >
                     </ng-template>
                   </div>
                 </div>
@@ -257,8 +316,17 @@ import { OrderService } from '../../../../core/services/order.service';
                 <div class="note-box">
                   <i class="bi bi-sticky"></i>
                   <div>
-                    <span class="i-lbl">{{ order.receiveMethod === 'delivery' ? 'Ghi chú giao hàng:' : 'Ghi chú nhận tại tiệm:' }}</span>
-                    <p>"{{ order.note || 'Gọi trước khi giao 15 phút, bánh bảo quản lạnh xin giao cẩn thận.' }}"</p>
+                    <span class="i-lbl">{{
+                      order.receiveMethod === 'delivery'
+                        ? 'Ghi chú giao hàng:'
+                        : 'Ghi chú nhận tại tiệm:'
+                    }}</span>
+                    <p>
+                      "{{
+                        order.note ||
+                          'Gọi trước khi giao 15 phút, bánh bảo quản lạnh xin giao cẩn thận.'
+                      }}"
+                    </p>
                   </div>
                 </div>
               </div>
@@ -284,7 +352,7 @@ import { OrderService } from '../../../../core/services/order.service';
                 </div>
                 <div class="pm-row">
                   <span>Thời gian xác nhận:</span>
-                  <strong>{{ order.createdAt | date:'HH:mm:ss — dd/MM/yyyy' }}</strong>
+                  <strong>{{ order.createdAt | date: 'HH:mm:ss — dd/MM/yyyy' }}</strong>
                 </div>
               </div>
 
@@ -295,11 +363,11 @@ import { OrderService } from '../../../../core/services/order.service';
                 </div>
                 <div class="pb-row">
                   <span>Phụ phí trang trí chữ chocolate</span>
-                  <span>{{ (order.addonFee || 0) | number }} đ</span>
+                  <span>{{ order.addonFee || 0 | number }} đ</span>
                 </div>
                 <div class="pb-row">
                   <span>Phí vận chuyển thùng lạnh</span>
-                  <span>{{ (order.shippingFee || 0) | number }} đ</span>
+                  <span>{{ order.shippingFee || 0 | number }} đ</span>
                 </div>
                 <div class="pb-row discount" *ngIf="order.discount">
                   <span>Voucher tri ân khách hàng</span>
@@ -314,7 +382,11 @@ import { OrderService } from '../../../../core/services/order.service';
                 </div>
                 <div class="gt-right">
                   <span class="gt-amount">{{ order.total | number }} đ</span>
-                  <small>{{ order.payment?.status === 'paid' ? 'Hoàn tất qua chuyển khoản' : 'Thanh toán theo hướng dẫn' }}</small>
+                  <small>{{
+                    order.payment?.status === 'paid'
+                      ? 'Hoàn tất qua chuyển khoản'
+                      : 'Thanh toán theo hướng dẫn'
+                  }}</small>
                 </div>
               </div>
             </section>
@@ -324,7 +396,9 @@ import { OrderService } from '../../../../core/services/order.service';
               <div class="hc-icon"><i class="bi bi-headset"></i></div>
               <div>
                 <h4>Cần thay đổi thông tin giờ nhận?</h4>
-                <p>Vui lòng gọi trực tiếp hotline hỗ trợ vận chuyển để điều phối lộ trình kịp thời.</p>
+                <p>
+                  Vui lòng gọi trực tiếp hotline hỗ trợ vận chuyển để điều phối lộ trình kịp thời.
+                </p>
                 <strong>Hotline: 0900 123 456</strong>
               </div>
             </section>
@@ -357,7 +431,6 @@ import { OrderService } from '../../../../core/services/order.service';
             </div>
           </div>
         </section>
-
       </div>
 
       <!-- LIGHTBOX PHÓNG TO ẢNH -->
@@ -377,504 +450,816 @@ import { OrderService } from '../../../../core/services/order.service';
       </ng-template>
     </div>
   `,
-  styles: [`
-    .detail-page {
-      background-color: #F9F6F2;
-      color: #2D1B10;
-      font-family: 'Inter', sans-serif;
-      padding: 22px 20px 60px;
-    }
-
-    .page-wrapper {
-      max-width: 1180px;
-      margin: 0 auto;
-    }
-
-    /* Breadcrumb */
-    .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: #8C7564;
-      margin-bottom: 18px;
-    }
-    .breadcrumb a { color: #7D6B5D; text-decoration: none; }
-    .breadcrumb a:hover { text-decoration: underline; }
-    .breadcrumb strong { color: #2D1B10; }
-
-    /* Top Header */
-    .order-top-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 22px;
-    }
-
-    .meta-pills {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 6px;
-    }
-
-    .pill-tracking {
-      background: #F4E8DC;
-      color: #7D562D;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 3px 9px;
-      border-radius: 6px;
-      letter-spacing: 0.4px;
-    }
-
-    .pill-date {
-      font-size: 12px;
-      color: #7D6B5D;
-    }
-
-    .order-top-header h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 32px;
-      margin: 0 0 4px 0;
-      color: #2D1B10;
-    }
-
-    .workshop-sub {
-      font-size: 13px;
-      color: #7D6B5D;
-      margin: 0;
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .status-pill-main {
-      background: #FDF3E7;
-      color: #B45309;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 7px 14px;
-      border-radius: 20px;
-    }
-
-    .st-done { background: #E6F6EC; color: #15803D; }
-    .st-cancelled { background: #FEE2E2; color: #B91C1C; }
-
-    .btn-print {
-      background: #FFFFFF;
-      border: 1px solid #DCD2C8;
-      color: #2D1B10;
-      padding: 7px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* Card Block Common */
-    .card-block {
-      background: #FFFFFF;
-      border: 1px solid #EAE2D9;
-      border-radius: 16px;
-      padding: 22px 24px;
-      margin-bottom: 18px;
-      box-shadow: 0 2px 10px rgba(45, 27, 16, 0.02);
-    }
-
-    .card-head-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .eyebrow {
-      display: block;
-      font-size: 10px;
-      font-weight: 700;
-      color: #8C7564;
-      letter-spacing: 0.6px;
-      margin-bottom: 3px;
-    }
-
-    .card-block h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 19px;
-      margin: 0;
-      color: #2D1B10;
-    }
-
-    .live-badge {
-      background: #FAF6F1;
-      border: 1px solid #EAE0D5;
-      color: #6B584C;
-      font-size: 11px;
-      padding: 5px 12px;
-      border-radius: 16px;
-    }
-
-    /* Horizontal Stepper */
-    .horizontal-stepper {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 12px 10px 4px;
-      overflow-x: auto;
-    }
-
-    .h-step {
-      position: relative;
-      flex: 1;
-      min-width: 105px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .step-line-right {
-      position: absolute;
-      top: 18px;
-      left: 50%;
-      width: 100%;
-      height: 2px;
-      background: #E6DDD3;
-      z-index: 1;
-    }
-
-    .step-line-right.filled {
-      background: #7D562D;
-    }
-
-    .step-circle {
-      position: relative;
-      z-index: 2;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #F3ECE4;
-      color: #8C7564;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      margin-bottom: 8px;
-      border: 2px solid #FFFFFF;
-    }
-
-    .h-step.completed .step-circle {
-      background: #7D562D;
-      color: #FFFFFF;
-    }
-
-    .h-step.current .step-circle {
-      background: #2D1B10;
-      color: #FFFFFF;
-      box-shadow: 0 0 0 4px #EFE5DA;
-    }
-
-    .step-name {
-      font-size: 12px;
-      font-weight: 600;
-      color: #2D1B10;
-    }
-
-    .h-step:not(.completed):not(.current) .step-name {
-      color: #9C8B7E;
-      font-weight: 500;
-    }
-
-    .step-time {
-      font-size: 11px;
-      color: #8C7564;
-      margin-top: 2px;
-    }
-
-    /* Photo Showcase */
-    .showcase-grid {
-      display: grid;
-      grid-template-columns: 1.25fr 1fr;
-      gap: 20px;
-      align-items: stretch;
-    }
-
-    .showcase-img-wrap {
-      position: relative;
-      border-radius: 14px;
-      overflow: hidden;
-      min-height: 270px;
-      background: #EFE8E0;
-    }
-
-    .showcase-img-wrap img {
-      width: 100%;
-      height: 100%;
-      max-height: 310px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .qc-tag {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: rgba(45, 27, 16, 0.8);
-      color: #fff;
-      font-size: 11px;
-      padding: 4px 10px;
-      border-radius: 6px;
-    }
-
-    .img-overlay-bottom {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: 16px;
-      background: linear-gradient(transparent, rgba(25, 14, 8, 0.85));
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 10px;
-    }
-
-    .img-overlay-bottom strong { display: block; font-size: 15px; }
-    .img-overlay-bottom small { font-size: 11px; opacity: 0.9; }
-
-    .btn-zoom {
-      background: rgba(255, 255, 255, 0.92);
-      color: #2D1B10;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .showcase-note-col {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 14px;
-    }
-
-    .baker-quote-box {
-      background: #FAF7F4;
-      border: 1px solid #EDE4DA;
-      border-radius: 12px;
-      padding: 16px 18px;
-    }
-
-    .bq-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #7D562D;
-      margin-bottom: 8px;
-    }
-
-    .baker-quote-box p {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: 14px;
-      line-height: 1.6;
-      color: #3E2A1E;
-      margin: 0;
-    }
-
-    .qa-meta-box {
-      background: #FAF8F5;
-      border: 1px solid #EDE4DA;
-      border-radius: 12px;
-      padding: 14px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      font-size: 12px;
-    }
-
-    .qa-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .qa-row span { color: #7D6B5D; }
-    .qa-row strong { color: #2D1B10; }
-    .ok-txt { color: #15803D !important; }
-
-    /* 2 Columns Detail */
-    .detail-2col {
-      display: grid;
-      grid-template-columns: 1.35fr 1fr;
-      gap: 20px;
-      align-items: start;
-    }
-
-    .count-pill {
-      background: #F6EFE7;
-      color: #7D562D;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 12px;
-    }
-
-    .prod-item-card {
-      margin-bottom: 16px;
-    }
-
-    .pi-top {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      margin-bottom: 16px;
-    }
-
-    .pi-top img {
-      width: 82px;
-      height: 82px;
-      border-radius: 12px;
-      object-fit: cover;
-      border: 1px solid #EDE4DA;
-    }
-
-    .pi-info { flex: 1; }
-    .pi-name-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-    .pi-name-row h3 { font-family: 'Playfair Display', serif; font-size: 17px; margin: 0; }
-    .pi-price { font-size: 15px; color: #2D1B10; }
-    .pi-desc { font-size: 12px; color: #7D6B5D; margin: 4px 0 8px; }
-    .pi-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-    .pi-tags span { background: #FAF6F1; border: 1px solid #E8DFD5; font-size: 11px; padding: 3px 9px; border-radius: 6px; color: #5E4B3E; }
-
-    .custom-specs-box {
-      background: #FAF8F5;
-      border: 1px solid #EDE4DA;
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .cs-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: #2D1B10; }
-    .cs-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 12px; margin-bottom: 14px; }
-    .cs-lbl { display: block; font-size: 11px; color: #8C7564; margin-bottom: 3px; }
-    .cs-2col strong { color: #2D1B10; line-height: 1.45; }
-
-    .cake-msg-pink {
-      background: #FDF4F6;
-      border: 1px solid #F6DCE2;
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-bottom: 14px;
-    }
-    .cmp-lbl { display: block; font-size: 10px; font-weight: 700; color: #9D4B63; margin-bottom: 4px; }
-    .cmp-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 15px; font-weight: 600; color: #2D1B10; margin-bottom: 3px; }
-    .cake-msg-pink small { font-size: 11px; color: #7D6B5D; }
-
-    .acc-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 12px;
-      font-size: 11px;
-      color: #4B3B30;
-      margin-top: 6px;
-    }
-    .acc-grid i { color: #7D562D; margin-right: 4px; }
-
-    /* Care boxes */
-    .care-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
-    .care-box { background: #FAF8F5; border: 1px solid #EDE4DA; border-radius: 10px; padding: 14px; }
-    .care-box h4 { font-size: 13px; margin: 0 0 6px 0; color: #2D1B10; }
-    .care-box p { font-size: 12px; color: #6B584C; line-height: 1.5; margin: 0; }
-
-    .btn-outline-print {
-      background: #FFFFFF;
-      border: 1px solid #DCD2C8;
-      color: #2D1B10;
-      padding: 9px 16px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* Right Column Info */
-    .method-badge { font-size: 11px; font-weight: 600; color: #7D562D; background: #F6EFE7; padding: 4px 10px; border-radius: 10px; }
-    .info-list { display: flex; flex-direction: column; gap: 14px; }
-    .info-item { display: flex; gap: 12px; align-items: flex-start; font-size: 13px; }
-    .info-item i { color: #7D562D; font-size: 16px; margin-top: 2px; }
-    .i-lbl { display: block; font-size: 11px; color: #8C7564; margin-bottom: 2px; }
-    .info-item strong { display: block; color: #2D1B10; line-height: 1.4; }
-    .info-item small { display: block; font-size: 11px; color: #7D6B5D; margin-top: 2px; }
-
-    .note-box { display: flex; gap: 10px; background: #FAF7F4; border: 1px solid #EDE4DA; border-radius: 10px; padding: 10px 12px; font-size: 12px; }
-    .note-box p { margin: 2px 0 0 0; font-style: italic; color: #5E4B3E; }
-
-    .paid-pill { background: #E6F6EC; color: #15803D; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
-    .paid-pill.unpaid { background: #FDF3E7; color: #B45309; }
-
-    .pay-meta-box { background: #FAF8F5; border-radius: 10px; padding: 12px 14px; font-size: 12px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-    .pm-row { display: flex; justify-content: space-between; }
-    .pm-row span { color: #8C7564; }
-
-    .price-breakdown { display: flex; flex-direction: column; gap: 8px; font-size: 12px; padding-bottom: 14px; border-bottom: 1px dashed #E2D6C8; margin-bottom: 14px; }
-    .pb-row { display: flex; justify-content: space-between; color: #5E4B3E; }
-    .pb-row.discount { color: #15803D; font-weight: 600; }
-
-    .grand-total-box { display: flex; justify-content: space-between; align-items: center; }
-    .grand-total-box strong { display: block; font-size: 14px; }
-    .grand-total-box small { display: block; font-size: 11px; color: #8C7564; }
-    .gt-right { text-align: right; }
-    .gt-amount { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #7D562D; }
-
-    .help-callout-card {
-      background: #FAF6F1;
-      border: 1px solid #E8DFD5;
-      border-radius: 14px;
-      padding: 16px 18px;
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-    }
-    .hc-icon { width: 36px; height: 36px; border-radius: 50%; background: #FFFFFF; color: #7D562D; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-    .help-callout-card h4 { font-size: 13px; margin: 0 0 4px 0; }
-    .help-callout-card p { font-size: 11px; color: #6B584C; margin: 0 0 6px 0; line-height: 1.45; }
-    .help-callout-card strong { font-size: 13px; color: #2D1B10; }
-
-    /* Guarantees Strip */
-    .guarantees-strip { margin-top: 36px; padding-top: 28px; border-top: 1px solid #E5DDD4; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-    .g-item { display: flex; gap: 14px; align-items: flex-start; }
-    .g-icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #D8CBBF; display: flex; align-items: center; justify-content: center; color: #7D562D; font-size: 18px; flex-shrink: 0; }
-    .g-item h4 { font-size: 14px; margin: 0 0 4px 0; color: #2D1B10; }
-    .g-item p { font-size: 12px; color: #7D6B5D; line-height: 1.5; margin: 0; }
-
-    /* Lightbox */
-    .zoom-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center; z-index: 3000; padding: 20px; }
-    .zoom-box { position: relative; max-width: 820px; width: 100%; }
-    .zoom-box img { width: 100%; border-radius: 14px; display: block; }
-    .zoom-close { position: absolute; top: -14px; right: -14px; width: 34px; height: 34px; border-radius: 50%; background: #fff; border: none; font-weight: 700; cursor: pointer; }
-
-    .empty-state { text-align: center; padding: 80px 20px; }
-    .err-txt { color: #BA1A1A; }
-    .btn-back { display: inline-block; margin-top: 12px; color: #7D562D; font-weight: 600; }
-
-    @media (max-width: 900px) {
-      .showcase-grid, .detail-2col, .cs-2col, .acc-grid, .care-2col, .guarantees-strip {
-        grid-template-columns: 1fr;
+  styles: [
+    `
+      .detail-page {
+        background-color: #f9f6f2;
+        color: #2d1b10;
+        font-family: 'Inter', sans-serif;
+        padding: 22px 20px 60px;
       }
-    }
-  `]
+
+      .page-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+
+      /* Breadcrumb */
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #8c7564;
+        margin-bottom: 18px;
+      }
+      .breadcrumb a {
+        color: #7d6b5d;
+        text-decoration: none;
+      }
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+      .breadcrumb strong {
+        color: #2d1b10;
+      }
+
+      /* Top Header */
+      .order-top-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .meta-pills {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+      }
+
+      .pill-tracking {
+        background: #f4e8dc;
+        color: #7d562d;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 6px;
+        letter-spacing: 0.4px;
+      }
+
+      .pill-date {
+        font-size: 12px;
+        color: #7d6b5d;
+      }
+
+      .order-top-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 32px;
+        margin: 0 0 4px 0;
+        color: #2d1b10;
+      }
+
+      .workshop-sub {
+        font-size: 13px;
+        color: #7d6b5d;
+        margin: 0;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .status-pill-main {
+        background: #fdf3e7;
+        color: #b45309;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: 20px;
+      }
+
+      .st-done {
+        background: #e6f6ec;
+        color: #15803d;
+      }
+      .st-cancelled {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+
+      .btn-print {
+        background: #ffffff;
+        border: 1px solid #dcd2c8;
+        color: #2d1b10;
+        padding: 7px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      /* Card Block Common */
+      .card-block {
+        background: #ffffff;
+        border: 1px solid #eae2d9;
+        border-radius: 16px;
+        padding: 22px 24px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 10px rgba(45, 27, 16, 0.02);
+      }
+
+      .card-head-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .eyebrow {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        color: #8c7564;
+        letter-spacing: 0.6px;
+        margin-bottom: 3px;
+      }
+
+      .card-block h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 19px;
+        margin: 0;
+        color: #2d1b10;
+      }
+
+      .live-badge {
+        background: #faf6f1;
+        border: 1px solid #eae0d5;
+        color: #6b584c;
+        font-size: 11px;
+        padding: 5px 12px;
+        border-radius: 16px;
+      }
+
+      /* Horizontal Stepper */
+      .horizontal-stepper {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px 10px 4px;
+        overflow-x: auto;
+      }
+
+      .h-step {
+        position: relative;
+        flex: 1;
+        min-width: 105px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .step-line-right {
+        position: absolute;
+        top: 18px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: #e6ddd3;
+        z-index: 1;
+      }
+
+      .step-line-right.filled {
+        background: #7d562d;
+      }
+
+      .step-circle {
+        position: relative;
+        z-index: 2;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #f3ece4;
+        color: #8c7564;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        margin-bottom: 8px;
+        border: 2px solid #ffffff;
+      }
+
+      .h-step.completed .step-circle {
+        background: #7d562d;
+        color: #ffffff;
+      }
+
+      .h-step.current .step-circle {
+        background: #2d1b10;
+        color: #ffffff;
+        box-shadow: 0 0 0 4px #efe5da;
+      }
+
+      .step-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: #2d1b10;
+      }
+
+      .h-step:not(.completed):not(.current) .step-name {
+        color: #9c8b7e;
+        font-weight: 500;
+      }
+
+      .step-time {
+        font-size: 11px;
+        color: #8c7564;
+        margin-top: 2px;
+      }
+
+      /* Photo Showcase */
+      .showcase-grid {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 20px;
+        align-items: stretch;
+      }
+
+      .showcase-img-wrap {
+        position: relative;
+        border-radius: 14px;
+        overflow: hidden;
+        min-height: 270px;
+        background: #efe8e0;
+      }
+
+      .showcase-img-wrap img {
+        width: 100%;
+        height: 100%;
+        max-height: 310px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .qc-tag {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: rgba(45, 27, 16, 0.8);
+        color: #fff;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 6px;
+      }
+
+      .img-overlay-bottom {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 16px;
+        background: linear-gradient(transparent, rgba(25, 14, 8, 0.85));
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 10px;
+      }
+
+      .img-overlay-bottom strong {
+        display: block;
+        font-size: 15px;
+      }
+      .img-overlay-bottom small {
+        font-size: 11px;
+        opacity: 0.9;
+      }
+
+      .btn-zoom {
+        background: rgba(255, 255, 255, 0.92);
+        color: #2d1b10;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .showcase-note-col {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .baker-quote-box {
+        background: #faf7f4;
+        border: 1px solid #ede4da;
+        border-radius: 12px;
+        padding: 16px 18px;
+      }
+
+      .bq-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #7d562d;
+        margin-bottom: 8px;
+      }
+
+      .baker-quote-box p {
+        font-family: 'Playfair Display', serif;
+        font-style: italic;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #3e2a1e;
+        margin: 0;
+      }
+
+      .qa-meta-box {
+        background: #faf8f5;
+        border: 1px solid #ede4da;
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 12px;
+      }
+
+      .qa-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .qa-row span {
+        color: #7d6b5d;
+      }
+      .qa-row strong {
+        color: #2d1b10;
+      }
+      .ok-txt {
+        color: #15803d !important;
+      }
+
+      /* 2 Columns Detail */
+      .detail-2col {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+
+      .count-pill {
+        background: #f6efe7;
+        color: #7d562d;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 12px;
+      }
+
+      .prod-item-card {
+        margin-bottom: 16px;
+      }
+
+      .pi-top {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+      }
+
+      .pi-top img {
+        width: 82px;
+        height: 82px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 1px solid #ede4da;
+      }
+
+      .pi-info {
+        flex: 1;
+      }
+      .pi-name-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .pi-name-row h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 17px;
+        margin: 0;
+      }
+      .pi-price {
+        font-size: 15px;
+        color: #2d1b10;
+      }
+      .pi-desc {
+        font-size: 12px;
+        color: #7d6b5d;
+        margin: 4px 0 8px;
+      }
+      .pi-tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .pi-tags span {
+        background: #faf6f1;
+        border: 1px solid #e8dfd5;
+        font-size: 11px;
+        padding: 3px 9px;
+        border-radius: 6px;
+        color: #5e4b3e;
+      }
+
+      .custom-specs-box {
+        background: #faf8f5;
+        border: 1px solid #ede4da;
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      .cs-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #2d1b10;
+      }
+      .cs-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        font-size: 12px;
+        margin-bottom: 14px;
+      }
+      .cs-lbl {
+        display: block;
+        font-size: 11px;
+        color: #8c7564;
+        margin-bottom: 3px;
+      }
+      .cs-2col strong {
+        color: #2d1b10;
+        line-height: 1.45;
+      }
+
+      .cake-msg-pink {
+        background: #fdf4f6;
+        border: 1px solid #f6dce2;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+      }
+      .cmp-lbl {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        color: #9d4b63;
+        margin-bottom: 4px;
+      }
+      .cmp-text {
+        font-family: 'Playfair Display', serif;
+        font-style: italic;
+        font-size: 15px;
+        font-weight: 600;
+        color: #2d1b10;
+        margin-bottom: 3px;
+      }
+      .cake-msg-pink small {
+        font-size: 11px;
+        color: #7d6b5d;
+      }
+
+      .acc-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        font-size: 11px;
+        color: #4b3b30;
+        margin-top: 6px;
+      }
+      .acc-grid i {
+        color: #7d562d;
+        margin-right: 4px;
+      }
+
+      /* Care boxes */
+      .care-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .care-box {
+        background: #faf8f5;
+        border: 1px solid #ede4da;
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .care-box h4 {
+        font-size: 13px;
+        margin: 0 0 6px 0;
+        color: #2d1b10;
+      }
+      .care-box p {
+        font-size: 12px;
+        color: #6b584c;
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      .btn-outline-print {
+        background: #ffffff;
+        border: 1px solid #dcd2c8;
+        color: #2d1b10;
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      /* Right Column Info */
+      .method-badge {
+        font-size: 11px;
+        font-weight: 600;
+        color: #7d562d;
+        background: #f6efe7;
+        padding: 4px 10px;
+        border-radius: 10px;
+      }
+      .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .info-item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        font-size: 13px;
+      }
+      .info-item i {
+        color: #7d562d;
+        font-size: 16px;
+        margin-top: 2px;
+      }
+      .i-lbl {
+        display: block;
+        font-size: 11px;
+        color: #8c7564;
+        margin-bottom: 2px;
+      }
+      .info-item strong {
+        display: block;
+        color: #2d1b10;
+        line-height: 1.4;
+      }
+      .info-item small {
+        display: block;
+        font-size: 11px;
+        color: #7d6b5d;
+        margin-top: 2px;
+      }
+
+      .note-box {
+        display: flex;
+        gap: 10px;
+        background: #faf7f4;
+        border: 1px solid #ede4da;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+      .note-box p {
+        margin: 2px 0 0 0;
+        font-style: italic;
+        color: #5e4b3e;
+      }
+
+      .paid-pill {
+        background: #e6f6ec;
+        color: #15803d;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 12px;
+      }
+      .paid-pill.unpaid {
+        background: #fdf3e7;
+        color: #b45309;
+      }
+
+      .pay-meta-box {
+        background: #faf8f5;
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      .pm-row {
+        display: flex;
+        justify-content: space-between;
+      }
+      .pm-row span {
+        color: #8c7564;
+      }
+
+      .price-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 12px;
+        padding-bottom: 14px;
+        border-bottom: 1px dashed #e2d6c8;
+        margin-bottom: 14px;
+      }
+      .pb-row {
+        display: flex;
+        justify-content: space-between;
+        color: #5e4b3e;
+      }
+      .pb-row.discount {
+        color: #15803d;
+        font-weight: 600;
+      }
+
+      .grand-total-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .grand-total-box strong {
+        display: block;
+        font-size: 14px;
+      }
+      .grand-total-box small {
+        display: block;
+        font-size: 11px;
+        color: #8c7564;
+      }
+      .gt-right {
+        text-align: right;
+      }
+      .gt-amount {
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #7d562d;
+      }
+
+      .help-callout-card {
+        background: #faf6f1;
+        border: 1px solid #e8dfd5;
+        border-radius: 14px;
+        padding: 16px 18px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .hc-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #7d562d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .help-callout-card h4 {
+        font-size: 13px;
+        margin: 0 0 4px 0;
+      }
+      .help-callout-card p {
+        font-size: 11px;
+        color: #6b584c;
+        margin: 0 0 6px 0;
+        line-height: 1.45;
+      }
+      .help-callout-card strong {
+        font-size: 13px;
+        color: #2d1b10;
+      }
+
+      /* Guarantees Strip */
+      .guarantees-strip {
+        margin-top: 36px;
+        padding-top: 28px;
+        border-top: 1px solid #e5ddd4;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+      }
+      .g-item {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .g-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid #d8cbbf;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #7d562d;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .g-item h4 {
+        font-size: 14px;
+        margin: 0 0 4px 0;
+        color: #2d1b10;
+      }
+      .g-item p {
+        font-size: 12px;
+        color: #7d6b5d;
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      /* Lightbox */
+      .zoom-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        padding: 20px;
+      }
+      .zoom-box {
+        position: relative;
+        max-width: 820px;
+        width: 100%;
+      }
+      .zoom-box img {
+        width: 100%;
+        border-radius: 14px;
+        display: block;
+      }
+      .zoom-close {
+        position: absolute;
+        top: -14px;
+        right: -14px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #fff;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+      }
+      .err-txt {
+        color: #ba1a1a;
+      }
+      .btn-back {
+        display: inline-block;
+        margin-top: 12px;
+        color: #7d562d;
+        font-weight: 600;
+      }
+
+      @media (max-width: 900px) {
+        .showcase-grid,
+        .detail-2col,
+        .cs-2col,
+        .acc-grid,
+        .care-2col,
+        .guarantees-strip {
+          grid-template-columns: 1fr;
+        }
+      }
+    `,
+  ],
 })
 export class OrderDetailComponent implements OnInit {
   order: any = null;
@@ -890,14 +1275,14 @@ export class OrderDetailComponent implements OnInit {
     delivering: 5,
     delivered: 6,
     done: 7,
-    cancelled: 0
+    cancelled: 0,
   };
 
   constructor(
     private route: ActivatedRoute,
     private orderService: OrderService,
     private cdr: ChangeDetectorRef,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
@@ -924,14 +1309,14 @@ export class OrderDetailComponent implements OnInit {
       { key: 'pending_payment', label: 'Chờ thanh toán', icon: 'bi-credit-card' },
       { key: 'pending_approval', label: 'Chờ duyệt', icon: 'bi-clipboard-check' },
       { key: 'accepted', label: 'Đã tiếp nhận', icon: 'bi-shop' },
-      { key: 'baking', label: 'Đang làm bánh', icon: 'bi-cake2' }
+      { key: 'baking', label: 'Đang làm bánh', icon: 'bi-cake2' },
     ];
 
     if (this.order?.receiveMethod === 'pickup') {
       return [
         ...baseSteps,
         { key: 'delivering', label: 'Đã xong', icon: 'bi-box-seam' },
-        { key: 'done', label: 'Đã nhận bánh', icon: 'bi-bag-heart' }
+        { key: 'done', label: 'Đã nhận bánh', icon: 'bi-bag-heart' },
       ];
     }
 
@@ -939,7 +1324,7 @@ export class OrderDetailComponent implements OnInit {
       ...baseSteps,
       { key: 'delivered', label: 'Đã xong', icon: 'bi-box-seam' },
       { key: 'delivering', label: 'Đang giao', icon: 'bi-truck' },
-      { key: 'done', label: 'Đã giao', icon: 'bi-house-check' }
+      { key: 'done', label: 'Đã giao', icon: 'bi-house-check' },
     ];
   }
 
@@ -955,7 +1340,7 @@ export class OrderDetailComponent implements OnInit {
         this.loading = false;
         this.errorMsg = err.error?.message || 'Không tìm thấy thông tin đơn hàng.';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -977,7 +1362,7 @@ export class OrderDetailComponent implements OnInit {
   getItemImage(item: any): string {
     if (!item) return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&q=80';
     if (item.imageUrl) return item.imageUrl;
-    if (item.imageId) return `http://localhost:3000/api/files/${item.imageId}`;
+    if (item.imageId) return `${environment.apiUrl}/files/${item.imageId}`;
     const name = (item.name || '').toLowerCase();
     if (name.includes('wedding') || name.includes('cưới')) {
       return 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=600&q=80';
@@ -994,7 +1379,7 @@ export class OrderDetailComponent implements OnInit {
       delivering: 'Đang giao',
       delivered: 'Đã xong',
       done: 'Hoàn thành',
-      cancelled: 'Đã hủy'
+      cancelled: 'Đã hủy',
     };
     return map[status] || status;
   }
