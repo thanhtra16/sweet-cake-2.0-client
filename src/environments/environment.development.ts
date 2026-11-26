@@ -1,4 +1,4 @@
 export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:3000/api',
+  production: true,
+  apiUrl: 'https://sweet-cake-2-0-server-1.onrender.com/api',
 };
