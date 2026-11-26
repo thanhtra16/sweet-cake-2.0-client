@@ -18,8 +18,8 @@
     <!-- Dòng thông báo nếu Buyer đã đăng nhập -->
     <p class="checkout__login-prompt checkout__login-prompt--signed" *ngIf="isLoggedIn">
       Đang đặt bánh với tài khoản thành viên SweetCake
-      <span *ngIf="savedBuyerProfile?.fullName">
-        (<strong>{{ savedBuyerProfile?.fullName }}</strong>)
+      <span *ngIf="savedBuyerProfile?.fullName || receiver.fullName">
+        (<strong>{{ savedBuyerProfile?.fullName || receiver.fullName }}</strong>)
       </span>
       — bạn có thể chỉnh sửa thông tin nhận hàng bên dưới.
     </p>
@@ -390,18 +390,25 @@
               type="button"
               class="sc-btn sc-btn--secondary"
               *ngFor="let slot of slots"
-              [disabled]="slot.status !== 'open' || loading"
-              [class.is-selected]="selectedSlotId === slot.id"
-              (click)="selectedSlotId = slot.id"
+              [disabled]="
+                loading ||
+                slot.closed === true ||
+                slot.disabled === true ||
+                slot.available === false ||
+                slot.isAvailable === false ||
+                (slot.remaining !== undefined && slot.remaining <= 0)
+              "
+              [class.is-selected]="selectedSlotId === (slot.id || slot._id || '')"
+              (click)="selectedSlotId = slot.id || slot._id || ''"
             >
-              <strong>{{ slot.label }}</strong>
+              <strong>{{ slot.label || slot.name || slot.timeSlot || slot.slotLabel }}</strong>
               <small>
                 {{
-                  slot.status === 'open'
-                    ? 'Còn chỗ'
-                    : slot.status === 'full'
+                  slot.closed || slot.disabled
+                    ? 'Đã đóng'
+                    : (slot.remaining !== undefined && slot.remaining <= 0) || slot.available === false || slot.isAvailable === false
                     ? 'Đầy ca'
-                    : 'Đã đóng'
+                    : 'Còn chỗ'
                 }}
               </small>
             </button>

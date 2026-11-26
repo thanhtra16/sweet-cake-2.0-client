@@ -21,6 +21,40 @@ import {
   TimeSlot,
 } from '@shared/models/checkout.model';
 
+export interface CheckoutTimeSlot
+  extends Omit<
+    TimeSlot,
+    | 'id'
+    | '_id'
+    | 'label'
+    | 'name'
+    | 'timeSlot'
+    | 'slotLabel'
+    | 'capacity'
+    | 'used'
+    | 'remaining'
+    | 'closed'
+    | 'disabled'
+    | 'available'
+    | 'isAvailable'
+    | 'status'
+  > {
+  id: string;
+  _id?: string;
+  label?: string;
+  name?: string;
+  timeSlot?: string;
+  slotLabel?: string;
+  capacity?: number;
+  used?: number;
+  remaining?: number;
+  closed?: boolean;
+  disabled?: boolean;
+  available?: boolean;
+  isAvailable?: boolean;
+  status?: string;
+}
+
 interface BuyNowData {
   source?: 'buy_now' | 'cart';
   cartItemIds?: string[];
@@ -192,7 +226,7 @@ export class CheckoutPage implements OnInit {
 
   settings?: PublicSettings;
   branches: BranchOption[] = DEFAULT_BRANCHES.map((b) => ({ ...b }));
-  slots: TimeSlot[] = [];
+  slots: CheckoutTimeSlot[] = [];
   quote?: OrderQuote;
 
   loading = false;
@@ -279,6 +313,10 @@ export class CheckoutPage implements OnInit {
     if (!target.closest('.sc-custom-select')) {
       this.activeDropdown = null;
     }
+  }
+
+  private isValidObjectId(id?: string): boolean {
+    return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id.trim());
   }
 
   // ========================================
@@ -398,22 +436,44 @@ export class CheckoutPage implements OnInit {
         localStorage.getItem('accessToken') ||
         localStorage.getItem('token') ||
         localStorage.getItem('buyerToken') ||
+        localStorage.getItem('auth_token') ||
         sessionStorage.getItem('accessToken') ||
         sessionStorage.getItem('token');
 
-      const rawUser =
-        localStorage.getItem('buyer') ||
-        localStorage.getItem('user') ||
-        localStorage.getItem('currentUser') ||
-        sessionStorage.getItem('buyer') ||
-        sessionStorage.getItem('user');
+      const candidateKeys = [
+        'buyer',
+        'user',
+        'currentUser',
+        'auth_user',
+        'userInfo',
+        'profile',
+      ];
+
+      let rawUser: string | null = null;
+      for (const key of candidateKeys) {
+        rawUser = localStorage.getItem(key) || sessionStorage.getItem(key);
+        if (rawUser) break;
+      }
 
       this.isLoggedIn = !!(token || rawUser);
-
       if (!rawUser) return;
 
-      const user = JSON.parse(rawUser);
-      const fullName = (user.fullName || user.name || '').trim();
+      const parsedJson = JSON.parse(rawUser);
+      const user =
+        parsedJson?.user ||
+        parsedJson?.buyer ||
+        parsedJson?.data ||
+        parsedJson;
+
+      const fullName = (
+        user.fullName ||
+        user.name ||
+        user.customerName ||
+        user.displayName ||
+        user.username ||
+        ''
+      ).trim();
+
       const phone = (user.phone || user.phoneNumber || '').trim();
       const rawAddress = (
         user.address ||
@@ -609,14 +669,89 @@ export class CheckoutPage implements OnInit {
           this.settings = payload;
           this.settingsError = '';
 
-          if (Array.isArray(payload?.branches) && payload.branches.length > 0) {
-            this.branches = payload.branches.map((b: any, idx: number) => ({
-              _id: b._id || DEFAULT_BRANCHES[idx]?._id || b.name,
-              name: b.name,
-              address: b.address,
-              lat: b.lat ?? DEFAULT_BRANCHES[idx]?.lat ?? 10.7734,
-              lng: b.lng ?? DEFAULT_BRANCHES[idx]?.lng ?? 106.7009,
-            }));
+          const rawBranches = Array.isArray(payload?.branches)
+            ? payload.branches
+            : Array.isArray(payload?.pickupBranches)
+              ? payload.pickupBranches
+              : [];
+
+          if (rawBranches.length > 0) {
+            const serverBranches: BranchOption[] = rawBranches.map(
+              (b: any, idx: number) => {
+                if (typeof b === 'object' && b !== null) {
+                  const matchedDefault = DEFAULT_BRANCHES.find(
+                    (def) =>
+                      this.normalizeText(def.name) ===
+                      this.normalizeText(b.name || '')
+                  );
+                  return {
+                    _id:
+                      b._id ||
+                      b.id ||
+                      matchedDefault?._id ||
+                      DEFAULT_BRANCHES[idx]?._id ||
+                      b.name,
+                    name:
+                      b.name ||
+                      matchedDefault?.name ||
+                      DEFAULT_BRANCHES[idx]?.name ||
+                      `Chi nhánh ${idx + 1}`,
+                    address:
+                      b.address ||
+                      matchedDefault?.address ||
+                      DEFAULT_BRANCHES[idx]?.address ||
+                      '',
+                    lat:
+                      b.lat ??
+                      matchedDefault?.lat ??
+                      DEFAULT_BRANCHES[idx]?.lat ??
+                      10.7734,
+                    lng:
+                      b.lng ??
+                      matchedDefault?.lng ??
+                      DEFAULT_BRANCHES[idx]?.lng ??
+                      106.7009,
+                  };
+                }
+
+                const matchedDefault = DEFAULT_BRANCHES.find(
+                  (def) =>
+                    this.normalizeText(def.name) ===
+                    this.normalizeText(String(b))
+                );
+                return {
+                  _id:
+                    matchedDefault?._id ||
+                    DEFAULT_BRANCHES[idx]?._id ||
+                    String(b),
+                  name: String(b),
+                  address:
+                    matchedDefault?.address ||
+                    DEFAULT_BRANCHES[idx]?.address ||
+                    '',
+                  lat:
+                    matchedDefault?.lat ??
+                    DEFAULT_BRANCHES[idx]?.lat ??
+                    10.7734,
+                  lng:
+                    matchedDefault?.lng ??
+                    DEFAULT_BRANCHES[idx]?.lng ??
+                    106.7009,
+                };
+              }
+            );
+
+            // Ghép thêm chi nhánh còn thiếu từ DEFAULT_BRANCHES nếu server chỉ trả về 1 chi nhánh
+            const missingDefaults = DEFAULT_BRANCHES.filter(
+              (def) =>
+                !serverBranches.some(
+                  (sb) =>
+                    this.normalizeText(sb.name) ===
+                    this.normalizeText(def.name)
+                )
+            ).map((def) => ({ ...def }));
+
+            this.branches = [...serverBranches, ...missingDefaults];
           }
 
           if (
@@ -634,7 +769,6 @@ export class CheckoutPage implements OnInit {
         },
         error: (err) => {
           console.error('[Checkout] Cannot load settings:', err);
-          // Vẫn giữ 2 chi nhánh mặc định để khách chọn được
           this.settingsError =
             err.error?.message ||
             'Không đồng bộ được cấu hình chi nhánh từ máy chủ.';
@@ -677,7 +811,43 @@ export class CheckoutPage implements OnInit {
       .subscribe({
         next: (value: any) => {
           const payload = value?.data ?? value;
-          this.slots = payload?.items || [];
+          const list: any[] = Array.isArray(payload)
+            ? payload
+            : payload?.items || payload?.slots || [];
+
+          this.slots = list.map((slot) => {
+            const resolvedId = String(slot.id || slot._id || '');
+            const computedRemaining =
+              slot.remaining !== undefined
+                ? slot.remaining
+                : typeof slot.capacity === 'number' &&
+                    typeof slot.used === 'number'
+                  ? Math.max(0, slot.capacity - slot.used)
+                  : undefined;
+
+            const isClosed = Boolean(
+              slot.closed || slot.disabled || slot.status === 'closed'
+            );
+            const isOutOfStock =
+              computedRemaining !== undefined && computedRemaining <= 0;
+            const isAvailable =
+              slot.available !== undefined
+                ? Boolean(slot.available)
+                : slot.isAvailable !== undefined
+                  ? Boolean(slot.isAvailable)
+                  : !isClosed && !isOutOfStock;
+
+            return {
+              ...slot,
+              id: resolvedId,
+              _id: slot._id || resolvedId,
+              remaining: computedRemaining,
+              closed: isClosed,
+              disabled: !isAvailable,
+              available: isAvailable,
+              isAvailable,
+            };
+          });
           this.slotsError = '';
           this.cdr.detectChanges();
         },
@@ -940,6 +1110,13 @@ export class CheckoutPage implements OnInit {
         ? `${this.deliveryAddress.street.trim()}, ${this.deliveryAddress.ward}, ${this.deliveryAddress.city}`
         : undefined;
 
+    const resolvedPickupBranch =
+      this.receiveMethod === 'pickup'
+        ? this.isValidObjectId(this.selectedBranch)
+          ? this.selectedBranch
+          : this.selectedBranchObj?.name || this.selectedBranch
+        : undefined;
+
     const payload: CreateOrderRequest = {
       items: this.cartItems as unknown as CreateOrderRequest['items'],
       receiver: {
@@ -949,12 +1126,14 @@ export class CheckoutPage implements OnInit {
       receiveMethod: this.receiveMethod,
       slotId: this.selectedSlotId,
       receiveDate: this.selectedDate,
-      pickupBranch:
-        this.receiveMethod === 'pickup' ? this.selectedBranch : undefined,
+      ...(this.receiveMethod === 'delivery'
+        ? { shippingAddress: fullDeliveryAddress }
+        : {}),
+      pickupBranch: resolvedPickupBranch,
       note: this.note.trim(),
       voucherCode: this.voucherCode.trim() || undefined,
       expectedTotal: this.quote!.total,
-    };
+    } as CreateOrderRequest;
 
     this.loading = true;
     this.cdr.detectChanges();
