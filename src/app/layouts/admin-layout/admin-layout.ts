@@ -68,6 +68,21 @@ export class AdminLayoutComponent implements OnInit {
       path: '/admin/customizations',
       icon: 'fa-solid fa-sliders',
     },
+    {
+      label: 'Quản lý khách hàng',
+      path: '/admin/users',
+      icon: 'fa-solid fa-users',
+    },
+    {
+      label: 'Quản lý khung giờ',
+      path: '/admin/time-slots',
+      icon: 'fa-solid fa-clock',
+    },
+    {
+      label: 'Quản lý voucher',
+      path: '/admin/vouchers',
+      icon: 'fa-solid fa-ticket',
+    },
   ];
 
   ngOnInit(): void {
@@ -122,6 +137,12 @@ export class AdminLayoutComponent implements OnInit {
       this.currentPageTitle = 'Quản lý sản phẩm';
     } else if (path === '/admin/customizations') {
       this.currentPageTitle = 'Cấu hình tùy biến';
+    } else if (path === '/admin/users') {
+      this.currentPageTitle = 'Quản lý khách hàng';
+    } else if (path === '/admin/time-slots') {
+      this.currentPageTitle = 'Quản lý khung giờ';
+    } else if (path === '/admin/vouchers') {
+      this.currentPageTitle = 'Quản lý voucher';
     } else {
       this.currentPageTitle = 'Trang quản trị';
     }
